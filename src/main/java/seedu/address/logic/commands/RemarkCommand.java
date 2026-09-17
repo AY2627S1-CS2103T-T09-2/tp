@@ -6,6 +6,7 @@ import static seedu.address.logic.parser.CliSyntax.PREFIX_REMARK;
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
+import seedu.address.model.person.Remark;
 
 /**
  * Changes the remark of an existing person in the address book.
@@ -26,9 +27,9 @@ public class RemarkCommand extends Command {
     public static final String MESSAGE_NOT_IMPLEMENTED_YET = "Remark command not implemented yet.";
 
     private final Index index;
-    private final String remark;
+    private final Remark remark;
 
-    public RemarkCommand(Index index, String remark) {
+    public RemarkCommand(Index index, Remark remark) {
         requireAllNonNull(index, remark);
 
         this.index = index;
