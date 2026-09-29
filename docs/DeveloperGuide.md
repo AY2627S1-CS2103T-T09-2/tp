@@ -270,29 +270,65 @@ _{Explain here how the data archiving feature will be implemented}_
 
 **Target user profile**:
 
-* has a need to manage a significant number of contacts
-* prefers desktop apps over other types of applications
-* can type fast
-* prefers typing to mouse interactions
-* is reasonably comfortable using CLI apps
+* junior insurance agent who is building their own base of prospects and clients
+* has a growing number of prospects and clients, and struggles to remember who to follow up with and when
+* currently keeps prospects scattered across phone contacts, chat apps and spreadsheets
+* works alone on their own laptop and prefers desktop apps
+* can type fast and prefers typing and keyboard shortcuts to mouse interactions
+* is new to CLI apps, but willing to learn a few short commands
 
-**Value proposition**: Manage contacts faster than with a typical mouse-driven GUI application.
+**Value proposition**: Keep track of prospects and clients, what stage each one is at, and when to follow up next, faster than juggling phone contacts, chat apps and spreadsheets.
+
+Easy-Insurance focuses on managing prospects and clients. It does not send messages or make calls, generate quotations or premiums, recommend policies, manage claims, track commissions, or replace the agency's official CRM. It is a single-user app, so nothing is shared with other agents.
 
 
 ### User stories
 
 Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
 
-| Priority | As a …                                    | I want to …                 | So that I can…                                                        |
-|----------|--------------------------------------------|------------------------------|------------------------------------------------------------------------|
-| `* * *`  | new user                                   | see usage instructions       | refer to instructions when I forget how to use the App                 |
-| `* * *`  | user                                       | add a new person             |                                                                        |
-| `* * *`  | user                                       | delete a person              | remove entries that I no longer need                                   |
-| `* * *`  | user                                       | find a person by name        | locate details of persons without having to go through the entire list |
-| `* *`    | user                                       | hide private contact details | minimize chance of someone else seeing them by accident                |
-| `*`      | user with many persons in the address book | sort persons by name         | locate a person easily                                                 |
-
-*{More to be added}*
+| Priority | As a …                                  | I want to …                                            | So that I can…                                                       |
+|----------|------------------------------------------|---------------------------------------------------------|-----------------------------------------------------------------------|
+| `* * *`  | new insurance agent                      | add a new prospect                                      | keep track of people I may want to follow up with                    |
+| `* * *`  | insurance agent                          | view my list of prospects and clients                   | see the people I am currently managing                               |
+| `* * *`  | insurance agent looking for a person     | search for a contact by name                            | quickly retrieve the person's information                            |
+| `* * *`  | insurance agent                          | edit a contact's details                                | keep their information up to date when it changes                    |
+| `* * *`  | insurance agent                          | delete a contact                                        | remove people who no longer want to hear from me                     |
+| `* * *`  | insurance agent                          | tag a contact as prospect, client or inactive           | tell at a glance who is still worth chasing                          |
+| `* * *`  | insurance agent                          | set a follow-up date for a contact                      | remember who I promised to call back                                 |
+| `* * *`  | insurance agent                          | mark a follow-up as done                                | keep my list to what is still pending                                |
+| `* * *`  | insurance agent unfamiliar with CLI      | see a guide to the available commands and their formats | learn to use the app without prior CLI experience                    |
+| `* *`    | insurance agent                          | record when I last contacted someone                    | see who I have not spoken to in a while                              |
+| `* *`    | insurance agent planning my day          | see all follow-ups due today                            | know who to call before I start                                      |
+| `* *`    | insurance agent unfamiliar with CLI      | get a clear error message when I type a command wrongly | learn from the error and type it correctly next time                 |
+| `* *`    | insurance agent                          | filter my list by tag                                   | focus on prospects when planning outreach                            |
+| `* *`    | insurance agent with many contacts       | search by partial name or phone number                  | find someone when I only remember part of it                         |
+| `* *`    | insurance agent                          | see overdue follow-ups                                  | catch the people I missed                                            |
+| `* *`    | insurance agent                          | see follow-ups due this week                            | plan ahead when today is already full                                |
+| `* *`    | insurance agent                          | push a follow-up to a later date                        | reschedule when a prospect asks me to call next week                 |
+| `* *`    | insurance agent                          | record the policies a client has bought                 | avoid pitching what they already have                                |
+| `* *`    | insurance agent                          | see renewals due in the next month                      | plan retention calls early                                           |
+| `* *`    | insurance agent                          | sort contacts by how many times I met them              | identify prospects who are more engaged with me                      |
+| `* *`    | insurance agent                          | be warned when I add a duplicate                        | keep my list clean                                                   |
+| `* *`    | insurance agent                          | be asked to confirm before deleting                     | avoid deleting someone by accident                                   |
+| `* *`    | insurance agent                          | undo my last change                                     | recover from a mistake quickly                                       |
+| `* *`    | insurance agent                          | see the contacts I added most recently                  | check what I keyed in after a busy day                               |
+| `* *`    | insurance agent                          | mark a contact as do-not-contact                        | respect people who said no without deleting their record             |
+| `* *`    | insurance agent back from leave          | see everything that went overdue while I was away       | catch up in one go                                                   |
+| `*`      | insurance agent                          | import contacts from a spreadsheet                      | bring in lead lists without retyping them                            |
+| `*`      | insurance agent                          | export my contacts to a spreadsheet                     | send my manager my numbers                                           |
+| `*`      | insurance agent                          | archive contacts I no longer work with                  | keep my main list short without losing their history                 |
+| `*`      | insurance agent who types fast           | use short forms for common commands                     | save keystrokes on things I do many times a day                      |
+| `*`      | insurance agent                          | recall a previous command                               | repeat it without retyping                                           |
+| `*`      | insurance agent switching laptops        | copy my data file to a new computer                     | keep working without starting over                                   |
+| `*`      | insurance agent                          | get a clear message if my data file is corrupted        | know what happened instead of losing everything silently             |
+| `*`      | insurance agent                          | record a client's birthday                              | keep in touch between renewals                                       |
+| `*`      | insurance agent                          | record a prospect's life stage                          | pitch products that fit them                                         |
+| `*`      | insurance agent                          | record the language a client prefers                    | speak to them in a language they are comfortable with                |
+| `*`      | insurance agent                          | link two contacts as family                             | pitch family plans to the right people                               |
+| `*`      | insurance agent                          | see how many prospects, clients and lost leads I have   | track progress toward my target                                      |
+| `*`      | insurance agent                          | set a preferred contact channel for a person            | reach them the way they like                                         |
+| `*`      | insurance agent                          | copy a phone number with one command                    | paste it into WhatsApp quickly                                       |
+| `*`      | insurance agent                          | see how many contacts I added this month                | check if I am prospecting enough                                     |
 
 ### Use cases
 
