@@ -29,14 +29,14 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 * Role: Developer
 
-### Johnny Doe
+### Kasey Ho Kei Ching
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/kaseyho.png" width="200px">
 
-[[github](http://github.com/johndoe)] [[portfolio](team/johndoe.md)]
+[[github](https://github.com/kaseyho)] [[portfolio](team/johndoe.md)]
 
 * Role: Developer
-* Responsibilities: Data
+* Responsibilities: ? 
 
 ### Jean Doe
 
