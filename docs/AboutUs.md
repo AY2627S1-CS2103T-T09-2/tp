@@ -58,3 +58,12 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 * Role: Developer
 * Responsibilities: UI
+
+### Jovan Ong
+
+<img src="images/watsurprob.png" width="200px">
+
+[[github](https://github.com/WatsUrProb)]
+
+* Role: Developer
+* Responsibilities: Testing and quality assurance
