@@ -27,8 +27,7 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 [[github](http://github.com/johndoe)](https://github.com/kqjy29)
 
-* Role: Team Lead
-* Responsibilities: UI
+* Role: Developer
 
 ### Johnny Doe
 
