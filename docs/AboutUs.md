@@ -25,15 +25,15 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 <img src="images/kqjy29.png" width="200px">
 
-[[github](http://github.com/johndoe)](https://github.com/kqjy29)
+[[github](https://github.com/kqjy29)]
 
 * Role: Developer
 
-### Peter Bezgoubov
+### Tommy Quak
 
-<img src="images/pbez02.png" width="200px">
+<img src="images/tommyquak.png" width="200px">
 
-[[github](http://github.com/pbez02)] 
+[[github](https://github.com/tommyquak)]
 
 * Role: Developer
 
@@ -47,12 +47,19 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 * Role: Developer
 * Responsibilities: Dev Ops + Threading
 
-### James Doe
+### Peter Bezgoubov
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/pbez02.png" width="200px">
 
-[[github](http://github.com/johndoe)]
-[[portfolio](team/johndoe.md)]
+[[github](https://github.com/pbez02)]
 
 * Role: Developer
-* Responsibilities: UI
+
+### Jovan Ong
+
+<img src="images/watsurprob.png" width="200px">
+
+[[github](https://github.com/WatsUrProb)]
+
+* Role: Developer
+* Responsibilities: Testing and quality assurance
