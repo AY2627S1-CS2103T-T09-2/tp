@@ -25,7 +25,7 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 <img src="images/kqjy29.png" width="200px">
 
-[[github](http://github.com/johndoe)](https://github.com/kqjy29)
+[[github](https://github.com/kqjy29)]
 
 * Role: Developer
 
