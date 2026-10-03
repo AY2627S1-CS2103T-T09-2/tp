@@ -24,6 +24,7 @@ We are a team based in the [School of Computing, National University of Singapor
 [[github](https://github.com/tommyquak)]
 
 * Role: Developer
+* Responsibilities: Documentation
 
 ### Kasey Ho Kei Ching
 
