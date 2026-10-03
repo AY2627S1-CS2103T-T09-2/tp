@@ -332,45 +332,89 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Use cases
 
-(For all use cases below, the **System** is the `AddressBook` and the **Actor** is the `user`, unless specified otherwise)
+(For all use cases below, the **System** is Easy-Insurance and the **Actor** is the insurance agent.)
 
-**Use case: Delete a person**
+**Use case: Add a prospect and plan a follow-up**
 
 **MSS**
 
-1.  User requests to list persons
-2.  AddressBook shows a list of persons
-3.  User requests to delete a specific person in the list
-4.  AddressBook deletes the person
+1. Agent provides the new prospect's name and contact details.
+2. System validates the details and saves the contact with the `Prospect` stage.
+3. System shows the new prospect in the contact list.
+4. Agent sets a follow-up date for the prospect.
+5. System saves the pending follow-up and shows its date with the prospect.
 
-    Use case ends.
+   Use case ends.
 
 **Extensions**
 
-* 2a. The list is empty.
+* 2a. The contact details are invalid or incomplete.
+  * 2a1. System explains which details need correction.
+  * 2a2. Agent corrects the details.
+  * Use case resumes at step 2.
+* 4a. The follow-up date is invalid.
+  * 4a1. System shows an error and does not change the saved contact.
+  * Use case resumes at step 4.
 
-  Use case ends.
+**Use case: Find contacts by name**
 
-* 3a. The given index is invalid.
+**MSS**
 
-    * 3a1. AddressBook shows an error message.
+1. Agent enters `find KEYWORD [MORE_KEYWORDS]`.
+2. System ignores leading and trailing spaces and checks that at least one keyword was supplied.
+3. System searches contact names case-insensitively. A complete word matching any supplied keyword is sufficient.
+4. System shows only matching contacts and reports how many were found.
 
-      Use case resumes at step 2.
+   Use case ends.
 
-*{More to be added}*
+**Extensions**
+
+* 2a. No name keyword was supplied.
+  * 2a1. System shows `Please enter at least one name keyword to search for.`
+  * Use case ends without changing the contact list.
+* 2b. The command format is invalid.
+  * 2b1. System shows the `find KEYWORD [MORE_KEYWORDS]` format.
+  * Use case ends without changing stored contacts.
+* 3a. No contact name contains a matching complete word.
+  * 3a1. System shows an empty result list and reports `0 contacts listed.`
+  * Use case ends.
+
+**Use case: Complete a follow-up**
+
+**MSS**
+
+1. Agent views a contact with a pending follow-up.
+2. System shows the scheduled follow-up date.
+3. Agent requests to mark that follow-up as done.
+4. System records the follow-up as completed and shows the updated contact.
+
+   Use case ends.
+
+**Extensions**
+
+* 3a. The contact has no pending follow-up.
+  * 3a1. System explains that there is no follow-up to complete.
+  * Use case ends without changing the contact.
 
 ### Non-Functional Requirements
 
-1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
-2.  Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
-3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
-
-*{More to be added}*
+1. Easy-Insurance should run on Windows, macOS, and Linux with Java `25` or above installed.
+2. With up to 1000 contacts, listing and finding contacts should complete within two seconds on a typical laptop.
+3. An agent should be able to add, find, edit, and view contacts and manage follow-ups using the keyboard alone.
+4. The app should work without an internet connection and should not transmit contact details to a network service.
+5. If a command is rejected, the error message should identify what needs correction without changing saved contact data.
 
 ### Glossary
 
-* **Mainstream OS**: Windows, Linux, Unix, or macOS
-* **Private contact detail**: A contact detail that is not meant to be shared with others
+* **Contact**: A person recorded in Easy-Insurance, together with their contact details, stage, and any follow-up.
+* **Prospect**: A contact the agent may sell a policy to but who is not yet a client.
+* **Client**: A contact who has bought a policy from the agent.
+* **Inactive**: A contact the agent is no longer actively pursuing but keeps in the app.
+* **Follow-up**: A planned future contact with a prospect or client, recorded with a scheduled date.
+* **Pending follow-up**: A follow-up that has not been marked as done.
+* **Due follow-up**: A pending follow-up scheduled for today.
+* **Overdue follow-up**: A pending follow-up whose scheduled date has passed.
+* **Name keyword**: A non-empty, complete word used by `find` to match contact names, ignoring letter case. Partial-name matching is outside the initial version.
 
 --------------------------------------------------------------------------------------------------------------------
 
