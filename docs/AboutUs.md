@@ -16,6 +16,7 @@ We are a team based in the [School of Computing, National University of Singapor
 [[github](https://github.com/kqjy29)]
 
 * Role: Developer
+* Responsibilities: Code quality, in charge of Logic component
 
 ### Tommy Quak
 
