@@ -12,10 +12,14 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.exceptions.IllegalValueException;
+import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
+import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.Status;
+import seedu.address.testutil.PersonBuilder;
 
 public class JsonAdaptedPersonTest {
     private static final String INVALID_NAME = "R@chel";
@@ -36,6 +40,34 @@ public class JsonAdaptedPersonTest {
     public void toModelType_validPersonDetails_returnsPerson() throws Exception {
         JsonAdaptedPerson person = new JsonAdaptedPerson(BENSON);
         assertEquals(BENSON, person.toModelType());
+    }
+
+    @Test
+    public void toModelType_statusRoundTrip_returnsPerson() throws Exception {
+        Person client = new PersonBuilder(BENSON).withStatus("CLIENT").build();
+        assertEquals(client, new JsonAdaptedPerson(client).toModelType());
+    }
+
+    @Test
+    public void jsonSerialization_statusRoundTrip_returnsPerson() throws Exception {
+        Person client = new PersonBuilder(BENSON).withStatus("CLIENT").build();
+        String json = JsonUtil.toJsonString(new JsonAdaptedPerson(client));
+        JsonAdaptedPerson restored = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class);
+        assertEquals(client, restored.toModelType());
+    }
+
+    @Test
+    public void toModelType_missingStatus_defaultsToProspect() throws Exception {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
+                VALID_TAGS);
+        assertEquals(Status.PROSPECT, person.toModelType().getStatus());
+    }
+
+    @Test
+    public void toModelType_invalidStatus_throwsIllegalValueException() {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
+                "lead", VALID_TAGS);
+        assertThrows(IllegalValueException.class, Status.MESSAGE_CONSTRAINTS, person::toModelType);
     }
 
     @Test
