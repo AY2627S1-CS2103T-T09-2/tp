@@ -49,7 +49,19 @@ public class AddCommandTest {
         AddCommand addCommand = new AddCommand(validPerson);
         ModelStub modelStub = new ModelStubWithPerson(validPerson);
 
-        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PERSON, () -> addCommand.execute(modelStub));
+        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PERSON,
+                () -> addCommand.execute(modelStub));
+    }
+
+    @Test
+    public void execute_nameDiffersOnlyInCase_throwsDuplicateCommandException() {
+        Person existingPerson = new PersonBuilder().withName("Alice Tan").build();
+        Person duplicatePerson = new PersonBuilder().withName("alice  tan").build();
+        AddCommand addCommand = new AddCommand(duplicatePerson);
+        ModelStub modelStub = new ModelStubWithPerson(existingPerson);
+
+        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PERSON,
+                () -> addCommand.execute(modelStub));
     }
 
     @Test
