@@ -33,10 +33,8 @@ public class StatusTest {
     @Test
     public void parse_invalidStatus_throwsIllegalArgumentException() {
         assertThrows(NullPointerException.class, () -> Status.parse(null));
-        assertThrows(IllegalArgumentException.class, Status.MESSAGE_CONSTRAINTS,
-                () -> Status.parse(""));
-        assertThrows(IllegalArgumentException.class, Status.MESSAGE_CONSTRAINTS,
-                () -> Status.parse("lead"));
+        assertThrows(IllegalArgumentException.class, Status.MESSAGE_CONSTRAINTS, () -> Status.parse(""));
+        assertThrows(IllegalArgumentException.class, Status.MESSAGE_CONSTRAINTS, () -> Status.parse("lead"));
     }
 
     @Test
