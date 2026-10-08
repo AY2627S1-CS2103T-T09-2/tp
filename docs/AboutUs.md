@@ -16,6 +16,7 @@ We are a team based in the [School of Computing, National University of Singapor
 [[github](https://github.com/kqjy29)]
 
 * Role: Developer
+* Responsibilities: Code quality, in charge of Logic component
 
 ### Tommy Quak
 
@@ -24,6 +25,7 @@ We are a team based in the [School of Computing, National University of Singapor
 [[github](https://github.com/tommyquak)]
 
 * Role: Developer
+* Responsibilities: Documentation
 
 ### Kasey Ho Kei Ching
 
@@ -32,6 +34,7 @@ We are a team based in the [School of Computing, National University of Singapor
 [[github](https://github.com/kaseyho)]
 
 * Role: Developer
+* Responsibilities: Contact listing and follow-up completion
 
 ### Peter Bezgoubov
 
