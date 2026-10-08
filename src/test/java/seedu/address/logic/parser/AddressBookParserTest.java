@@ -76,9 +76,19 @@ public class AddressBookParserTest {
     }
 
     @Test
-    public void parseCommand_help() throws Exception {
+    public void parseCommand_helpWithoutArgs_returnsHelpCommand() throws ParseException {
         assertTrue(parser.parseCommand(HelpCommand.COMMAND_WORD) instanceof HelpCommand);
-        assertTrue(parser.parseCommand(HelpCommand.COMMAND_WORD + " 3") instanceof HelpCommand);
+        assertTrue(parser.parseCommand(HelpCommand.COMMAND_WORD + "  ") instanceof HelpCommand);
+    }
+    
+    @Test
+    public void parseCommand_helpWithExtraArgs_throwsParseException() {
+        String expectedMessage = "The help command does not accept additional parameters.";
+    
+        assertThrows(ParseException.class, expectedMessage, ()
+                -> parser.parseCommand(HelpCommand.COMMAND_WORD + " 3"));
+        assertThrows(ParseException.class, expectedMessage, ()
+                -> parser.parseCommand(HelpCommand.COMMAND_WORD + " extra"));
     }
 
     @Test
