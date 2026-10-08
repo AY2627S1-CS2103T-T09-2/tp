@@ -33,6 +33,7 @@ We are a team based in the [School of Computing, National University of Singapor
 [[github](https://github.com/kaseyho)]
 
 * Role: Developer
+* Responsibilities: Contact listing and follow-up completion
 
 ### Peter Bezgoubov
 
