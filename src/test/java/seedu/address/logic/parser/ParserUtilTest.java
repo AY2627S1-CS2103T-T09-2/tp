@@ -16,6 +16,7 @@ import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.Status;
 import seedu.address.model.tag.Tag;
 
 public class ParserUtilTest {
@@ -33,6 +34,16 @@ public class ParserUtilTest {
     private static final String VALID_TAG_2 = "neighbour";
 
     private static final String WHITESPACE = " \t\r\n";
+
+    @Test
+    public void parseStatus_validInput_returnsStatus() throws Exception {
+        assertEquals(Status.CLIENT, ParserUtil.parseStatus(" client "));
+    }
+
+    @Test
+    public void parseStatus_invalidInput_throwsParseException() {
+        assertThrows(ParseException.class, Status.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseStatus("lead"));
+    }
 
     @Test
     public void parseIndex_invalidInput_throwsParseException() {

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static seedu.address.storage.JsonAdaptedPerson.MISSING_FIELD_MESSAGE_FORMAT;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.BENSON;
+import static seedu.address.testutil.TypicalPersons.CLIENT_BENSON;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,10 +13,12 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.exceptions.IllegalValueException;
+import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.Status;
 
 public class JsonAdaptedPersonTest {
     private static final String INVALID_NAME = "R@chel";
@@ -36,6 +39,32 @@ public class JsonAdaptedPersonTest {
     public void toModelType_validPersonDetails_returnsPerson() throws Exception {
         JsonAdaptedPerson person = new JsonAdaptedPerson(BENSON);
         assertEquals(BENSON, person.toModelType());
+    }
+
+    @Test
+    public void toModelType_statusRoundTrip_returnsPerson() throws Exception {
+        assertEquals(CLIENT_BENSON, new JsonAdaptedPerson(CLIENT_BENSON).toModelType());
+    }
+
+    @Test
+    public void jsonSerialization_statusRoundTrip_returnsPerson() throws Exception {
+        String json = JsonUtil.toJsonString(new JsonAdaptedPerson(CLIENT_BENSON));
+        JsonAdaptedPerson restored = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class);
+        assertEquals(CLIENT_BENSON, restored.toModelType());
+    }
+
+    @Test
+    public void toModelType_missingStatus_defaultsToProspect() throws Exception {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
+                VALID_TAGS);
+        assertEquals(Status.PROSPECT, person.toModelType().getStatus());
+    }
+
+    @Test
+    public void toModelType_invalidStatus_throwsIllegalValueException() {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
+                "lead", VALID_TAGS);
+        assertThrows(IllegalValueException.class, Status.MESSAGE_CONSTRAINTS, person::toModelType);
     }
 
     @Test

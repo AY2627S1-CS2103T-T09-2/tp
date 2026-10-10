@@ -76,20 +76,21 @@ Shows a message explaining how to access the help page.
 Format: `help`
 
 
-### Adding a person: `add`
+### Adding a contact: `add`
 
-Adds a person to the address book.
+Adds a contact to Easy-Insurance.
 
-Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]... `
+Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [s/STATUS] [t/TAG]...`
 
 <box type="tip" seamless>
 
-**Tip:** A person can have any number of tags, including zero.
+**Tip:** `s/STATUS` is optional. Use `PROSPECT`, `CLIENT`, or `INACTIVE` (case does not matter).
+Contacts added without `s/` default to `PROSPECT`. A contact can have any number of tags, including zero.
 </box>
 
 Examples:
 * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
-* `add n/Betsy Crowe t/friend e/betsycrowe@example.com a/Newgate Prison p/1234567 t/criminal`
+* `add n/Betsy Crowe t/friend e/betsycrowe@example.com a/Newgate Prison p/1234567 s/client t/criminal`
 
 ### Listing all persons: `list`
 
@@ -195,7 +196,7 @@ _Details coming soon ..._
 
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-**Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]... ` <br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
+**Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [s/STATUS] [t/TAG]...` <br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 s/CLIENT t/friend t/colleague`
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]... `<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
