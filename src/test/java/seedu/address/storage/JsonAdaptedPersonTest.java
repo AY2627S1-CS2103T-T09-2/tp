@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static seedu.address.storage.JsonAdaptedPerson.MISSING_FIELD_MESSAGE_FORMAT;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.BENSON;
+import static seedu.address.testutil.TypicalPersons.CLIENT_BENSON;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,10 +17,8 @@ import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
-import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
 import seedu.address.model.person.Status;
-import seedu.address.testutil.PersonBuilder;
 
 public class JsonAdaptedPersonTest {
     private static final String INVALID_NAME = "R@chel";
@@ -44,16 +43,14 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_statusRoundTrip_returnsPerson() throws Exception {
-        Person client = new PersonBuilder(BENSON).withStatus("CLIENT").build();
-        assertEquals(client, new JsonAdaptedPerson(client).toModelType());
+        assertEquals(CLIENT_BENSON, new JsonAdaptedPerson(CLIENT_BENSON).toModelType());
     }
 
     @Test
     public void jsonSerialization_statusRoundTrip_returnsPerson() throws Exception {
-        Person client = new PersonBuilder(BENSON).withStatus("CLIENT").build();
-        String json = JsonUtil.toJsonString(new JsonAdaptedPerson(client));
+        String json = JsonUtil.toJsonString(new JsonAdaptedPerson(CLIENT_BENSON));
         JsonAdaptedPerson restored = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class);
-        assertEquals(client, restored.toModelType());
+        assertEquals(CLIENT_BENSON, restored.toModelType());
     }
 
     @Test
