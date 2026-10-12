@@ -61,8 +61,11 @@ public class ParserUtil {
     public static FollowUp parseFollowUp(String followUp) throws ParseException {
         requireNonNull(followUp);
         String trimmedFollowUp = followUp.trim();
-        if (!FollowUp.isValidFollowUp(trimmedFollowUp)) {
+        if (!FollowUp.hasValidFormat(trimmedFollowUp)) {
             throw new ParseException(FollowUp.MESSAGE_CONSTRAINTS);
+        }
+        if (!FollowUp.isRealDate(trimmedFollowUp)) {
+            throw new ParseException(String.format(FollowUp.MESSAGE_NOT_A_REAL_DATE, trimmedFollowUp));
         }
         return new FollowUp(trimmedFollowUp);
     }

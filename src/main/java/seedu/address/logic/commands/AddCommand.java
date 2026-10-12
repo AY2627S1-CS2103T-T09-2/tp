@@ -43,7 +43,6 @@ public class AddCommand extends Command {
 
     public static final String MESSAGE_SUCCESS = "New contact added: %1$s (%2$s)";
     public static final String MESSAGE_DUPLICATE_PERSON = "This contact already exists in Easy-Insurance.";
-    public static final String MESSAGE_PAST_FOLLOW_UP_WARNING = "\nNote: this follow-up date is in the past.";
 
     private final Person toAdd;
 
@@ -65,9 +64,7 @@ public class AddCommand extends Command {
 
         model.addPerson(toAdd);
         String feedback = String.format(MESSAGE_SUCCESS, toAdd.getName(), toAdd.getStatus());
-        if (toAdd.getFollowUp().map(FollowUp::isPast).orElse(false)) {
-            feedback += MESSAGE_PAST_FOLLOW_UP_WARNING;
-        }
+        feedback += toAdd.getFollowUp().filter(FollowUp::isPast).map(FollowUp::getPastDateWarning).orElse("");
         return new CommandResult(feedback);
     }
 

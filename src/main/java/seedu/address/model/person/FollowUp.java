@@ -15,7 +15,9 @@ import java.time.format.ResolverStyle;
 public class FollowUp {
 
     public static final String MESSAGE_CONSTRAINTS =
-            "Follow-up date must be a valid date in DD-MM-YYYY format.";
+            "Follow-up date must be in DD-MM-YYYY format, e.g. 25-12-2026.";
+    public static final String MESSAGE_NOT_A_REAL_DATE = "%1$s is not a real date.";
+    public static final String MESSAGE_PAST_DATE_WARNING = "\nNote: %1$s is in the past; it was saved anyway.";
     public static final String VALIDATION_REGEX = "\\d{2}-\\d{2}-\\d{4}";
 
     private static final DateTimeFormatter FORMATTER =
@@ -38,15 +40,33 @@ public class FollowUp {
      * Returns true if a given string is a valid follow-up date in DD-MM-YYYY format.
      */
     public static boolean isValidFollowUp(String test) {
-        if (!test.matches(VALIDATION_REGEX)) {
-            return false;
-        }
+        return hasValidFormat(test) && isRealDate(test);
+    }
+
+    /**
+     * Returns true if a given string has the DD-MM-YYYY shape, whether or not it is a real calendar date.
+     */
+    public static boolean hasValidFormat(String test) {
+        return test.matches(VALIDATION_REGEX);
+    }
+
+    /**
+     * Returns true if a given DD-MM-YYYY string is a real calendar date, e.g. not 31-02-2026.
+     */
+    public static boolean isRealDate(String test) {
         try {
             LocalDate.parse(test, FORMATTER);
             return true;
         } catch (DateTimeParseException e) {
             return false;
         }
+    }
+
+    /**
+     * Returns the warning to show when this follow-up date is already in the past.
+     */
+    public String getPastDateWarning() {
+        return String.format(MESSAGE_PAST_DATE_WARNING, this);
     }
 
     /**

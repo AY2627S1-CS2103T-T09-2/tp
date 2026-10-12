@@ -109,4 +109,18 @@ public class FollowUpTest {
         assertEquals(new FollowUp("20-09-2026").hashCode(), new FollowUp("20-09-2026").hashCode());
         assertNotEquals(new FollowUp("20-09-2026").hashCode(), new FollowUp("21-09-2026").hashCode());
     }
+
+    @Test
+    public void hasValidFormat_and_isRealDate() {
+        assertTrue(FollowUp.hasValidFormat("31-02-2026"));
+        assertFalse(FollowUp.isRealDate("31-02-2026"));
+        assertFalse(FollowUp.hasValidFormat("2026-02-28"));
+        assertTrue(FollowUp.isRealDate("28-02-2026"));
+    }
+
+    @Test
+    public void getPastDateWarning_containsDate() {
+        assertEquals("\nNote: 01-01-2020 is in the past; it was saved anyway.",
+                new FollowUp("01-01-2020").getPastDateWarning());
+    }
 }

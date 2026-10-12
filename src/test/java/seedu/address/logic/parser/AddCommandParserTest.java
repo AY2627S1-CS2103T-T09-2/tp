@@ -177,9 +177,15 @@ public class AddCommandParserTest {
     }
 
     @Test
-    public void parse_invalidFollowUp_failure() {
+    public void parse_impossibleFollowUpDate_failure() {
         assertParseFailure(parser, NAME_DESC_AMY + PHONE_DESC_AMY + EMAIL_DESC_AMY + ADDRESS_DESC_AMY
-                + INVALID_FOLLOW_UP_DESC, FollowUp.MESSAGE_CONSTRAINTS);
+                + INVALID_FOLLOW_UP_DESC, String.format(FollowUp.MESSAGE_NOT_A_REAL_DATE, "31-02-2099"));
+    }
+
+    @Test
+    public void parse_wrongFollowUpFormat_failure() {
+        assertParseFailure(parser, NAME_DESC_AMY + PHONE_DESC_AMY + EMAIL_DESC_AMY + ADDRESS_DESC_AMY
+                + " " + PREFIX_FOLLOW_UP + "2099-12-25", FollowUp.MESSAGE_CONSTRAINTS);
     }
 
     @Test

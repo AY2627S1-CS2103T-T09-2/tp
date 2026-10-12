@@ -51,7 +51,7 @@ public class AddCommandTest {
 
         assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, personWithPastFollowUp.getName(),
                 personWithPastFollowUp.getStatus())
-                + AddCommand.MESSAGE_PAST_FOLLOW_UP_WARNING, commandResult.getFeedbackToUser());
+                + personWithPastFollowUp.getFollowUp().get().getPastDateWarning(), commandResult.getFeedbackToUser());
         assertEquals(List.of(personWithPastFollowUp), modelStub.personsAdded);
     }
 
