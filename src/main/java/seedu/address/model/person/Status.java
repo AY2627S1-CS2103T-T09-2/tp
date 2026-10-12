@@ -6,7 +6,7 @@ import static seedu.address.commons.util.AppUtil.checkArgument;
 import java.util.Locale;
 
 /**
- * Represents the relationship status of a contact in Easy-Insurance.
+ * Represents the status of a contact in Easy-Insurance.
  */
 public enum Status {
     PROSPECT,
