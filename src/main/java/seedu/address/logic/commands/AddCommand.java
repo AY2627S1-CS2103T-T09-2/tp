@@ -14,7 +14,7 @@ import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 
 /**
- * Adds a person to the address book.
+ * Adds a contact to Easy-Insurance.
  */
 public class AddCommand extends Command {
 
@@ -37,7 +37,7 @@ public class AddCommand extends Command {
             + PREFIX_TAG + "friends "
             + PREFIX_TAG + "owesMoney";
 
-    public static final String MESSAGE_SUCCESS = "New contact added: %1$s";
+    public static final String MESSAGE_SUCCESS = "New contact added: %1$s (%2$s)";
     public static final String MESSAGE_DUPLICATE_PERSON = "This contact already exists in Easy-Insurance.";
 
     private final Person toAdd;
@@ -59,7 +59,7 @@ public class AddCommand extends Command {
         }
 
         model.addPerson(toAdd);
-        return new CommandResult(String.format(MESSAGE_SUCCESS, toAdd.getName()));
+        return new CommandResult(String.format(MESSAGE_SUCCESS, toAdd.getName(), toAdd.getStatus()));
     }
 
     @Override

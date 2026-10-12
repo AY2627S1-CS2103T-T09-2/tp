@@ -114,10 +114,10 @@ class JsonAdaptedPerson {
         }
         final Address modelAddress = new Address(address);
 
-        if (status != null && !Status.isValidStatus(status)) {
+        if (status != null && !status.isBlank() && !Status.isValidStatus(status)) {
             throw new IllegalValueException(Status.MESSAGE_CONSTRAINTS);
         }
-        final Status modelStatus = status == null ? Status.PROSPECT : Status.parse(status);
+        final Status modelStatus = status == null || status.isBlank() ? Status.PROSPECT : Status.parse(status);
 
         final Set<Tag> modelTags = new HashSet<>(personTags);
         return new Person(modelName, modelPhone, modelEmail, modelAddress, modelStatus, modelTags);

@@ -93,7 +93,7 @@ public class PersonTest {
         editedAlice = new PersonBuilder(ALICE).withTags(VALID_TAG_HUSBAND).build();
         assertFalse(ALICE.equals(editedAlice));
 
-        // different relationship status -> returns false
+        // different status -> returns false
         editedAlice = new PersonBuilder(ALICE).withStatus("CLIENT").build();
         assertFalse(ALICE.equals(editedAlice));
     }

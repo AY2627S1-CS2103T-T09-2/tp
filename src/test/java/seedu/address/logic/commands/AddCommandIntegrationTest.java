@@ -33,7 +33,7 @@ public class AddCommandIntegrationTest {
         expectedModel.addPerson(validPerson);
 
         assertCommandSuccess(new AddCommand(validPerson), model,
-                String.format(AddCommand.MESSAGE_SUCCESS, validPerson.getName()),
+                String.format(AddCommand.MESSAGE_SUCCESS, validPerson.getName(), validPerson.getStatus()),
                 expectedModel);
     }
 

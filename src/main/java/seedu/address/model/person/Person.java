@@ -34,7 +34,7 @@ public class Person {
     }
 
     /**
-     * Creates a person with the given relationship status.
+     * Creates a person with the given status.
      */
     public Person(Name name, Phone phone, Email email, Address address, Status status, Set<Tag> tags) {
         requireAllNonNull(name, phone, email, address, status, tags);

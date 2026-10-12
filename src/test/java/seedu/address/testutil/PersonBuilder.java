@@ -94,7 +94,7 @@ public class PersonBuilder {
     }
 
     /**
-     * Sets the relationship status of the person being built.
+     * Sets the status of the person being built.
      */
     public PersonBuilder withStatus(String status) {
         this.status = Status.parse(status);

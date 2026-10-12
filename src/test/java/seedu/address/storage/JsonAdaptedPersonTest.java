@@ -61,6 +61,13 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
+    public void toModelType_blankStatus_defaultsToProspect() throws Exception {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
+                "   ", VALID_TAGS);
+        assertEquals(Status.PROSPECT, person.toModelType().getStatus());
+    }
+
+    @Test
     public void toModelType_invalidStatus_throwsIllegalValueException() {
         JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
                 "lead", VALID_TAGS);
