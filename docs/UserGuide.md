@@ -61,8 +61,9 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* Commands that take no parameters, such as `help` and `list`, reject extra parameters.<br>
-  For example, `list 123` shows the error `The list command does not accept additional parameters.`
+* `help` and `list` reject extra parameters.<br>
+  For example, `list 123` shows the error `The list command does not accept additional parameters.`<br>
+  `clear` and `exit` currently ignore extra parameters, so `clear 123` still clears every contact. Take care with `clear`.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </box>
@@ -100,7 +101,7 @@ Examples:
 
 ### Listing all contacts: `list`
 
-Shows a list of all contacts in Easy-Insurance, with each contact's status and follow-up date.
+Shows a list of all contacts in Easy-Insurance, with each contact's status.
 
 Format: `list`
 
