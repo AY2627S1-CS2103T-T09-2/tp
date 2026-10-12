@@ -18,6 +18,8 @@ Class Address
 Class Email
 Class Name
 Class Phone
+Class Status
+Class FollowUp
 Class Tag
 
 Class I #FFFFFF
@@ -41,6 +43,8 @@ Person *--> Name
 Person *--> Phone
 Person *--> Email
 Person *--> Address
+Person *--> Status
+Person *--> "0..1" FollowUp
 Person *--> "*" Tag
 
 Person -[hidden]up--> I
