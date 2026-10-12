@@ -31,7 +31,7 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 
    * `list` : Lists all contacts.
 
-   * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a contact named `John Doe` to the Address Book.
+   * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a contact named `John Doe` to Easy-Insurance.
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
 
@@ -61,8 +61,8 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `list`, `exit`, and `clear`, are ignored.<br>
-  For example, `help 123` is interpreted as `help`.
+* Commands that take no parameters, such as `help` and `list`, reject extra parameters.<br>
+  For example, `list 123` shows the error `The list command does not accept additional parameters.`
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </box>
@@ -98,9 +98,9 @@ Examples:
 * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
 * `add n/John Tan p/91234567 e/johntan@example.com a/21 Clementi Ave 3 st/PROSPECT t/referral`
 
-### Listing all persons: `list`
+### Listing all contacts: `list`
 
-Shows a list of all persons in the address book.
+Shows a list of all contacts in Easy-Insurance, with each contact's status and follow-up date.
 
 Format: `list`
 
@@ -137,23 +137,25 @@ Examples:
 * `find alex david` returns `Alex Yeoh`, `David Li`<br>
   ![result for 'find alex david'](images/findAlexDavidResult.png)
 
-### Deleting a person: `delete`
+### Deleting a contact: `delete`
 
-Deletes the specified person from the address book.
+Deletes the specified contact from Easy-Insurance.
 
 Format: `delete INDEX`
 
-* Deletes the person at the specified `INDEX`.
-* The index refers to the index number shown in the displayed person list.
+* Deletes the contact at the specified `INDEX`.
+* The index refers to the index number shown in the displayed contact list.
 * The index **must be a positive integer** 1, 2, 3, ...
 
 Examples:
-* `list` followed by `delete 2` deletes the 2nd person in the address book.
-* `find Betsy` followed by `delete 1` deletes the 1st person in the results of the `find` command.
+* `list` followed by `delete 2` deletes the 2nd contact in Easy-Insurance.
+* `find Betsy` followed by `delete 1` deletes the 1st contact in the results of the `find` command.
 
-### Clearing all entries: `clear`
+The result shows the deleted contact's name, for example `Deleted contact: Betsy Crowe`.
 
-Clears all entries from the address book.
+### Clearing all contacts: `clear`
+
+Removes every contact from Easy-Insurance. There is no confirmation step, so use it with care.
 
 Format: `clear`
 
@@ -178,10 +180,6 @@ If your changes make the data file invalid, Easy-Insurance starts with an empty 
 Two contacts whose names differ only in case or extra spaces also make the data file invalid and cause it to load as an empty contact list.<br>
 Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
-
-### Archiving data files `[coming in v2.0]`
-
-_Details coming soon ..._
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -210,3 +208,4 @@ Action     | Format, Examples
 **Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List**   | `list`
 **Help**   | `help`
+**Exit**   | `exit`
