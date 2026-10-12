@@ -336,7 +336,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **MSS**
 
 1. Agent provides the new prospect's name and contact details.
-2. System validates the details and saves the contact with the `Prospect` stage.
+2. System validates the details and saves the contact with status `PROSPECT`.
 3. System shows the new prospect in the contact list.
 4. Agent sets a follow-up date for the prospect.
 5. System saves the pending follow-up and shows its date with the prospect.
@@ -346,12 +346,18 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **Extensions**
 
 * 2a. The contact details are invalid or incomplete.
-  * 2a1. System explains which details need correction.
+  * 2a1. System explains which details need correction without changing saved contact data.
   * 2a2. Agent corrects the details.
   * Use case resumes at step 2.
+* 2b. A contact with the same name already exists, ignoring case and extra spaces.
+  * 2b1. System explains that the contact already exists without changing saved contact data.
+  * Use case ends.
 * 4a. The follow-up date is invalid.
   * 4a1. System shows an error and does not change the saved contact.
   * Use case resumes at step 4.
+* 5a. The follow-up date is in the past.
+  * 5a1. System saves the date and warns the agent that it is in the past.
+  * Use case ends.
 
 **Use case: Find contacts by name**
 
@@ -399,7 +405,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 2. With up to 1000 contacts, listing and finding contacts should complete within two seconds on a typical laptop.
 3. An agent should be able to add, find, edit, and view contacts and manage follow-ups using the keyboard alone.
 4. The app should work without an internet connection and should not transmit contact details to a network service.
-5. If a command is rejected, the error message should identify what needs correction without changing saved contact data.
+5. An agent who knows the commands should be able to complete common contact tasks faster by typing than by using the mouse.
+6. Contact data should be stored locally as human-editable JSON.
+7. The app should be distributed as a single JAR of at most 100 MB, with no installer required.
 
 ### Glossary
 
