@@ -10,6 +10,7 @@ import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.Status;
 import seedu.address.model.tag.Tag;
 import seedu.address.model.util.SampleDataUtil;
 
@@ -27,6 +28,7 @@ public class PersonBuilder {
     private Phone phone;
     private Email email;
     private Address address;
+    private Status status;
     private Set<Tag> tags;
     private Optional<FollowUp> followUp;
 
@@ -38,6 +40,7 @@ public class PersonBuilder {
         phone = new Phone(DEFAULT_PHONE);
         email = new Email(DEFAULT_EMAIL);
         address = new Address(DEFAULT_ADDRESS);
+        status = Status.PROSPECT;
         tags = new HashSet<>();
         followUp = Optional.empty();
     }
@@ -50,6 +53,7 @@ public class PersonBuilder {
         phone = personToCopy.getPhone();
         email = personToCopy.getEmail();
         address = personToCopy.getAddress();
+        status = personToCopy.getStatus();
         tags = new HashSet<>(personToCopy.getTags());
         followUp = personToCopy.getFollowUp();
     }
@@ -95,6 +99,14 @@ public class PersonBuilder {
     }
 
     /**
+     * Sets the status of the person being built.
+     */
+    public PersonBuilder withStatus(String status) {
+        this.status = Status.parse(status);
+        return this;
+    }
+
+    /**
      * Sets the {@code FollowUp} of the {@code Person} that we are building.
      */
     public PersonBuilder withFollowUp(String followUp) {
@@ -103,7 +115,7 @@ public class PersonBuilder {
     }
 
     public Person build() {
-        return new Person(name, phone, email, address, tags, followUp);
+        return new Person(name, phone, email, address, status, tags, followUp);
     }
 
 }

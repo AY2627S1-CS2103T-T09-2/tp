@@ -24,6 +24,7 @@ public class Person {
 
     // Data fields
     private final Address address;
+    private final Status status;
     private final Set<Tag> tags = new HashSet<>();
     private final Optional<FollowUp> followUp;
 
@@ -32,20 +33,28 @@ public class Person {
      * Every field must be present and not null.
      */
     public Person(Name name, Phone phone, Email email, Address address, Set<Tag> tags) {
-        this(name, phone, email, address, tags, Optional.empty());
+        this(name, phone, email, address, Status.PROSPECT, tags, Optional.empty());
     }
 
     /**
-     * Constructs a person with an optional follow-up date.
+     * Creates a person with the given status and no follow-up date.
+     */
+    public Person(Name name, Phone phone, Email email, Address address, Status status, Set<Tag> tags) {
+        this(name, phone, email, address, status, tags, Optional.empty());
+    }
+
+    /**
+     * Creates a person with the given status and an optional follow-up date.
      * Every field must be present and not null.
      */
-    public Person(Name name, Phone phone, Email email, Address address, Set<Tag> tags,
+    public Person(Name name, Phone phone, Email email, Address address, Status status, Set<Tag> tags,
             Optional<FollowUp> followUp) {
-        requireAllNonNull(name, phone, email, address, tags, followUp);
+        requireAllNonNull(name, phone, email, address, status, tags, followUp);
         this.name = name;
         this.phone = phone;
         this.email = email;
         this.address = address;
+        this.status = status;
         this.tags.addAll(tags);
         this.followUp = followUp;
     }
@@ -64,6 +73,10 @@ public class Person {
 
     public Address getAddress() {
         return address;
+    }
+
+    public Status getStatus() {
+        return status;
     }
 
     /**
@@ -118,6 +131,7 @@ public class Person {
                 && phone.equals(otherPerson.phone)
                 && email.equals(otherPerson.email)
                 && address.equals(otherPerson.address)
+                && status == otherPerson.status
                 && tags.equals(otherPerson.tags)
                 && followUp.equals(otherPerson.followUp);
     }
@@ -125,7 +139,7 @@ public class Person {
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, address, tags, followUp);
+        return Objects.hash(name, phone, email, address, status, tags, followUp);
     }
 
     @Override
@@ -135,6 +149,7 @@ public class Person {
                 .add("phone", phone)
                 .add("email", email)
                 .add("address", address)
+                .add("status", status)
                 .add("tags", tags)
                 .add("followUp", followUp.map(FollowUp::toString).orElse("none"))
                 .toString();

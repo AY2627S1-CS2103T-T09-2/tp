@@ -18,6 +18,7 @@ import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.Status;
 import seedu.address.model.tag.Tag;
 
 /**
@@ -31,6 +32,7 @@ class JsonAdaptedPerson {
     private final String phone;
     private final String email;
     private final String address;
+    private final String status;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private final String followUp;
@@ -42,11 +44,13 @@ class JsonAdaptedPerson {
     @JsonCreator
     public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("phone") String phone,
             @JsonProperty("email") String email, @JsonProperty("address") String address,
+            @JsonProperty("status") String status,
             @JsonProperty("tags") List<JsonAdaptedTag> tags, @JsonProperty("followUp") String followUp) {
         this.name = name;
         this.phone = phone;
         this.email = email;
         this.address = address;
+        this.status = status;
         if (tags != null) {
             this.tags.addAll(tags);
         }
@@ -54,10 +58,19 @@ class JsonAdaptedPerson {
     }
 
     /**
-     * Constructs a {@code JsonAdaptedPerson} with the given person details and no follow-up date.
+     * Constructs a {@code JsonAdaptedPerson} with the given details, no status and no follow-up date,
+     * as written by versions of the app before statuses and follow-ups were supported.
      */
     public JsonAdaptedPerson(String name, String phone, String email, String address, List<JsonAdaptedTag> tags) {
-        this(name, phone, email, address, tags, null);
+        this(name, phone, email, address, null, tags, null);
+    }
+
+    /**
+     * Constructs a {@code JsonAdaptedPerson} with the given details and status but no follow-up date.
+     */
+    public JsonAdaptedPerson(String name, String phone, String email, String address, String status,
+            List<JsonAdaptedTag> tags) {
+        this(name, phone, email, address, status, tags, null);
     }
 
     /**
@@ -68,6 +81,7 @@ class JsonAdaptedPerson {
         phone = source.getPhone().value;
         email = source.getEmail().value;
         address = source.getAddress().value;
+        status = source.getStatus().name();
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
@@ -117,14 +131,20 @@ class JsonAdaptedPerson {
         }
         final Address modelAddress = new Address(address);
 
+        if (status != null && !status.isBlank() && !Status.isValidStatus(status)) {
+            throw new IllegalValueException(Status.MESSAGE_CONSTRAINTS);
+        }
+        final Status modelStatus = status == null || status.isBlank() ? Status.PROSPECT : Status.parse(status);
+
         final Set<Tag> modelTags = new HashSet<>(personTags);
 
-        if (followUp != null && !FollowUp.isValidFollowUp(followUp)) {
+        if (followUp != null && !followUp.isBlank() && !FollowUp.isValidFollowUp(followUp)) {
             throw new IllegalValueException(FollowUp.MESSAGE_CONSTRAINTS);
         }
-        final Optional<FollowUp> modelFollowUp = Optional.ofNullable(followUp).map(FollowUp::new);
+        final Optional<FollowUp> modelFollowUp = followUp == null || followUp.isBlank()
+                ? Optional.empty() : Optional.of(new FollowUp(followUp));
 
-        return new Person(modelName, modelPhone, modelEmail, modelAddress, modelTags, modelFollowUp);
+        return new Person(modelName, modelPhone, modelEmail, modelAddress, modelStatus, modelTags, modelFollowUp);
     }
 
 }

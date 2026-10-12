@@ -93,6 +93,10 @@ public class PersonTest {
         editedAlice = new PersonBuilder(ALICE).withTags(VALID_TAG_HUSBAND).build();
         assertFalse(ALICE.equals(editedAlice));
 
+        // different status -> returns false
+        editedAlice = new PersonBuilder(ALICE).withStatus("CLIENT").build();
+        assertFalse(ALICE.equals(editedAlice));
+
         // different follow-up -> returns false
         editedAlice = new PersonBuilder(ALICE).withFollowUp("25-12-2099").build();
         assertFalse(ALICE.equals(editedAlice));
@@ -108,8 +112,13 @@ public class PersonTest {
     @Test
     public void toStringMethod() {
         String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
-                + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress() + ", tags=" + ALICE.getTags()
-                + ", followUp=none}";
+                + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress()
+                + ", status=" + ALICE.getStatus() + ", tags=" + ALICE.getTags() + ", followUp=none}";
         assertEquals(expected, ALICE.toString());
+    }
+
+    @Test
+    public void constructor_withoutStatus_defaultsToProspect() {
+        assertEquals(Status.PROSPECT, ALICE.getStatus());
     }
 }

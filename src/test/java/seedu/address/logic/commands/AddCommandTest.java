@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 
 import javafx.collections.ObservableList;
 import seedu.address.commons.core.GuiSettings;
-import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
@@ -38,7 +37,7 @@ public class AddCommandTest {
 
         CommandResult commandResult = new AddCommand(validPerson).execute(modelStub);
 
-        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(validPerson)),
+        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, validPerson.getName(), validPerson.getStatus()),
                 commandResult.getFeedbackToUser());
         assertEquals(List.of(validPerson), modelStub.personsAdded);
     }
@@ -50,7 +49,8 @@ public class AddCommandTest {
 
         CommandResult commandResult = new AddCommand(personWithPastFollowUp).execute(modelStub);
 
-        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(personWithPastFollowUp))
+        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, personWithPastFollowUp.getName(),
+                personWithPastFollowUp.getStatus())
                 + AddCommand.MESSAGE_PAST_FOLLOW_UP_WARNING, commandResult.getFeedbackToUser());
         assertEquals(List.of(personWithPastFollowUp), modelStub.personsAdded);
     }
@@ -62,7 +62,8 @@ public class AddCommandTest {
 
         CommandResult commandResult = new AddCommand(personWithFutureFollowUp).execute(modelStub);
 
-        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(personWithFutureFollowUp)),
+        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, personWithFutureFollowUp.getName(),
+                personWithFutureFollowUp.getStatus()),
                 commandResult.getFeedbackToUser());
     }
 
