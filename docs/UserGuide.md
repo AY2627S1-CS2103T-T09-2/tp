@@ -104,7 +104,7 @@ Names with extra spaces are saved with single spaces. A contact cannot be added 
 
 Examples:
 * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
-* `add n/John Tan p/91234567 e/johntan@example.com a/21 Clementi Ave 3 st/PROSPECT t/referral`
+* `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT t/referral`
 * `add n/Sarah Lim p/92345678 e/sarah@example.com a/10 Tampines Street 1 st/CLIENT f/25-12-2026`
 
 ### Listing all contacts: `list`
@@ -117,13 +117,13 @@ Format: `list`
 
 Edits an existing contact in Easy-Insurance.
 
-Format: `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/DD-MM-YYYY] [t/TAG]...`
+Format: `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...`
 
 * Edits the contact at the specified `INDEX`. The index refers to the index number shown in the displayed contact list. The index **must be a positive integer** 1, 2, 3, ...
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
 * `st/STATUS` changes the contact's status. Status is case-insensitive.
-* `f/DD-MM-YYYY` changes the follow-up date. The date must be real and in `DD-MM-YYYY` format.
+* `f/FOLLOW_UP_DATE` changes the follow-up date. The date must be real and in `DD-MM-YYYY` format.
 * Past follow-up dates are accepted with a warning.
 * To clear an existing follow-up, enter `f/` without a date after it.
 * When editing tags, all of the contact's existing tags are removed; adding tags is not cumulative.
@@ -240,11 +240,11 @@ Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways
 
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-**Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...` <br> e.g., `add n/John Tan p/91234567 e/johntan@example.com a/21 Clementi Ave 3 st/PROSPECT f/25-12-2026 t/referral`
+**Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...` <br> e.g., `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT f/25-12-2026 t/referral`
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Done**   | `done INDEX`<br> e.g., `done 1`
-**Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/DD-MM-YYYY] [t/TAG]...`<br> e.g., `edit 2 n/James Lee st/CLIENT f/25-12-2026`
+**Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...`<br> e.g., `edit 2 n/James Lee st/CLIENT f/25-12-2026`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List**   | `list`
 **Help**   | `help`

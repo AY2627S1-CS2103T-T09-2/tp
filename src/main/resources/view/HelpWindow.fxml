@@ -59,11 +59,11 @@
               <Label text="add"
                      GridPane.columnIndex="0"
                      GridPane.rowIndex="1" />
-              <Label text="add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/DD-MM-YYYY] [t/TAG]..."
+              <Label text="add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]..."
                      wrapText="true"
                      GridPane.columnIndex="1"
                      GridPane.rowIndex="1" />
-              <Label text="add n/John Tan p/91234567 e/john@example.com a/Clementi st/PROSPECT t/referral"
+              <Label text="add n/Sarah Lim p/98765432 e/sarahlim@example.com a/Tampines st/PROSPECT t/referral"
                      wrapText="true"
                      GridPane.columnIndex="2"
                      GridPane.rowIndex="1" />
@@ -141,7 +141,7 @@
               <Label text="edit"
                      GridPane.columnIndex="0"
                      GridPane.rowIndex="9" />
-              <Label text="edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/DD-MM-YYYY] [t/TAG]..."
+              <Label text="edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]..."
                      wrapText="true"
                      GridPane.columnIndex="1"
                      GridPane.rowIndex="9" />
