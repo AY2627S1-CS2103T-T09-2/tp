@@ -43,6 +43,31 @@ public class AddCommandTest {
     }
 
     @Test
+    public void execute_pastFollowUp_addSuccessfulWithWarning() throws Exception {
+        ModelStubAcceptingPersonAdded modelStub = new ModelStubAcceptingPersonAdded();
+        Person personWithPastFollowUp = new PersonBuilder().withFollowUp("01-01-2020").build();
+
+        CommandResult commandResult = new AddCommand(personWithPastFollowUp).execute(modelStub);
+
+        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, personWithPastFollowUp.getName(),
+                personWithPastFollowUp.getStatus())
+                + personWithPastFollowUp.getFollowUp().get().getPastDateWarning(), commandResult.getFeedbackToUser());
+        assertEquals(List.of(personWithPastFollowUp), modelStub.personsAdded);
+    }
+
+    @Test
+    public void execute_futureFollowUp_addSuccessfulWithoutWarning() throws Exception {
+        ModelStubAcceptingPersonAdded modelStub = new ModelStubAcceptingPersonAdded();
+        Person personWithFutureFollowUp = new PersonBuilder().withFollowUp("25-12-2099").build();
+
+        CommandResult commandResult = new AddCommand(personWithFutureFollowUp).execute(modelStub);
+
+        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, personWithFutureFollowUp.getName(),
+                personWithFutureFollowUp.getStatus()),
+                commandResult.getFeedbackToUser());
+    }
+
+    @Test
     public void execute_duplicatePerson_throwsCommandException() {
         Person validPerson = new PersonBuilder().build();
         AddCommand addCommand = new AddCommand(validPerson);

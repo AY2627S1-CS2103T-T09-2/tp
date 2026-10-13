@@ -96,13 +96,24 @@ public class PersonTest {
         // different status -> returns false
         editedAlice = new PersonBuilder(ALICE).withStatus("CLIENT").build();
         assertFalse(ALICE.equals(editedAlice));
+
+        // different follow-up -> returns false
+        editedAlice = new PersonBuilder(ALICE).withFollowUp("25-12-2099").build();
+        assertFalse(ALICE.equals(editedAlice));
+    }
+
+    @Test
+    public void getFollowUp() {
+        assertTrue(ALICE.getFollowUp().isEmpty());
+        Person aliceWithFollowUp = new PersonBuilder(ALICE).withFollowUp("25-12-2099").build();
+        assertEquals(new FollowUp("25-12-2099"), aliceWithFollowUp.getFollowUp().get());
     }
 
     @Test
     public void toStringMethod() {
         String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
                 + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress()
-                + ", status=" + ALICE.getStatus() + ", tags=" + ALICE.getTags() + "}";
+                + ", status=" + ALICE.getStatus() + ", tags=" + ALICE.getTags() + ", followUp=none}";
         assertEquals(expected, ALICE.toString());
     }
 

@@ -1,10 +1,12 @@
 package seedu.address.testutil;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -28,6 +30,7 @@ public class PersonBuilder {
     private Address address;
     private Status status;
     private Set<Tag> tags;
+    private Optional<FollowUp> followUp;
 
     /**
      * Creates a {@code PersonBuilder} with the default details.
@@ -39,6 +42,7 @@ public class PersonBuilder {
         address = new Address(DEFAULT_ADDRESS);
         status = Status.PROSPECT;
         tags = new HashSet<>();
+        followUp = Optional.empty();
     }
 
     /**
@@ -51,6 +55,7 @@ public class PersonBuilder {
         address = personToCopy.getAddress();
         status = personToCopy.getStatus();
         tags = new HashSet<>(personToCopy.getTags());
+        followUp = personToCopy.getFollowUp();
     }
 
     /**
@@ -101,8 +106,16 @@ public class PersonBuilder {
         return this;
     }
 
+    /**
+     * Sets the {@code FollowUp} of the {@code Person} that we are building.
+     */
+    public PersonBuilder withFollowUp(String followUp) {
+        this.followUp = Optional.of(new FollowUp(followUp));
+        return this;
+    }
+
     public Person build() {
-        return new Person(name, phone, email, address, status, tags);
+        return new Person(name, phone, email, address, status, tags, followUp);
     }
 
 }

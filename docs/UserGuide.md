@@ -80,11 +80,16 @@ Format: `help`
 
 Adds a contact to Easy-Insurance.
 
-Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [t/TAG]...`
+Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...`
 
 <box type="tip" seamless>
 
 **Status:** `st/STATUS` is optional and case-insensitive. `PROSPECT` means a potential client, `CLIENT` means a policyholder, and `INACTIVE` means a contact no longer being pursued. The default is `PROSPECT`.
+</box>
+
+<box type="tip" seamless>
+
+**Follow-up date:** `f/FOLLOW_UP_DATE` is optional. Use the `DD-MM-YYYY` format, e.g. `f/25-12-2026`. The date must be a real calendar date (`31-02-2026` is rejected). A date in the past is accepted, so you can record a follow-up you already did, but Easy-Insurance shows a note reminding you that it is in the past. The follow-up date appears on the contact's card.
 </box>
 
 <box type="tip" seamless>
@@ -97,6 +102,7 @@ Names with extra spaces are saved with single spaces. A contact cannot be added 
 Examples:
 * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
 * `add n/John Tan p/91234567 e/johntan@example.com a/21 Clementi Ave 3 st/PROSPECT t/referral`
+* `add n/Sarah Lim p/92345678 e/sarah@example.com a/10 Tampines Street 1 st/CLIENT f/25-12-2026`
 
 ### Listing all persons: `list`
 
@@ -203,7 +209,7 @@ _Details coming soon ..._
 
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-**Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [t/TAG]...` <br> e.g., `add n/John Tan p/91234567 e/johntan@example.com a/21 Clementi Ave 3 st/PROSPECT t/referral`
+**Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...` <br> e.g., `add n/John Tan p/91234567 e/johntan@example.com a/21 Clementi Ave 3 st/PROSPECT f/25-12-2026 t/referral`
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]... `<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`

@@ -3,15 +3,18 @@ package seedu.address.storage;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -31,15 +34,18 @@ class JsonAdaptedPerson {
     private final String address;
     private final String status;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private final String followUp;
 
     /**
      * Constructs a {@code JsonAdaptedPerson} with the given person details.
+     * A missing {@code followUp} means the person has no follow-up date.
      */
     @JsonCreator
     public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("phone") String phone,
             @JsonProperty("email") String email, @JsonProperty("address") String address,
             @JsonProperty("status") String status,
-            @JsonProperty("tags") List<JsonAdaptedTag> tags) {
+            @JsonProperty("tags") List<JsonAdaptedTag> tags, @JsonProperty("followUp") String followUp) {
         this.name = name;
         this.phone = phone;
         this.email = email;
@@ -48,13 +54,23 @@ class JsonAdaptedPerson {
         if (tags != null) {
             this.tags.addAll(tags);
         }
+        this.followUp = followUp;
     }
 
     /**
-     * Creates an adapted person without a status, for data written before statuses were supported.
+     * Constructs a {@code JsonAdaptedPerson} with the given details, no status and no follow-up date,
+     * as written by versions of the app before statuses and follow-ups were supported.
      */
     public JsonAdaptedPerson(String name, String phone, String email, String address, List<JsonAdaptedTag> tags) {
-        this(name, phone, email, address, null, tags);
+        this(name, phone, email, address, null, tags, null);
+    }
+
+    /**
+     * Constructs a {@code JsonAdaptedPerson} with the given details and status but no follow-up date.
+     */
+    public JsonAdaptedPerson(String name, String phone, String email, String address, String status,
+            List<JsonAdaptedTag> tags) {
+        this(name, phone, email, address, status, tags, null);
     }
 
     /**
@@ -69,6 +85,7 @@ class JsonAdaptedPerson {
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
+        followUp = source.getFollowUp().map(FollowUp::toString).orElse(null);
     }
 
     /**
@@ -120,7 +137,14 @@ class JsonAdaptedPerson {
         final Status modelStatus = status == null || status.isBlank() ? Status.PROSPECT : Status.parse(status);
 
         final Set<Tag> modelTags = new HashSet<>(personTags);
-        return new Person(modelName, modelPhone, modelEmail, modelAddress, modelStatus, modelTags);
+
+        if (followUp != null && !followUp.isBlank() && !FollowUp.isValidFollowUp(followUp)) {
+            throw new IllegalValueException(FollowUp.MESSAGE_CONSTRAINTS);
+        }
+        final Optional<FollowUp> modelFollowUp = followUp == null || followUp.isBlank()
+                ? Optional.empty() : Optional.of(new FollowUp(followUp));
+
+        return new Person(modelName, modelPhone, modelEmail, modelAddress, modelStatus, modelTags, modelFollowUp);
     }
 
 }

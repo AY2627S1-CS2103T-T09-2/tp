@@ -468,6 +468,25 @@ testers are expected to do more *exploratory* testing.
 
 1. _{ more test cases … }_
 
+### Adding a contact with a follow-up date
+
+1. Adding a contact with a future follow-up date
+
+   1. Test case: `add n/Sarah Lim p/92345678 e/sarah@example.com a/10 Tampines Street 1 f/25-12-2099`<br>
+      Expected: The contact is added and the card shows `Follow-up: 25-12-2099`. No note is shown.
+
+1. Adding a contact with a past follow-up date
+
+   1. Test case: `add n/Ben Ong p/93456789 e/ben@example.com a/5 Bishan Road f/01-01-2020`<br>
+      Expected: The contact is added. The result message ends with a note that `01-01-2020` is in the past.
+
+1. Adding a contact with an impossible or badly formatted date
+
+   1. Test case: `add n/Ann Lee p/94567890 e/ann@example.com a/1 Clementi Ave f/31-02-2026`<br>
+      Expected: No contact is added. Error: `31-02-2026 is not a real date.`
+   1. Test case: `... f/2026-12-25`<br>
+      Expected: No contact is added. Error: `Follow-up date must be in DD-MM-YYYY format, e.g. 25-12-2026.`
+
 ### Saving data
 
 1. Dealing with missing/corrupted data files

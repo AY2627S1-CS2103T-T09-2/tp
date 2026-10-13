@@ -5,6 +5,7 @@ import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import seedu.address.commons.util.ToStringBuilder;
@@ -25,25 +26,37 @@ public class Person {
     private final Address address;
     private final Status status;
     private final Set<Tag> tags = new HashSet<>();
+    private final Optional<FollowUp> followUp;
 
     /**
+     * Constructs a person without a follow-up date.
      * Every field must be present and not null.
      */
     public Person(Name name, Phone phone, Email email, Address address, Set<Tag> tags) {
-        this(name, phone, email, address, Status.PROSPECT, tags);
+        this(name, phone, email, address, Status.PROSPECT, tags, Optional.empty());
     }
 
     /**
-     * Creates a person with the given status.
+     * Creates a person with the given status and no follow-up date.
      */
     public Person(Name name, Phone phone, Email email, Address address, Status status, Set<Tag> tags) {
-        requireAllNonNull(name, phone, email, address, status, tags);
+        this(name, phone, email, address, status, tags, Optional.empty());
+    }
+
+    /**
+     * Creates a person with the given status and an optional follow-up date.
+     * Every field must be present and not null.
+     */
+    public Person(Name name, Phone phone, Email email, Address address, Status status, Set<Tag> tags,
+            Optional<FollowUp> followUp) {
+        requireAllNonNull(name, phone, email, address, status, tags, followUp);
         this.name = name;
         this.phone = phone;
         this.email = email;
         this.address = address;
         this.status = status;
         this.tags.addAll(tags);
+        this.followUp = followUp;
     }
 
     public Name getName() {
@@ -72,6 +85,13 @@ public class Person {
      */
     public Set<Tag> getTags() {
         return Collections.unmodifiableSet(tags);
+    }
+
+    /**
+     * Returns the follow-up date of this person, or an empty {@code Optional} if there is none.
+     */
+    public Optional<FollowUp> getFollowUp() {
+        return followUp;
     }
 
     /**
@@ -112,13 +132,14 @@ public class Person {
                 && email.equals(otherPerson.email)
                 && address.equals(otherPerson.address)
                 && status == otherPerson.status
-                && tags.equals(otherPerson.tags);
+                && tags.equals(otherPerson.tags)
+                && followUp.equals(otherPerson.followUp);
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, address, status, tags);
+        return Objects.hash(name, phone, email, address, status, tags, followUp);
     }
 
     @Override
@@ -130,6 +151,7 @@ public class Person {
                 .add("address", address)
                 .add("status", status)
                 .add("tags", tags)
+                .add("followUp", followUp.map(FollowUp::toString).orElse("none"))
                 .toString();
     }
 
