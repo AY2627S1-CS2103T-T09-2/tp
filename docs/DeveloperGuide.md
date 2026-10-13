@@ -287,6 +287,32 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   * 3a1. System shows an empty result list and reports `0 contacts listed.`
   * Use case ends.
 
+**Use case: Edit a contact**
+
+**MSS**
+
+1. Agent views the contact to edit.
+2. Agent provides one or more replacement details, including an optional status or follow-up date.
+3. System validates the replacement details.
+4. System updates the contact and shows its updated details.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. Agent provides an empty follow-up date.
+  * 2a1. System clears the contact's follow-up date.
+  * Use case resumes at step 4.
+* 3a. A replacement detail is invalid.
+  * 3a1. System shows the relevant validation error and does not change the contact.
+  * Use case ends.
+* 3b. The follow-up date is in the past.
+  * 3b1. System saves the date and warns the agent that it is in the past.
+  * Use case resumes at step 4.
+* 4a. The selected contact is not in the displayed list.
+  * 4a1. System explains that the contact reference is invalid.
+  * Use case ends without changing any contacts.
+
 **Use case: Complete a follow-up**
 
 **MSS**
@@ -422,6 +448,32 @@ testers are expected to do more *exploratory* testing.
       Expected: No contact is added. Error: `31-02-2026 is not a real date.`
    1. Test case: `... f/2026-12-25`<br>
       Expected: No contact is added. Error: `Follow-up date must be in DD-MM-YYYY format, e.g. 25-12-2026.`
+
+### Editing a contact
+
+1. Editing a contact's status and follow-up date
+
+   1. Prerequisites: List the contacts using the `list` command and note the first contact's current details.
+
+   1. Test case: `edit 1 st/CLIENT f/25-12-2099`<br>
+      Expected: The first contact's status changes to `CLIENT`, its follow-up changes to `25-12-2099`,
+      and the updated details are shown.
+
+   1. Test case: `edit 1 f/`<br>
+      Expected: The first contact's follow-up is cleared and its card shows `Follow-up: None`.
+
+1. Editing a contact with a past follow-up date
+
+   1. Test case: `edit 1 f/01-01-2020`<br>
+      Expected: The date is saved and the result includes a warning that `01-01-2020` is in the past.
+
+1. Invalid follow-up dates when editing
+
+   1. Test case: `edit 1 f/31-02-2026`<br>
+      Expected: No contact details change. Error: `31-02-2026 is not a real date.`
+
+   1. Test case: `edit 1 f/2026-12-25`<br>
+      Expected: No contact details change. Error: `Follow-up date must be in DD-MM-YYYY format, e.g. 25-12-2026.`
 
 ### Completing a follow-up
 

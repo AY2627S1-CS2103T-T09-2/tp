@@ -3,6 +3,7 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_FOLLOW_UP;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_STATUS;
@@ -24,6 +25,7 @@ import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -46,6 +48,7 @@ public class EditCommand extends Command {
             + "[" + PREFIX_EMAIL + "EMAIL] "
             + "[" + PREFIX_ADDRESS + "ADDRESS] "
             + "[" + PREFIX_STATUS + "STATUS] "
+            + "[" + PREFIX_FOLLOW_UP + "DD-MM-YYYY] "
             + "[" + PREFIX_TAG + "TAG]...\n"
             + "Example: " + COMMAND_WORD + " 1 "
             + PREFIX_PHONE + "91234567 "
@@ -88,7 +91,12 @@ public class EditCommand extends Command {
 
         model.setPerson(personToEdit, editedPerson);
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
-        return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
+        String feedback = String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        if (editPersonDescriptor.isFollowUpEdited()) {
+            feedback += editedPerson.getFollowUp().filter(FollowUp::isPast)
+                    .map(FollowUp::getPastDateWarning).orElse("");
+        }
+        return new CommandResult(feedback);
     }
 
     /**
@@ -103,10 +111,12 @@ public class EditCommand extends Command {
         Email updatedEmail = editPersonDescriptor.getEmail().orElse(personToEdit.getEmail());
         Address updatedAddress = editPersonDescriptor.getAddress().orElse(personToEdit.getAddress());
         Status updatedStatus = editPersonDescriptor.getStatus().orElse(personToEdit.getStatus());
+        Optional<FollowUp> updatedFollowUp = editPersonDescriptor.isFollowUpEdited()
+                ? editPersonDescriptor.getFollowUp() : personToEdit.getFollowUp();
         Set<Tag> updatedTags = editPersonDescriptor.getTags().orElse(personToEdit.getTags());
 
         return new Person(updatedName, updatedPhone, updatedEmail, updatedAddress,
-                updatedStatus, updatedTags, personToEdit.getFollowUp());
+                updatedStatus, updatedTags, updatedFollowUp);
     }
 
     @Override
@@ -142,6 +152,8 @@ public class EditCommand extends Command {
         private Email email;
         private Address address;
         private Status status;
+        private Optional<FollowUp> followUp;
+        private boolean followUpEdited;
         private Set<Tag> tags;
 
         public EditPersonDescriptor() {}
@@ -156,6 +168,8 @@ public class EditCommand extends Command {
             setEmail(toCopy.email);
             setAddress(toCopy.address);
             setStatus(toCopy.status);
+            followUp = toCopy.followUp;
+            followUpEdited = toCopy.followUpEdited;
             setTags(toCopy.tags);
         }
 
@@ -163,7 +177,8 @@ public class EditCommand extends Command {
          * Returns true if at least one field is edited.
          */
         public boolean isAnyFieldEdited() {
-            return CollectionUtil.isAnyNonNull(name, phone, email, address, status, tags);
+            return CollectionUtil.isAnyNonNull(name, phone, email, address, status, tags)
+                    || followUpEdited;
         }
 
         public void setName(Name name) {
@@ -206,6 +221,19 @@ public class EditCommand extends Command {
             return Optional.ofNullable(status);
         }
 
+        public void setFollowUp(Optional<FollowUp> followUp) {
+            this.followUp = requireNonNull(followUp);
+            this.followUpEdited = true;
+        }
+
+        public Optional<FollowUp> getFollowUp() {
+            return followUp == null ? Optional.empty() : followUp;
+        }
+
+        public boolean isFollowUpEdited() {
+            return followUpEdited;
+        }
+
         /**
          * Sets {@code tags} to this object's {@code tags}.
          * A defensive copy of {@code tags} is used internally.
@@ -239,6 +267,8 @@ public class EditCommand extends Command {
                     && Objects.equals(email, otherEditPersonDescriptor.email)
                     && Objects.equals(address, otherEditPersonDescriptor.address)
                     && Objects.equals(status, otherEditPersonDescriptor.status)
+                    && Objects.equals(followUp, otherEditPersonDescriptor.followUp)
+                    && followUpEdited == otherEditPersonDescriptor.followUpEdited
                     && Objects.equals(tags, otherEditPersonDescriptor.tags);
         }
 
@@ -250,6 +280,7 @@ public class EditCommand extends Command {
                     .add("email", email)
                     .add("address", address)
                     .add("status", status)
+                    .add("followUp", followUp)
                     .add("tags", tags)
                     .toString();
         }

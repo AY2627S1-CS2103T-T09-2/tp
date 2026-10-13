@@ -5,8 +5,10 @@ import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.EMAIL_DESC_BOB;
+import static seedu.address.logic.commands.CommandTestUtil.FOLLOW_UP_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.INVALID_ADDRESS_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.INVALID_EMAIL_DESC;
+import static seedu.address.logic.commands.CommandTestUtil.INVALID_FOLLOW_UP_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.INVALID_NAME_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.INVALID_PHONE_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.INVALID_TAG_DESC;
@@ -17,6 +19,7 @@ import static seedu.address.logic.commands.CommandTestUtil.TAG_DESC_FRIEND;
 import static seedu.address.logic.commands.CommandTestUtil.TAG_DESC_HUSBAND;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_ADDRESS_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_EMAIL_AMY;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_FOLLOW_UP_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_NAME_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_PHONE_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_PHONE_BOB;
@@ -41,6 +44,7 @@ import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Phone;
 import seedu.address.model.person.Status;
@@ -169,6 +173,12 @@ public class EditCommandParserTest {
         descriptor = new EditPersonDescriptorBuilder().withStatus("CLIENT").build();
         expectedCommand = new EditCommand(targetIndex, descriptor);
         assertParseSuccess(parser, userInput, expectedCommand);
+
+        // follow-up
+        userInput = targetIndex.getOneBased() + FOLLOW_UP_DESC_AMY;
+        descriptor = new EditPersonDescriptorBuilder().withFollowUp(VALID_FOLLOW_UP_AMY).build();
+        expectedCommand = new EditCommand(targetIndex, descriptor);
+        assertParseSuccess(parser, userInput, expectedCommand);
     }
 
     @Test
@@ -226,5 +236,27 @@ public class EditCommandParserTest {
     public void parse_invalidStatus_failure() {
         assertParseFailure(parser, INDEX_FIRST_PERSON.getOneBased() + " st/LEAD",
                 Status.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void parse_emptyFollowUp_success() {
+        EditCommand expectedCommand = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder().withFollowUp().build());
+
+        assertParseSuccess(parser, INDEX_FIRST_PERSON.getOneBased() + " f/", expectedCommand);
+    }
+
+    @Test
+    public void parse_invalidFollowUp_failure() {
+        assertParseFailure(parser, INDEX_FIRST_PERSON.getOneBased() + INVALID_FOLLOW_UP_DESC,
+                String.format(FollowUp.MESSAGE_NOT_A_REAL_DATE, "31-02-2099"));
+    }
+
+    @Test
+    public void parse_duplicateFollowUp_failure() {
+        String userInput = INDEX_FIRST_PERSON.getOneBased() + " f/25-12-2099 f/25-12-2099";
+
+        assertParseFailure(parser, userInput,
+                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_FOLLOW_UP));
     }
 }
