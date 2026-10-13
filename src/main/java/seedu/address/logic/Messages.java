@@ -18,6 +18,8 @@ public class Messages {
     public static final String MESSAGE_PERSONS_LISTED_OVERVIEW = "%1$d contact(s) listed.";
     public static final String MESSAGE_DUPLICATE_FIELDS =
                 "Multiple values specified for the following single-valued field(s): ";
+    public static final String MESSAGE_NO_PARAMETERS_EXPECTED =
+            "The %1$s command does not accept additional parameters.";
 
     /**
      * Returns an error message indicating the duplicate prefixes.

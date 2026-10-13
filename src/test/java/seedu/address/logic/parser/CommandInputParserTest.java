@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.DeleteCommand;
+import seedu.address.logic.commands.DoneCommand;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.logic.commands.ExitCommand;
@@ -40,9 +41,19 @@ public class CommandInputParserTest {
     }
 
     @Test
-    public void parseCommand_clear() throws Exception {
+    public void parseCommand_clearWithoutArgs_returnsClearCommand() throws ParseException {
         assertTrue(parser.parseCommand(ClearCommand.COMMAND_WORD) instanceof ClearCommand);
-        assertTrue(parser.parseCommand(ClearCommand.COMMAND_WORD + " 3") instanceof ClearCommand);
+        assertTrue(parser.parseCommand(ClearCommand.COMMAND_WORD + "   ") instanceof ClearCommand);
+    }
+
+    @Test
+    public void parseCommand_clearWithExtraArgs_throwsParseException() {
+        String expectedMessage = "The clear command does not accept additional parameters.";
+
+        assertThrows(ParseException.class, expectedMessage, ()
+                -> parser.parseCommand(ClearCommand.COMMAND_WORD + " 3"));
+        assertThrows(ParseException.class, expectedMessage, ()
+                -> parser.parseCommand(ClearCommand.COMMAND_WORD + " extra"));
     }
 
     @Test
@@ -63,9 +74,37 @@ public class CommandInputParserTest {
     }
 
     @Test
-    public void parseCommand_exit() throws Exception {
+    public void parseCommand_exitWithoutArgs_returnsExitCommand() throws ParseException {
         assertTrue(parser.parseCommand(ExitCommand.COMMAND_WORD) instanceof ExitCommand);
-        assertTrue(parser.parseCommand(ExitCommand.COMMAND_WORD + " 3") instanceof ExitCommand);
+        assertTrue(parser.parseCommand(ExitCommand.COMMAND_WORD + "   ") instanceof ExitCommand);
+    }
+
+    @Test
+    public void parseCommand_exitWithExtraArgs_throwsParseException() {
+        String expectedMessage = "The exit command does not accept additional parameters.";
+
+        assertThrows(ParseException.class, expectedMessage, ()
+                -> parser.parseCommand(ExitCommand.COMMAND_WORD + " 3"));
+        assertThrows(ParseException.class, expectedMessage, ()
+                -> parser.parseCommand(ExitCommand.COMMAND_WORD + " extra"));
+    }
+
+    @Test
+    public void parseCommand_doneWithValidIndex_returnsDoneCommand() throws ParseException {
+        DoneCommand expectedCommand = new DoneCommand(INDEX_FIRST_PERSON);
+
+        assertEquals(expectedCommand, parser.parseCommand(DoneCommand.COMMAND_WORD + " 1"));
+        assertEquals(expectedCommand, parser.parseCommand(DoneCommand.COMMAND_WORD + "   1   "));
+    }
+
+    @Test
+    public void parseCommand_doneWithInvalidArgs_throwsParseException() {
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, DoneCommand.MESSAGE_USAGE);
+        String[] invalidCommands = {"done", "done 0", "done -1", "done abc", "done 1 extra"};
+
+        for (String commandText : invalidCommands) {
+            assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(commandText));
+        }
     }
 
     @Test
