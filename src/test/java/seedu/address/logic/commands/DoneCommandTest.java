@@ -19,34 +19,71 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Person;
+import seedu.address.testutil.PersonBuilder;
 
 /**
- * Tests index validation and unchanged contact data in {@code DoneCommand}.
+ * Tests follow-up completion and index validation in {@code DoneCommand}.
  */
 public class DoneCommandTest {
 
     private final Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+    private final Person completedPerson = new PersonBuilder()
+            .withName("John Tan")
+            .withPhone("91234567")
+            .withEmail("johntan@example.com")
+            .withAddress("21 Clementi Ave 3")
+            .withStatus("CLIENT")
+            .withTags("referral", "lifePolicy")
+            .build();
+    private final Person personWithFollowUp = new PersonBuilder(completedPerson)
+            .withFollowUp("25-12-2099")
+            .build();
 
     @Test
-    public void execute_validIndexUnfilteredList_leavesContactsUnchanged() {
-        Person selectedPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
-        String expectedMessage = selectedPerson.getName()
-                + " selected; completing follow-ups is coming soon.";
+    public void execute_validIndexUnfilteredList_completesFollowUp() {
+        Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        model.setPerson(originalPerson, personWithFollowUp);
+
+        String expectedMessage = "Marked follow-up for John Tan as completed.";
         Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        expectedModel.setPerson(personWithFollowUp, completedPerson);
 
         assertCommandSuccess(new DoneCommand(INDEX_FIRST_PERSON), model, expectedMessage, expectedModel);
     }
 
     @Test
-    public void execute_validIndexFilteredList_leavesContactsUnchanged() {
+    public void execute_validIndexFilteredList_completesFollowUp() {
+        Person originalPerson = model.getFilteredPersonList().get(INDEX_SECOND_PERSON.getZeroBased());
+        model.setPerson(originalPerson, personWithFollowUp);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        Person selectedPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
-        String expectedMessage = selectedPerson.getName()
-                + " selected; completing follow-ups is coming soon.";
+
+        String expectedMessage = "Marked follow-up for John Tan as completed.";
         Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        expectedModel.setPerson(personWithFollowUp, completedPerson);
         showPersonAtIndex(expectedModel, INDEX_SECOND_PERSON);
 
         assertCommandSuccess(new DoneCommand(INDEX_FIRST_PERSON), model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_noPendingFollowUp_throwsCommandException() {
+        Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        model.setPerson(originalPerson, completedPerson);
+
+        assertCommandFailure(new DoneCommand(INDEX_FIRST_PERSON), model,
+                "John Tan does not have a pending follow-up.");
+    }
+
+    @Test
+    public void execute_followUpAlreadyCompleted_throwsCommandException() {
+        Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        model.setPerson(originalPerson, personWithFollowUp);
+        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        expectedModel.setPerson(personWithFollowUp, completedPerson);
+        DoneCommand command = new DoneCommand(INDEX_FIRST_PERSON);
+
+        assertCommandSuccess(command, model, "Marked follow-up for John Tan as completed.", expectedModel);
+        assertCommandFailure(command, model, "John Tan does not have a pending follow-up.");
     }
 
     @Test

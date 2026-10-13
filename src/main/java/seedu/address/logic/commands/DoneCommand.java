@@ -3,6 +3,7 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.Optional;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.ToStringBuilder;
@@ -12,19 +13,19 @@ import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 
 /**
- * Validates a contact index without completing its follow-up.
+ * Completes the pending follow-up of a contact identified by its displayed index.
  */
 public class DoneCommand extends Command {
 
     public static final String COMMAND_WORD = "done";
     public static final String MESSAGE_USAGE = COMMAND_WORD + " INDEX";
-    public static final String MESSAGE_SUCCESS =
-            "%1$s selected; completing follow-ups is coming soon.";
+    public static final String MESSAGE_SUCCESS = "Marked follow-up for %1$s as completed.";
+    public static final String MESSAGE_NO_PENDING_FOLLOW_UP = "%1$s does not have a pending follow-up.";
 
     private final Index targetIndex;
 
     /**
-     * Constructs a command that selects the contact at the given displayed index.
+     * Constructs a command that completes the follow-up for the given displayed index.
      *
      * @param targetIndex Index of the contact in the displayed list.
      * @throws NullPointerException If {@code targetIndex} is null.
@@ -34,11 +35,12 @@ public class DoneCommand extends Command {
     }
 
     /**
-     * Validates the index and returns a message without changing any contacts.
+     * Clears the selected contact's pending follow-up and returns a confirmation message.
      *
      * @param model Model containing the displayed contacts.
-     * @return A result identifying the selected contact.
-     * @throws CommandException If the index is outside the displayed list.
+     * @return A result confirming that the follow-up was completed.
+     * @throws CommandException If the index is outside the displayed list or the contact has
+     *     no pending follow-up.
      * @throws NullPointerException If {@code model} is null.
      */
     @Override
@@ -50,8 +52,19 @@ public class DoneCommand extends Command {
             throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
         }
 
-        Person selectedPerson = lastShownList.get(targetIndex.getZeroBased());
-        return new CommandResult(String.format(MESSAGE_SUCCESS, selectedPerson.getName()));
+        Person personToComplete = lastShownList.get(targetIndex.getZeroBased());
+        if (personToComplete.getFollowUp().isEmpty()) {
+            throw new CommandException(
+                    String.format(MESSAGE_NO_PENDING_FOLLOW_UP, personToComplete.getName()));
+        }
+
+        Person completedPerson = new Person(
+                personToComplete.getName(), personToComplete.getPhone(), personToComplete.getEmail(),
+                personToComplete.getAddress(), personToComplete.getStatus(), personToComplete.getTags(),
+                Optional.empty());
+        model.setPerson(personToComplete, completedPerson);
+
+        return new CommandResult(String.format(MESSAGE_SUCCESS, personToComplete.getName()));
     }
 
     @Override

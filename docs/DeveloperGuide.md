@@ -306,6 +306,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 3a. The contact has no pending follow-up.
   * 3a1. System explains that there is no follow-up to complete.
   * Use case ends without changing the contact.
+* 3b. The selected contact is not in the displayed list.
+  * 3b1. System explains that the contact reference is invalid.
+  * Use case ends without changing any contacts.
 
 **Use case: Delete a contact**
 
@@ -422,6 +425,34 @@ testers are expected to do more *exploratory* testing.
       Expected: No contact is added. Error: `31-02-2026 is not a real date.`
    1. Test case: `... f/2026-12-25`<br>
       Expected: No contact is added. Error: `Follow-up date must be in DD-MM-YYYY format, e.g. 25-12-2026.`
+
+### Completing a follow-up
+
+1. Completing a pending follow-up from a filtered list
+
+   1. Prerequisites: Add a contact named `Followup Test` with a scheduled follow-up, for example:<br>
+      `add n/Followup Test p/91234567 e/followuptest@example.com a/21 Clementi Ave 3 st/CLIENT f/25-12-2099 t/referral`<br>
+      Run `find Followup` and check that only this contact is shown.
+
+   1. Test case: `done 1`<br>
+      Expected: The result shows `Marked follow-up for Followup Test as completed.`
+      The card shows `Follow-up: None`. The contact's name, phone, email, address, status and tags remain unchanged.
+
+   1. Test case: Run `done 1` again.<br>
+      Expected: The result shows `Followup Test does not have a pending follow-up.` No contact details change.
+
+   1. Test case: `done 2` while only the test contact is displayed.<br>
+      Expected: The result shows `The contact index provided is invalid.` No contact details change.
+
+   1. Other incorrect commands to try: `done`, `done 0`, `done x`, `done 1 extra`<br>
+      Expected: The result shows the invalid-command-format error with `done INDEX`. No contact details change.
+
+1. Saving a completed follow-up
+
+   1. Prerequisites: Complete the test contact's follow-up as described above.
+
+   1. Test case: Close the app, relaunch it, and run `find Followup`.<br>
+      Expected: The contact still shows `Follow-up: None`, and all its other details remain unchanged.
 
 ### Saving data
 
