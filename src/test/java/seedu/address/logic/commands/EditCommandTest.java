@@ -49,6 +49,17 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_editStatus_success() throws Exception {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withStatus("CLIENT")
+                .build();
+
+        new EditCommand(INDEX_FIRST_PERSON, descriptor).execute(model);
+
+        assertEquals(Status.CLIENT, model.getFilteredPersonList().get(0).getStatus());
+    }
+
+    @Test
     public void execute_allFieldsSpecifiedUnfilteredList_success() {
         Person editedPerson = new PersonBuilder().build();
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(editedPerson).build();
