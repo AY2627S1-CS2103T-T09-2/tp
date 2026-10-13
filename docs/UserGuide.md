@@ -61,9 +61,10 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* `help` and `list` reject extra parameters.<br>
-  For example, `list 123` shows the error `The list command does not accept additional parameters.`<br>
-  `clear` and `exit` currently ignore extra parameters, so `clear 123` still clears every contact. Take care with `clear`.
+* `help`, `list`, `clear`, and `exit` accept no parameters.<br>
+  Extra parameters are rejected with an error naming the command.<br>
+  For example, `clear 123` shows `The clear command does not accept additional parameters.`
+  and leaves all contacts unchanged.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </box>
@@ -160,6 +161,27 @@ Examples:
 
 The result shows the deleted contact's name, for example `Deleted contact: Betsy Crowe`.
 
+### Selecting a contact for follow-up completion: `done`
+
+Checks the index of the contact whose follow-up you want to complete.
+
+Format: `done INDEX`
+
+* The index refers to the number shown in the displayed contact list.
+* The index must be a positive integer and refer to a displayed contact.
+* This preliminary version leaves the contact and its follow-up unchanged.
+
+For a valid index, the result is:
+`<name> selected; completing follow-ups is coming soon.`
+
+For an index beyond the displayed list, the result is:
+`The contact index provided is invalid.`
+
+Examples:
+
+* `list` followed by `done 2` identifies the second displayed contact.
+* `find John` followed by `done 1` identifies the first matching contact.
+
 ### Clearing all contacts: `clear`
 
 Removes every contact from Easy-Insurance. There is no confirmation step, so use it with care.
@@ -211,6 +233,7 @@ Action     | Format, Examples
 **Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...` <br> e.g., `add n/John Tan p/91234567 e/johntan@example.com a/21 Clementi Ave 3 st/PROSPECT f/25-12-2026 t/referral`
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
+**Done**   | `done INDEX`<br> e.g., `done 1`<br> Selection only in this preliminary version
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]... `<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List**   | `list`

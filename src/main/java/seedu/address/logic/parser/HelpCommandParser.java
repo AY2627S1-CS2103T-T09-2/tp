@@ -1,6 +1,7 @@
 package seedu.address.logic.parser;
 
 import static java.util.Objects.requireNonNull;
+import static seedu.address.logic.Messages.MESSAGE_NO_PARAMETERS_EXPECTED;
 
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -22,7 +23,8 @@ public class HelpCommandParser implements Parser<HelpCommand> {
     public HelpCommand parse(String args) throws ParseException {
         requireNonNull(args);
         if (!args.isBlank()) {
-            throw new ParseException("The help command does not accept additional parameters.");
+            throw new ParseException(
+                    String.format(MESSAGE_NO_PARAMETERS_EXPECTED, HelpCommand.COMMAND_WORD));
         }
 
         return new HelpCommand();
