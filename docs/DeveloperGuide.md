@@ -158,99 +158,7 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 ## **Implementation**
 
-This section describes some noteworthy details on how certain features are implemented.
-
-### \[Proposed\] Undo/redo feature
-
-#### Proposed Implementation
-
-The proposed undo/redo mechanism is facilitated by `VersionedAddressBook`. It extends `AddressBook` with an undo/redo history, stored internally as an `addressBookStateList` and `currentStatePointer`. Additionally, it implements the following operations:
-
-* `VersionedAddressBook#commit()` -- Saves the current address book state in its history.
-* `VersionedAddressBook#undo()` -- Restores the previous address book state from its history.
-* `VersionedAddressBook#redo()` -- Restores a previously undone address book state from its history.
-
-These operations are exposed in the `Model` interface as `Model#commitAddressBook()`, `Model#undoAddressBook()` and `Model#redoAddressBook()` respectively.
-
-Given below is an example usage scenario and how the undo/redo mechanism behaves at each step.
-
-Step 1. The user launches the application for the first time. The `VersionedAddressBook` will be initialized with the initial address book state, and the `currentStatePointer` pointing to that single address book state.
-
-<puml src="diagrams/UndoRedoState0.puml" alt="UndoRedoState0" />
-
-Step 2. The user executes `delete 5` command to delete the 5th person in the address book. The `delete` command calls `Model#commitAddressBook()`, causing the modified state of the address book after the `delete 5` command executes to be saved in the `addressBookStateList`, and the `currentStatePointer` is shifted to the newly inserted address book state.
-
-<puml src="diagrams/UndoRedoState1.puml" alt="UndoRedoState1" />
-
-Step 3. The user executes `add n/David …​` to add a new person. The `add` command also calls `Model#commitAddressBook()`, causing another modified address book state to be saved into the `addressBookStateList`.
-
-<puml src="diagrams/UndoRedoState2.puml" alt="UndoRedoState2" />
-
-<box type="info" seamless>
-
-**Note:** If a command fails its execution, it will not call `Model#commitAddressBook()`, so the address book state will not be saved into the `addressBookStateList`.
-</box>
-
-Step 4. The user now decides that adding the person was a mistake, and decides to undo that action by executing the `undo` command. The `undo` command will call `Model#undoAddressBook()`, which will shift the `currentStatePointer` once to the left, pointing it to the previous address book state, and restores the address book to that state.
-
-<puml src="diagrams/UndoRedoState3.puml" alt="UndoRedoState3" />
-
-
-<box type="info" seamless>
-
-**Note:** If the `currentStatePointer` is at index 0, pointing to the initial AddressBook state, then there are no previous AddressBook states to restore. The `undo` command uses `Model#canUndoAddressBook()` to check if this is the case. If so, it will return an error to the user rather
-than attempting to perform the undo.
-</box>
-
-The following sequence diagram shows how an undo operation goes through the `Logic` component:
-
-<puml src="diagrams/UndoSequenceDiagram-Logic.puml" alt="UndoSequenceDiagram-Logic" />
-
-<box type="info" seamless>
-
-**Note:** The lifeline for `UndoCommand` should end at the destroy marker (X), but due to a limitation of PlantUML, it continues to the end of the diagram.
-</box>
-
-Similarly, how an undo operation goes through the `Model` component is shown below:
-
-<puml src="diagrams/UndoSequenceDiagram-Model.puml" alt="UndoSequenceDiagram-Model" />
-
-The `redo` command does the opposite — it calls `Model#redoAddressBook()`, which shifts the `currentStatePointer` once to the right, pointing to the previously undone state, and restores the address book to that state.
-
-<box type="info" seamless>
-
-**Note:** If the `currentStatePointer` is at index `addressBookStateList.size() - 1`, pointing to the latest address book state, then there are no undone AddressBook states to restore. The `redo` command uses `Model#canRedoAddressBook()` to check if this is the case. If so, it will return an error to the user rather than attempting to perform the redo.
-</box>
-
-Step 5. The user then decides to execute the command `list`. Commands that do not modify the address book, such as `list`, will usually not call `Model#commitAddressBook()`, `Model#undoAddressBook()` or `Model#redoAddressBook()`. Thus, the `addressBookStateList` remains unchanged.
-
-<puml src="diagrams/UndoRedoState4.puml" alt="UndoRedoState4" />
-
-Step 6. The user executes `clear`, which calls `Model#commitAddressBook()`. Since the `currentStatePointer` is not pointing at the end of the `addressBookStateList`, all address book states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add n/David …` command. This is the behavior that most modern desktop applications follow.
-
-<puml src="diagrams/UndoRedoState5.puml" alt="UndoRedoState5" />
-
-The following activity diagram summarizes what happens when a user executes a new command:
-
-<puml src="diagrams/CommitActivityDiagram.puml" width="250" />
-
-#### Design considerations:
-
-**Aspect: How undo & redo execute:**
-
-* **Alternative 1 (current choice):** Saves the entire address book.
-  * Pros: Easy to implement.
-  * Cons: May have performance issues in terms of memory usage.
-
-* **Alternative 2:** Individual command knows how to undo/redo by
-  itself.
-  * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
-  * Cons: We must ensure that the implementation of each individual command is correct.
-
-_{more aspects and alternatives to be added}_
-
-
---------------------------------------------------------------------------------------------------------------------
+This section will describe noteworthy details of how Easy-Insurance features are implemented, starting with the follow-up and status features once their designs settle.
 
 ## **Documentation, logging, testing, dev-ops**
 
@@ -399,6 +307,28 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   * 3a1. System explains that there is no follow-up to complete.
   * Use case ends without changing the contact.
 
+**Use case: Delete a contact**
+
+**MSS**
+
+1. Agent requests to list contacts, or finds contacts by name.
+2. System shows the matching contacts with their index numbers.
+3. Agent requests to delete the contact at a given index.
+4. System removes the contact and confirms which contact was deleted.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. No contacts are shown.
+
+  Use case ends.
+
+* 3a. The given index does not refer to a shown contact.
+  * 3a1. System explains that the index is invalid and changes nothing.
+
+    Use case resumes at step 2.
+
 ### Non-Functional Requirements
 
 1. Easy-Insurance should run on Windows, macOS, and Linux with Java `25` or above installed.
@@ -411,16 +341,16 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Glossary
 
-* **Contact**: A person recorded in Easy-Insurance, together with their contact details, stage, and any follow-up.
+* **Contact**: A person recorded in Easy-Insurance, together with their contact details, status, and any follow-up.
+* **Status**: Where a contact is in the agent's pipeline: `PROSPECT`, `CLIENT` or `INACTIVE`. New contacts are prospects unless told otherwise.
 * **Prospect**: A contact the agent may sell a policy to but who is not yet a client.
 * **Client**: A contact who has bought a policy from the agent.
 * **Inactive**: A contact the agent is no longer actively pursuing but keeps in the app.
-* **Follow-up**: A planned future contact with a prospect or client, recorded with a scheduled date.
+* **Follow-up**: The date on which the agent intends to next contact a prospect or client. It may be in the past, for example when recording a follow-up that already happened.
 * **Pending follow-up**: A follow-up that has not been marked as done.
-* **Due follow-up**: A pending follow-up scheduled for today.
-* **Overdue follow-up**: A pending follow-up whose scheduled date has passed.
+* **Duplicate contact**: A contact whose name matches an existing contact's name after ignoring letter case and extra spaces. Easy-Insurance refuses to add a duplicate.
+* **Index**: The number shown next to a contact in the currently displayed list. Commands such as `edit`, `delete` and `done` refer to contacts by index.
 * **Name keyword**: A non-empty, complete word used by `find` to match contact names, ignoring letter case. Partial-name matching is outside the initial version.
-
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Appendix: Instructions for manual testing**
@@ -437,36 +367,42 @@ testers are expected to do more *exploratory* testing.
 
 1. Initial launch
 
-   1. Download the JAR file and copy it into an empty folder.
+   1. Download `EasyInsurance.jar` and copy it into an empty folder.
 
-   1. Double-click the JAR file.<br>
-      Expected: The GUI opens with a set of sample contacts. The window size may not be optimal.
+   1. Open a terminal in that folder and run `java -jar EasyInsurance.jar`.<br>
+      Expected: The window titled Easy-Insurance opens with a set of sample contacts, each showing a status badge.
 
 1. Saving window preferences
 
    1. Resize the window to an optimal size. Move the window to a different location. Close the window.
 
-   1. Relaunch the app by double-clicking the JAR file.<br>
-       Expected: The most recent window size and location are retained.
+   1. Relaunch the app the same way.<br>
+      Expected: The most recent window size and location are retained.
 
-1. _{ more test cases … }_
+### Deleting a contact
 
-### Deleting a person
+1. Deleting a contact while all contacts are being shown
 
-1. Deleting a person while all persons are being shown
-
-   1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
+   1. Prerequisites: List all contacts using the `list` command, with multiple contacts in the list.
 
    1. Test case: `delete 1`<br>
-      Expected: The first contact is deleted from the list. The status message shows the deleted contact's details.
+      Expected: The first contact is removed from the list. The result shows `Deleted contact: ` followed by that contact's name.
 
    1. Test case: `delete 0`<br>
-      Expected: No person is deleted. The status message shows error details.
+      Expected: No contact is deleted. The result shows the invalid-command-format error with the delete usage.
 
-   1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
-      Expected: Similar to previous.
+   1. Test case: `delete 99` (where 99 is larger than the list size)<br>
+      Expected: No contact is deleted. The result shows `The contact index provided is invalid.`
 
-1. _{ more test cases … }_
+   1. Other incorrect delete commands to try: `delete`, `delete x`, `delete 1 2`<br>
+      Expected: No contact is deleted. An error explains the problem.
+
+1. Deleting a contact from a filtered list
+
+   1. Prerequisites: Run `find` with a keyword that matches at least one contact.
+
+   1. Test case: `delete 1`<br>
+      Expected: The first contact in the filtered list is deleted, not the first contact overall.
 
 ### Adding a contact with a follow-up date
 
@@ -489,8 +425,23 @@ testers are expected to do more *exploratory* testing.
 
 ### Saving data
 
-1. Dealing with missing/corrupted data files
+1. Dealing with a missing data file
 
-   1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
+   1. Close the app. Delete `data/addressbook.json` from the folder containing the JAR.
 
-1. _{ more test cases … }_
+   1. Relaunch the app.<br>
+      Expected: The app starts with the sample contacts and recreates the data file on the next change.
+
+1. Dealing with a corrupted data file
+
+   1. Close the app. Open `data/addressbook.json` and change one contact's `"status"` value to `"lead"`.
+
+   1. Relaunch the app.<br>
+      Expected: The app starts with an empty contact list, because the file could not be read. Restoring the original value and relaunching brings the contacts back.
+
+1. Dealing with an older data file
+
+   1. Close the app. Remove the `"status"` and `"followUp"` fields from one contact in `data/addressbook.json`.
+
+   1. Relaunch the app.<br>
+      Expected: The contact loads with status `PROSPECT` and no follow-up. Nothing else is lost.
