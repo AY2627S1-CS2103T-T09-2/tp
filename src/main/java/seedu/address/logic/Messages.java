@@ -15,11 +15,23 @@ public class Messages {
     public static final String MESSAGE_UNKNOWN_COMMAND = "Unknown command.";
     public static final String MESSAGE_INVALID_COMMAND_FORMAT = "Invalid command format!\n%1$s";
     public static final String MESSAGE_INVALID_PERSON_DISPLAYED_INDEX = "The contact index provided is invalid.";
-    public static final String MESSAGE_PERSONS_LISTED_OVERVIEW = "%1$d contact(s) listed.";
+    public static final String MESSAGE_PERSONS_LISTED_OVERVIEW = "%1$d contacts listed.";
+    public static final String MESSAGE_PERSON_LISTED_OVERVIEW = "1 contact listed.";
     public static final String MESSAGE_DUPLICATE_FIELDS =
                 "Multiple values specified for the following single-valued field(s): ";
     public static final String MESSAGE_NO_PARAMETERS_EXPECTED =
             "The %1$s command does not accept additional parameters.";
+
+    /**
+     * Returns a grammatically correct result-count message.
+     */
+    public static String getPersonListOverview(int numberOfContacts) {
+        if (numberOfContacts == 1) {
+            return MESSAGE_PERSON_LISTED_OVERVIEW;
+        }
+
+        return String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, numberOfContacts);
+    }
 
     /**
      * Returns an error message indicating the duplicate prefixes.

@@ -281,11 +281,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **Extensions**
 
 * 2a. No name keyword was supplied.
-  * 2a1. System shows `Please enter at least one name keyword to search for.`
+  * 2a1. System shows `Please enter at least one name keyword to search for. Example: find alice tan`.
   * Use case ends without changing the contact list.
-* 2b. The command format is invalid.
-  * 2b1. System shows the `find KEYWORD [MORE_KEYWORDS]` format.
-  * Use case ends without changing stored contacts.
 * 3a. No contact name contains a matching complete word.
   * 3a1. System shows an empty result list and reports `0 contacts listed.`
   * Use case ends.

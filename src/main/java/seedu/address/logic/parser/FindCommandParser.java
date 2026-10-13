@@ -1,5 +1,7 @@
 package seedu.address.logic.parser;
 
+import static seedu.address.logic.commands.FindCommand.MESSAGE_EMPTY_KEYWORD;
+
 import java.util.List;
 
 import seedu.address.logic.commands.FindCommand;
@@ -19,7 +21,7 @@ public class FindCommandParser implements Parser<FindCommand> {
     public FindCommand parse(String args) throws ParseException {
         String trimmedArgs = args.trim();
         if (trimmedArgs.isEmpty()) {
-            throw new ParseException("Please enter at least one name keyword to search for.");
+            throw new ParseException(MESSAGE_EMPTY_KEYWORD);
         }
 
         String[] nameKeywords = trimmedArgs.split("\\s+");
