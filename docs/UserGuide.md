@@ -162,26 +162,30 @@ Examples:
 
 The result shows the deleted contact's name, for example `Deleted contact: Betsy Crowe`.
 
-### Selecting a contact for follow-up completion: `done`
+### Completing a follow-up: `done`
 
-Checks the index of the contact whose follow-up you want to complete.
+Marks a contact's pending follow-up as completed by removing its scheduled follow-up date.
 
 Format: `done INDEX`
 
 * The index refers to the number shown in the displayed contact list.
 * The index must be a positive integer and refer to a displayed contact.
-* This preliminary version leaves the contact and its follow-up unchanged.
+* The contact must have a pending follow-up.
+* The contact's other details remain unchanged. Its card shows `Follow-up: None` after completion.
 
-For a valid index, the result is:
-`<name> selected; completing follow-ups is coming soon.`
+On success, the result is:
+`Marked follow-up for <name> as completed.`
+
+If the contact has no pending follow-up, the result is:
+`<name> does not have a pending follow-up.`
 
 For an index beyond the displayed list, the result is:
 `The contact index provided is invalid.`
 
 Examples:
 
-* `list` followed by `done 2` identifies the second displayed contact.
-* `find John` followed by `done 1` identifies the first matching contact.
+* `list` followed by `done 2` completes the second displayed contact's follow-up, if it has one.
+* `find John` followed by `done 1` completes the first matching contact's follow-up, if it has one.
 
 ### Clearing all contacts: `clear`
 
@@ -234,7 +238,7 @@ Action     | Format, Examples
 **Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...` <br> e.g., `add n/John Tan p/91234567 e/johntan@example.com a/21 Clementi Ave 3 st/PROSPECT f/25-12-2026 t/referral`
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
-**Done**   | `done INDEX`<br> e.g., `done 1`<br> Selection only in this preliminary version
+**Done**   | `done INDEX`<br> e.g., `done 1`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]... `<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List**   | `list`
