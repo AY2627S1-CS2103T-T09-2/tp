@@ -290,6 +290,32 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   * 3a1. System shows an empty result list and reports `0 contacts listed.`
   * Use case ends.
 
+**Use case: Edit a contact**
+
+**MSS**
+
+1. Agent views the contact to edit.
+2. Agent provides one or more replacement details, including an optional status or follow-up date.
+3. System validates the replacement details.
+4. System updates the contact and shows its updated details.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. Agent provides an empty follow-up date.
+  * 2a1. System clears the contact's follow-up date.
+  * Use case resumes at step 4.
+* 3a. A replacement detail is invalid.
+  * 3a1. System shows the relevant validation error and does not change the contact.
+  * Use case ends.
+* 3b. The follow-up date is in the past.
+  * 3b1. System saves the date and warns the agent that it is in the past.
+  * Use case resumes at step 4.
+* 4a. The selected contact is not in the displayed list.
+  * 4a1. System explains that the contact reference is invalid.
+  * Use case ends without changing any contacts.
+
 **Use case: Complete a follow-up**
 
 **MSS**

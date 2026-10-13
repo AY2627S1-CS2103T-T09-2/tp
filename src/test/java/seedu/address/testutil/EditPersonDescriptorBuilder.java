@@ -1,5 +1,6 @@
 package seedu.address.testutil;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -7,6 +8,7 @@ import java.util.stream.Stream;
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -78,6 +80,22 @@ public class EditPersonDescriptorBuilder {
      */
     public EditPersonDescriptorBuilder withStatus(String status) {
         descriptor.setStatus(Status.parse(status));
+        return this;
+    }
+
+    /**
+     * Sets the follow-up date of the contact that is being edited.
+     */
+    public EditPersonDescriptorBuilder withFollowUp(String followUp) {
+        descriptor.setFollowUp(Optional.of(new FollowUp(followUp)));
+        return this;
+    }
+
+    /**
+     * Clears the follow-up date of the contact that is being edited.
+     */
+    public EditPersonDescriptorBuilder withFollowUp() {
+        descriptor.setFollowUp(Optional.empty());
         return this;
     }
 
