@@ -26,7 +26,6 @@ We are a team based in the [School of Computing, National University of Singapor
 
 * Role: Developer
 * Responsibilities: Team lead, documentation, release and integration
-* Responsibilities: Documentation
 
 ### Kasey Ho Kei Ching
 
