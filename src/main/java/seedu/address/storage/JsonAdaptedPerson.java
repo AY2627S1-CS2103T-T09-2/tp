@@ -138,7 +138,7 @@ class JsonAdaptedPerson {
         if (status != null && !status.isBlank() && !Status.isValidStatus(status)) {
             throw new IllegalValueException(Status.MESSAGE_CONSTRAINTS);
         }
-        final Status modelStatus = status == null || status.isBlank() ? Status.PROSPECT : Status.parse(status);
+        final Status modelStatus = status == null || status.isBlank() ? Status.DEFAULT : Status.parse(status);
 
         final Set<Tag> modelTags = new HashSet<>(personTags);
 

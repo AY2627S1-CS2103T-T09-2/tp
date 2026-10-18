@@ -88,6 +88,7 @@ Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DA
 <box type="tip" seamless>
 
 **Status:** `st/STATUS` is optional and case-insensitive. `PROSPECT` means a potential client, `CLIENT` means a policyholder, and `INACTIVE` means a contact no longer being pursued. The default is `PROSPECT`.
+The contact list shows blue, green, and grey badges respectively for these statuses.
 </box>
 
 <box type="tip" seamless>
