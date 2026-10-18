@@ -101,11 +101,19 @@ Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DA
 </box>
 
 Names with extra spaces are saved with single spaces. A contact cannot be added if its name matches an existing contact's name after ignoring case and extra spaces.
+Names must start with a letter, including accented letters. They may then contain letters, digits, spaces,
+hyphens (`-`), apostrophes (`'`), periods (`.`), commas (`,`), and slashes (`/`), so names such as
+`Anne-Marie`, `O'Connor`, and `Raj s/o Kumar` are accepted. Phone numbers must contain at least three
+digits. They may start with `+` and include spaces or dashes between digits, for example `+65 9123-4567`.
+Phone numbers are saved exactly as entered. If a name is already in the contact list, Easy-Insurance
+shows that contact's name and phone number.
 
 Examples:
 * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
 * `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT t/referral`
 * `add n/Sarah Lim p/92345678 e/sarah@example.com a/10 Tampines Street 1 st/CLIENT f/25-12-2026`
+
+Known issue: names containing `a/l` are interpreted as an address prefix by the command parser.
 
 ### Listing all contacts: `list`
 

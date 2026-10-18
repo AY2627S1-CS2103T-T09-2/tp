@@ -10,13 +10,14 @@ import static seedu.address.commons.util.AppUtil.checkArgument;
 public class Name {
 
     public static final String MESSAGE_CONSTRAINTS =
-            "Names should only contain alphanumeric characters and spaces, and should not be blank";
+            "Names must start with a letter and may contain letters, digits, spaces, hyphens, apostrophes, "
+                    + "periods, commas and slashes.";
 
     /*
-     * The first character of the name must not be a whitespace,
-     * otherwise " " (a blank string) becomes a valid input.
+     * The first character must be a Unicode letter. The remaining characters may include
+     * punctuation used in names such as "s/o" and "d/o".
      */
-    public static final String VALIDATION_REGEX = "[\\p{Alnum}][\\p{Alnum} ]*";
+    public static final String VALIDATION_REGEX = "\\p{L}[\\p{L}\\p{N} '.,/-]*";
 
     public final String fullName;
 
