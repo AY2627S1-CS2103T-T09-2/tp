@@ -1,0 +1,95 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant ":CommandInputParser" as CommandInputParser LOGIC_COLOR
+participant ":DoneCommandParser" as DoneCommandParser LOGIC_COLOR
+participant "d:DoneCommand" as DoneCommand LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "m:Model" as Model MODEL_COLOR
+end box
+
+box Storage STORAGE_COLOR_T1
+participant "s:Storage" as Storage STORAGE_COLOR
+end box
+
+[-> LogicManager : execute("done 1")
+activate LogicManager
+
+LogicManager -> CommandInputParser : parseCommand("done 1")
+activate CommandInputParser
+
+create DoneCommandParser
+CommandInputParser -> DoneCommandParser : DoneCommandParser()
+activate DoneCommandParser
+DoneCommandParser --> CommandInputParser
+deactivate DoneCommandParser
+
+CommandInputParser -> DoneCommandParser : parse(arguments)
+activate DoneCommandParser
+
+note right of DoneCommandParser
+Validate the displayed index using
+ParserUtil.parseIndex(args).
+end note
+
+create DoneCommand
+DoneCommandParser -> DoneCommand : DoneCommand(index)
+activate DoneCommand
+DoneCommand --> DoneCommandParser : d
+deactivate DoneCommand
+
+DoneCommandParser --> CommandInputParser : d
+deactivate DoneCommandParser
+CommandInputParser --> LogicManager : d
+deactivate CommandInputParser
+
+LogicManager -> DoneCommand : execute(m)
+activate DoneCommand
+
+DoneCommand -> Model : getFilteredPersonList()
+activate Model
+Model --> DoneCommand : lastShownList
+deactivate Model
+
+note over DoneCommand, Model
+Check the index and select personToComplete from the displayed list.
+Check that the selected contact has a pending follow-up.
+This example assumes both checks succeed.
+end note
+
+note over DoneCommand, Model
+Construct completedPerson with Optional.empty() for the follow-up.
+Copy the name, phone, email, address, status and tags.
+end note
+
+DoneCommand -> Model : setPerson(personToComplete, completedPerson)
+activate Model
+Model --> DoneCommand
+deactivate Model
+
+note right of DoneCommand
+Construct r:CommandResult with the
+follow-up completion message.
+end note
+
+DoneCommand --> LogicManager : r
+deactivate DoneCommand
+
+LogicManager -> Model : getAddressBook()
+activate Model
+Model --> LogicManager : addressBook
+deactivate Model
+
+LogicManager -> Storage : saveAddressBook(addressBook)
+activate Storage
+Storage --> LogicManager
+deactivate Storage
+
+[<-- LogicManager : r
+deactivate LogicManager
+@enduml
