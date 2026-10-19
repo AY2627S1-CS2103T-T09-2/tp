@@ -8,6 +8,7 @@ import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,8 @@ import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Status;
+import seedu.address.model.tag.Tag;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
 import seedu.address.testutil.PersonBuilder;
 import seedu.address.testutil.PersonUtil;
@@ -134,18 +137,29 @@ public class CommandInputParserTest {
 
     @Test
     public void parseCommand_listWithoutArgs_returnsListCommand() throws ParseException {
-        assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD) instanceof ListCommand);
-        assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD + "  ") instanceof ListCommand);
+        assertEquals(new ListCommand(), parser.parseCommand("list"));
+        assertEquals(new ListCommand(), parser.parseCommand("list  "));
+    }
+
+    @Test
+    public void parseCommand_listWithFilters_returnsFilteredListCommand() throws ParseException {
+        assertEquals(new ListCommand(Optional.of(Status.CLIENT), Optional.empty()),
+                parser.parseCommand("list st/CLIENT"));
+        assertEquals(new ListCommand(Optional.empty(), Optional.of(new Tag("referral"))),
+                parser.parseCommand("list t/REFERRAL"));
+
+        ListCommand expectedCommand =
+                new ListCommand(Optional.of(Status.CLIENT), Optional.of(new Tag("referral")));
+        assertEquals(expectedCommand, parser.parseCommand("list st/CLIENT t/referral"));
+        assertEquals(expectedCommand, parser.parseCommand("list t/REFERRAL st/client"));
     }
 
     @Test
     public void parseCommand_listWithExtraArgs_throwsParseException() {
-        String expectedMessage = "The list command does not accept additional parameters.";
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, ListCommand.MESSAGE_USAGE);
 
-        assertThrows(ParseException.class, expectedMessage, ()
-                -> parser.parseCommand(ListCommand.COMMAND_WORD + " 3"));
-        assertThrows(ParseException.class, expectedMessage, ()
-                -> parser.parseCommand(ListCommand.COMMAND_WORD + " extra"));
+        assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand("list 3"));
+        assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand("list extra"));
     }
 
     @Test

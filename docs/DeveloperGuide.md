@@ -405,6 +405,67 @@ testers are expected to do more *exploratory* testing.
    1. Relaunch the app the same way.<br>
       Expected: The most recent window size and location are retained.
 
+### Listing contacts with filters
+
+1. Preparing test contacts
+
+   1. Prerequisites: Use disposable test data and start with an empty contact list.
+
+   1. Add these four contacts:
+
+      `add n/Filter Client Referral p/91110001 e/one@example.com a/1 Test Road st/CLIENT t/ReFeRRaL`
+
+      `add n/Filter Client Family p/91110002 e/two@example.com a/2 Test Road st/CLIENT t/family`
+
+      `add n/Filter Prospect Referral p/91110003 e/three@example.com a/3 Test Road st/PROSPECT t/referral`
+
+      `add n/Filter Inactive p/91110004 e/four@example.com a/4 Test Road st/INACTIVE`
+
+1. Filtering by status
+
+   1. Test case: `list st/CLIENT`<br>
+      Expected: Only Filter Client Referral and Filter Client Family are shown.
+      The result is `Listed 2 contacts with status CLIENT.`
+
+1. Filtering by tag
+
+   1. Test case: `list t/REFERRAL`<br>
+      Expected: Only Filter Client Referral and Filter Prospect Referral are shown.
+      The result is `Listed 2 contacts with tag referral.`
+
+   1. Test case: `list t/ref`<br>
+      Expected: No contacts are shown.
+      The result is `Listed 0 contacts with tag ref.`
+
+1. Combining filters
+
+   1. Test case: `list st/client t/referral`<br>
+      Expected: Only Filter Client Referral is shown.
+      The result is `Listed 1 contact with status CLIENT and tag referral.`
+
+   1. Test case: `list t/REFERRAL st/CLIENT`<br>
+      Expected: The same contact and result message are shown.
+
+1. Resetting the filter
+
+   1. Test case: `list`<br>
+      Expected: All four contacts are shown.
+      The result is `Listed all contacts.`
+
+1. Rejecting invalid filters
+
+   1. Test cases: `list st/LEAD` and `list st/`<br>
+      Expected: The status constraint message is shown.
+
+   1. Test cases: `list t/` and `list t/referral!`<br>
+      Expected: The tag constraint message is shown.
+
+   1. Test cases: `list st/CLIENT st/PROSPECT` and `list t/referral t/family`<br>
+      Expected: An error identifies the repeated filter prefix.
+
+   1. Test cases: `list extra`, `list extra st/CLIENT` and `list st/CLIENT extra`<br>
+      Expected: An error is shown and the current displayed list is unchanged.
+
 ### Deleting a contact
 
 1. Deleting a contact while all contacts are being shown
