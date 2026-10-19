@@ -5,6 +5,7 @@
 <?import javafx.scene.Scene?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
@@ -12,7 +13,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.stage.Stage?>
 
-<fx:root resizable="false" title="Help" type="javafx.stage.Stage"
+<fx:root resizable="true" title="Help" type="javafx.stage.Stage"
          xmlns="http://javafx.com/javafx/17"
          xmlns:fx="http://javafx.com/fxml/1">
 
@@ -26,135 +27,260 @@
         <URL value="@HelpWindow.css" />
       </stylesheets>
 
-      <VBox spacing="10.0">
+      <VBox minHeight="0.0" minWidth="0.0" spacing="10.0">
         <padding>
           <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
         </padding>
 
         <children>
-          <Label text="Easy-Insurance Command Guide"
-                 style="-fx-font-size: 18px; -fx-font-weight: bold;" />
+          <Label fx:id="commandGuideTitle"
+                 text="Easy-Insurance Command Guide"
+                 minWidth="0.0"
+                 maxWidth="Infinity"
+                 wrapText="true"
+                 styleClass="command-guide-title" />
+          <Label text="Resize the window or scroll to view all commands."
+                 minWidth="0.0"
+                 maxWidth="Infinity"
+                 wrapText="true"
+                 styleClass="command-guide-hint" />
 
-          <GridPane hgap="15.0" vgap="8.0">
-            <columnConstraints>
-              <ColumnConstraints minWidth="70.0" />
-              <ColumnConstraints minWidth="440.0" />
-              <ColumnConstraints minWidth="300.0" />
-            </columnConstraints>
+          <ScrollPane fx:id="commandGuideScrollPane"
+                      fitToWidth="true" hbarPolicy="NEVER"
+                      minHeight="0.0" minWidth="0.0" VBox.vgrow="ALWAYS">
+            <content>
+              <GridPane fx:id="commandGuideTable" minWidth="0.0" hgap="12.0" vgap="8.0">
+                <columnConstraints>
+                  <ColumnConstraints minWidth="0.0" percentWidth="18.0" />
+                  <ColumnConstraints minWidth="0.0" percentWidth="46.0" />
+                  <ColumnConstraints minWidth="0.0" percentWidth="36.0" />
+                </columnConstraints>
 
-            <children>
-              <Label text="Command"
-                     style="-fx-font-weight: bold;"
-                     GridPane.columnIndex="0"
-                     GridPane.rowIndex="0" />
-              <Label text="Format"
-                     style="-fx-font-weight: bold;"
-                     GridPane.columnIndex="1"
-                     GridPane.rowIndex="0" />
-              <Label text="Example"
-                     style="-fx-font-weight: bold;"
-                     GridPane.columnIndex="2"
-                     GridPane.rowIndex="0" />
+                <children>
+                  <Label text="Command"
+                         styleClass="command-guide-column-heading"
+                         GridPane.columnIndex="0"
+                         GridPane.rowIndex="0"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity" />
+                  <Label text="Format"
+                         styleClass="command-guide-column-heading"
+                         GridPane.columnIndex="1"
+                         GridPane.rowIndex="0"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity" />
+                  <Label text="Example"
+                         styleClass="command-guide-column-heading"
+                         GridPane.columnIndex="2"
+                         GridPane.rowIndex="0"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity" />
 
-              <Label text="add"
-                     GridPane.columnIndex="0"
-                     GridPane.rowIndex="1" />
-              <Label text="add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]..."
-                     wrapText="true"
-                     GridPane.columnIndex="1"
-                     GridPane.rowIndex="1" />
-              <Label text="add n/Sarah Lim p/98765432 e/sarahlim@example.com a/Tampines st/PROSPECT t/referral"
-                     wrapText="true"
-                     GridPane.columnIndex="2"
-                     GridPane.rowIndex="1" />
+                  <Label text="add"
+                         GridPane.columnIndex="0"
+                         GridPane.rowIndex="1"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity" />
+                  <Label text="add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]..."
+                         wrapText="true"
+                         GridPane.columnIndex="1"
+                         GridPane.rowIndex="1"
+                         minWidth="0.0"
+                         maxWidth="Infinity"
+                         styleClass="command-guide-code" />
+                  <Label text="add n/Sarah Lim p/98765432 e/sarahlim@example.com a/Tampines st/PROSPECT t/referral"
+                         wrapText="true"
+                         GridPane.columnIndex="2"
+                         GridPane.rowIndex="1"
+                         minWidth="0.0"
+                         maxWidth="Infinity"
+                         styleClass="command-guide-code" />
 
-              <Label text="list"
-                     GridPane.columnIndex="0"
-                     GridPane.rowIndex="2" />
-              <Label text="list"
-                     GridPane.columnIndex="1"
-                     GridPane.rowIndex="2" />
-              <Label text="list"
-                     GridPane.columnIndex="2"
-                     GridPane.rowIndex="2" />
+                  <Label text="list"
+                         GridPane.columnIndex="0"
+                         GridPane.rowIndex="2"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity" />
+                  <Label text="list"
+                         GridPane.columnIndex="1"
+                         GridPane.rowIndex="2"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity"
+                         styleClass="command-guide-code" />
+                  <Label text="list"
+                         GridPane.columnIndex="2"
+                         GridPane.rowIndex="2"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity"
+                         styleClass="command-guide-code" />
 
-              <Label text="find"
-                     GridPane.columnIndex="0"
-                     GridPane.rowIndex="3" />
-              <Label text="find KEYWORD [MORE_KEYWORDS]"
-                     GridPane.columnIndex="1"
-                     GridPane.rowIndex="3" />
-              <Label text="find John Tan"
-                     GridPane.columnIndex="2"
-                     GridPane.rowIndex="3" />
+                  <Label text="find"
+                         GridPane.columnIndex="0"
+                         GridPane.rowIndex="3"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity" />
+                  <Label text="find KEYWORD [MORE_KEYWORDS]"
+                         GridPane.columnIndex="1"
+                         GridPane.rowIndex="3"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity"
+                         styleClass="command-guide-code" />
+                  <Label text="find John Tan"
+                         GridPane.columnIndex="2"
+                         GridPane.rowIndex="3"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity"
+                         styleClass="command-guide-code" />
 
-              <Label text="delete"
-                     GridPane.columnIndex="0"
-                     GridPane.rowIndex="4" />
-              <Label text="delete INDEX"
-                     GridPane.columnIndex="1"
-                     GridPane.rowIndex="4" />
-              <Label text="delete 2"
-                     GridPane.columnIndex="2"
-                     GridPane.rowIndex="4" />
+                  <Label text="delete"
+                         GridPane.columnIndex="0"
+                         GridPane.rowIndex="4"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity" />
+                  <Label text="delete INDEX"
+                         GridPane.columnIndex="1"
+                         GridPane.rowIndex="4"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity"
+                         styleClass="command-guide-code" />
+                  <Label text="delete 2"
+                         GridPane.columnIndex="2"
+                         GridPane.rowIndex="4"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity"
+                         styleClass="command-guide-code" />
 
-              <Label text="done"
-                     GridPane.columnIndex="0"
-                     GridPane.rowIndex="5" />
-              <Label text="done INDEX"
-                     GridPane.columnIndex="1"
-                     GridPane.rowIndex="5" />
-              <Label text="done 1"
-                     GridPane.columnIndex="2"
-                     GridPane.rowIndex="5" />
+                  <Label text="done"
+                         GridPane.columnIndex="0"
+                         GridPane.rowIndex="5"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity" />
+                  <Label text="done INDEX"
+                         GridPane.columnIndex="1"
+                         GridPane.rowIndex="5"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity"
+                         styleClass="command-guide-code" />
+                  <Label text="done 1"
+                         GridPane.columnIndex="2"
+                         GridPane.rowIndex="5"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity"
+                         styleClass="command-guide-code" />
 
-              <Label text="clear"
-                     GridPane.columnIndex="0"
-                     GridPane.rowIndex="6" />
-              <Label text="clear"
-                     GridPane.columnIndex="1"
-                     GridPane.rowIndex="6" />
-              <Label text="clear"
-                     GridPane.columnIndex="2"
-                     GridPane.rowIndex="6" />
+                  <Label text="clear"
+                         GridPane.columnIndex="0"
+                         GridPane.rowIndex="6"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity" />
+                  <Label text="clear"
+                         GridPane.columnIndex="1"
+                         GridPane.rowIndex="6"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity"
+                         styleClass="command-guide-code" />
+                  <Label text="clear"
+                         GridPane.columnIndex="2"
+                         GridPane.rowIndex="6"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity"
+                         styleClass="command-guide-code" />
 
-              <Label text="help"
-                     GridPane.columnIndex="0"
-                     GridPane.rowIndex="7" />
-              <Label text="help"
-                     GridPane.columnIndex="1"
-                     GridPane.rowIndex="7" />
-              <Label text="help"
-                     GridPane.columnIndex="2"
-                     GridPane.rowIndex="7" />
+                  <Label text="help"
+                         GridPane.columnIndex="0"
+                         GridPane.rowIndex="7"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity" />
+                  <Label text="help"
+                         GridPane.columnIndex="1"
+                         GridPane.rowIndex="7"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity"
+                         styleClass="command-guide-code" />
+                  <Label text="help"
+                         GridPane.columnIndex="2"
+                         GridPane.rowIndex="7"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity"
+                         styleClass="command-guide-code" />
 
-              <Label text="exit"
-                     GridPane.columnIndex="0"
-                     GridPane.rowIndex="8" />
-              <Label text="exit"
-                     GridPane.columnIndex="1"
-                     GridPane.rowIndex="8" />
-              <Label text="exit"
-                     GridPane.columnIndex="2"
-                     GridPane.rowIndex="8" />
+                  <Label text="exit"
+                         GridPane.columnIndex="0"
+                         GridPane.rowIndex="8"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity" />
+                  <Label text="exit"
+                         GridPane.columnIndex="1"
+                         GridPane.rowIndex="8"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity"
+                         styleClass="command-guide-code" />
+                  <Label text="exit"
+                         GridPane.columnIndex="2"
+                         GridPane.rowIndex="8"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity"
+                         styleClass="command-guide-code" />
 
-              <Label text="edit"
-                     GridPane.columnIndex="0"
-                     GridPane.rowIndex="9" />
-              <Label text="edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]..."
-                     wrapText="true"
-                     GridPane.columnIndex="1"
-                     GridPane.rowIndex="9" />
-              <Label text="edit 1 p/91234567 st/CLIENT"
-                     GridPane.columnIndex="2"
-                     GridPane.rowIndex="9" />
-            </children>
-          </GridPane>
+                  <Label text="edit"
+                         GridPane.columnIndex="0"
+                         GridPane.rowIndex="9"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity" />
+                  <Label text="edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]..."
+                         wrapText="true"
+                         GridPane.columnIndex="1"
+                         GridPane.rowIndex="9"
+                         minWidth="0.0"
+                         maxWidth="Infinity"
+                         styleClass="command-guide-code" />
+                  <Label text="edit 1 p/91234567 st/CLIENT"
+                         GridPane.columnIndex="2"
+                         GridPane.rowIndex="9"
+                         wrapText="true"
+                         minWidth="0.0"
+                         maxWidth="Infinity"
+                         styleClass="command-guide-code" />
+                </children>
+              </GridPane>
+            </content>
+          </ScrollPane>
 
           <HBox alignment="CENTER_RIGHT" spacing="10.0">
             <children>
-              <Label text="Full documentation is available in the User Guide." />
+              <Label text="Full documentation is available in the User Guide."
+                     minWidth="0.0"
+                     maxWidth="Infinity"
+                     wrapText="true"
+                     HBox.hgrow="ALWAYS" />
               <Button fx:id="copyButton"
+                      minWidth="80.0"
                       mnemonicParsing="false"
                       onAction="#copyUrl"
                       text="Copy URL" />

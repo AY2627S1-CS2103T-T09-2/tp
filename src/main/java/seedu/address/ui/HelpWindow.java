@@ -3,9 +3,11 @@ package seedu.address.ui;
 import java.util.logging.Logger;
 
 import javafx.fxml.FXML;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.control.Button;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import seedu.address.commons.core.LogsCenter;
 
@@ -19,6 +21,8 @@ public class HelpWindow extends UiPart<Stage> {
 
     private static final Logger logger = LogsCenter.getLogger(HelpWindow.class);
     private static final String FXML = "HelpWindow.fxml";
+    private static final double DEFAULT_WIDTH = 900;
+    private static final double DEFAULT_HEIGHT = 600;
 
     @FXML
     private Button copyButton;
@@ -60,8 +64,31 @@ public class HelpWindow extends UiPart<Stage> {
      */
     public void show() {
         logger.fine("Showing help page about the application.");
+        fitToScreen();
         getRoot().show();
-        getRoot().centerOnScreen();
+    }
+
+    /**
+     * Fits and centers the help window within its screen's usable area.
+     */
+    private void fitToScreen() {
+        Stage stage = getRoot();
+        double width = stage.getWidth() > 0 ? stage.getWidth() : DEFAULT_WIDTH;
+        double height = stage.getHeight() > 0 ? stage.getHeight() : DEFAULT_HEIGHT;
+        Screen screen = Screen.getPrimary();
+
+        if (!Double.isNaN(stage.getX()) && !Double.isNaN(stage.getY())) {
+            screen = Screen.getScreensForRectangle(stage.getX(), stage.getY(), 1, 1).stream()
+                    .findFirst().orElse(screen);
+        }
+
+        Rectangle2D visualBounds = screen.getVisualBounds();
+        width = Math.min(width, visualBounds.getWidth());
+        height = Math.min(height, visualBounds.getHeight());
+        stage.setWidth(width);
+        stage.setHeight(height);
+        stage.setX(visualBounds.getMinX() + (visualBounds.getWidth() - width) / 2);
+        stage.setY(visualBounds.getMinY() + (visualBounds.getHeight() - height) / 2);
     }
 
     /**

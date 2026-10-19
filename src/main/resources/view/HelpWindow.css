@@ -1,3 +1,20 @@
+.command-guide-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.command-guide-hint {
+    -fx-font-size: 12px;
+}
+
+.command-guide-column-heading {
+    -fx-font-weight: bold;
+}
+
+.command-guide-code {
+    -fx-font-size: 13px;
+}
+
 #copyButton, #helpMessage {
     -fx-text-fill: white;
 }
