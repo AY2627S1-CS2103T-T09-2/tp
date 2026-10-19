@@ -61,10 +61,13 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* `help`, `list`, `clear`, and `exit` accept no parameters.<br>
+* `help`, `clear`, and `exit` accept no parameters.<br>
   Extra parameters are rejected with an error naming the command.<br>
   For example, `clear 123` shows `The clear command does not accept additional parameters.`
   and leaves all contacts unchanged.
+
+* `list` accepts optional `st/STATUS` and `t/TAG` filters.
+  Each filter may appear at most once.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </box>
@@ -107,11 +110,31 @@ Examples:
 * `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT t/referral`
 * `add n/Sarah Lim p/92345678 e/sarah@example.com a/10 Tampines Street 1 st/CLIENT f/25-12-2026`
 
-### Listing all contacts: `list`
+### Listing contacts: `list`
 
-Shows a list of all contacts in Easy-Insurance, with each contact's status.
+Shows all contacts, or filters contacts by status, tag, or both.
 
-Format: `list`
+Format: `list [st/STATUS] [t/TAG]`
+
+* Plain `list` removes the current filter and shows all contacts.
+* `st/STATUS` accepts `PROSPECT`, `CLIENT`, or `INACTIVE`, ignoring case.
+* `t/TAG` matches a complete tag name, ignoring case.
+  For example, `t/REFERRAL` matches the tag `referral`, but `t/ref` does not.
+* When both filters are supplied, a contact must match both.
+* Filters may appear in either order.
+* Each filter may appear at most once, and its value cannot be blank.
+* Invalid filter values and unrelated arguments are rejected.
+* A filtered result reports the number of matching contacts.
+  If no contacts match, the displayed list is empty.
+* Each new `list` command replaces the previous filter.
+
+Examples:
+
+* `list` shows all contacts and reports `Listed all contacts.`
+* `list st/CLIENT` shows only clients.
+* `list t/referral` shows contacts tagged `referral`, regardless of the tag's case.
+* `list st/CLIENT t/referral` shows clients with the referral tag.
+* `list t/REFERRAL st/client` applies the same combined filter.
 
 ### Editing a contact: `edit`
 
@@ -246,6 +269,6 @@ Action     | Format, Examples
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...`<br> e.g., `edit 2 n/James Lee st/CLIENT f/25-12-2026`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
-**List**   | `list`
+**List**   | `list [st/STATUS] [t/TAG]`<br> e.g., `list st/CLIENT t/referral`
 **Help**   | `help`
 **Exit**   | `exit`
