@@ -106,14 +106,14 @@
                          wrapText="true"
                          minWidth="0.0"
                          maxWidth="Infinity" />
-                  <Label text="list"
+                  <Label text="list [st/STATUS] [t/TAG]"
                          GridPane.columnIndex="1"
                          GridPane.rowIndex="2"
                          wrapText="true"
                          minWidth="0.0"
                          maxWidth="Infinity"
                          styleClass="command-guide-code" />
-                  <Label text="list"
+                  <Label text="list st/CLIENT t/referral"
                          GridPane.columnIndex="2"
                          GridPane.rowIndex="2"
                          wrapText="true"
