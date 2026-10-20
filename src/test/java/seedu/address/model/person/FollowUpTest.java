@@ -127,15 +127,19 @@ public class FollowUpTest {
     }
 
     @Test
-    public void hasValidFormat_and_isRealDate() {
-        assertTrue(FollowUp.hasValidFormat("31-02-2026"));
+    public void hasValidFormat() {
+        assertTrue(FollowUp.hasValidFormat("31-02-2026")); // right shape, impossible date
+        assertFalse(FollowUp.hasValidFormat("2026-02-28")); // year first
+    }
+
+    @Test
+    public void isRealDate() {
         assertFalse(FollowUp.isRealDate("31-02-2026"));
-        assertFalse(FollowUp.hasValidFormat("2026-02-28"));
         assertTrue(FollowUp.isRealDate("28-02-2026"));
     }
 
     @Test
-    public void getPastDateWarning_containsDate() {
+    public void getPastDateWarning_pastDate_returnsWarningWithDate() {
         assertEquals("\nNote: 01-01-2020 is in the past; it was saved anyway.",
                 new FollowUp("01-01-2020").getPastDateWarning());
     }

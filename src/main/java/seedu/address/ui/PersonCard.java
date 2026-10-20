@@ -16,6 +16,9 @@ import seedu.address.model.person.Person;
 public class PersonCard extends UiPart<Region> {
 
     private static final String FXML = "PersonListCard.fxml";
+    private static final String FOLLOW_UP_LABEL_PREFIX = "Follow-up: ";
+    private static final String NO_FOLLOW_UP_TEXT = "None";
+    private static final String OVERDUE_SUFFIX = " (overdue)";
     private static final String OVERDUE_STYLE_CLASS = "follow_up_overdue";
 
     /**
@@ -59,9 +62,10 @@ public class PersonCard extends UiPart<Region> {
         address.setText(person.getAddress().value);
         email.setText(person.getEmail().value);
         status.setText(person.getStatus().name());
-        followUp.setText("Follow-up: " + person.getFollowUp().map(FollowUp::toString).orElse("None"));
-        if (person.getFollowUp().map(FollowUp::isPast).orElse(false)) {
-            followUp.setText(followUp.getText() + " (overdue)");
+        String followUpDate = person.getFollowUp().map(FollowUp::toString).orElse(NO_FOLLOW_UP_TEXT);
+        boolean isFollowUpOverdue = person.getFollowUp().map(FollowUp::isPast).orElse(false);
+        followUp.setText(FOLLOW_UP_LABEL_PREFIX + followUpDate + (isFollowUpOverdue ? OVERDUE_SUFFIX : ""));
+        if (isFollowUpOverdue) {
             followUp.getStyleClass().add(OVERDUE_STYLE_CLASS);
         }
         person.getTags().stream()
