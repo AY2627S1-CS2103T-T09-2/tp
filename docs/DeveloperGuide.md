@@ -476,10 +476,10 @@ testers are expected to do more *exploratory* testing.
       Expected: The first contact is removed from the list. The result shows `Deleted contact: ` followed by that contact's name.
 
    1. Test case: `delete 0`<br>
-      Expected: No contact is deleted. The result shows the invalid-command-format error with the delete usage.
+      Expected: No contact is deleted. The result shows `Index must be a positive integer.`
 
    1. Test case: `delete 99` (where 99 is larger than the list size)<br>
-      Expected: No contact is deleted. The result shows `The contact index provided is invalid.`
+      Expected: No contact is deleted. The result shows `There is no contact 99. The list shows N contacts.`
 
    1. Other incorrect delete commands to try: `delete`, `delete x`, `delete 1 2`<br>
       Expected: No contact is deleted. An error explains the problem.

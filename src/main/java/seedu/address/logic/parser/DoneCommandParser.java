@@ -1,7 +1,6 @@
 package seedu.address.logic.parser;
 
 import static java.util.Objects.requireNonNull;
-import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.DoneCommand;
@@ -27,8 +26,7 @@ public class DoneCommandParser implements Parser<DoneCommand> {
             Index index = ParserUtil.parseIndex(args);
             return new DoneCommand(index);
         } catch (ParseException exception) {
-            throw new ParseException(
-                    String.format(MESSAGE_INVALID_COMMAND_FORMAT, DoneCommand.MESSAGE_USAGE), exception);
+            throw exception;
         }
     }
 }

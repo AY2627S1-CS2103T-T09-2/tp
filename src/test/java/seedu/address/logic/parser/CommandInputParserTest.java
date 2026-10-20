@@ -102,7 +102,7 @@ public class CommandInputParserTest {
 
     @Test
     public void parseCommand_doneWithInvalidArgs_throwsParseException() {
-        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, DoneCommand.MESSAGE_USAGE);
+        String expectedMessage = ParserUtil.MESSAGE_INVALID_INDEX;
         String[] invalidCommands = {"done", "done 0", "done -1", "done abc", "done 1 extra"};
 
         for (String commandText : invalidCommands) {
