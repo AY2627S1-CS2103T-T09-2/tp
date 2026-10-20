@@ -578,7 +578,7 @@ testers are expected to do more *exploratory* testing.
    1. Close the app. Open `data/addressbook.json` and change one contact's `"status"` value to `"lead"`.
 
    1. Relaunch the app.<br>
-      Expected: The app starts with an empty contact list, because the file could not be read. Restoring the original value and relaunching brings the contacts back.
+      Expected: The app starts with an empty contact list, because the file could not be read. A copy of the invalid file is saved as `data/addressbook.json.bak`. Restoring the original value and relaunching brings the contacts back.
 
 1. Dealing with an older data file
 

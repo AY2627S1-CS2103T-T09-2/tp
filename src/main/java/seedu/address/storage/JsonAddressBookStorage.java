@@ -3,7 +3,9 @@ package seedu.address.storage;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -18,6 +20,8 @@ import seedu.address.model.ReadOnlyAddressBook;
  * A class to access AddressBook data stored as a JSON file on the hard disk.
  */
 public class JsonAddressBookStorage {
+
+    public static final String BACKUP_FILE_SUFFIX = ".bak";
 
     private static final Logger logger = LogsCenter.getLogger(JsonAddressBookStorage.class);
 
@@ -62,6 +66,58 @@ public class JsonAddressBookStorage {
             logger.info("Illegal values found in " + filePath + ": " + ive.getMessage());
             throw new DataLoadingException(ive);
         }
+    }
+
+    /**
+     * Similar to {@link #readAddressBook()}, but if the data file exists and cannot be loaded,
+     * copies it to {@code <file name>.bak} in the same folder before rethrowing the exception.
+     * A failed copy is logged and does not stop the exception from being rethrown.
+     *
+     * @throws DataLoadingException if loading the data from storage failed.
+     */
+    public Optional<ReadOnlyAddressBook> readAddressBookWithBackup() throws DataLoadingException {
+        try {
+            return readAddressBook(filePath);
+        } catch (DataLoadingException e) {
+            backUpFile(filePath);
+            throw e;
+        }
+    }
+
+    /**
+     * Returns the path of the backup file for {@code filePath}, e.g. {@code data/a.json.bak} for
+     * {@code data/a.json}.
+     */
+    public static Path getBackupFilePath(Path filePath) {
+        requireNonNull(filePath);
+        Path fileName = filePath.getFileName();
+        assert fileName != null : "Data file path should end with a file name";
+        return filePath.resolveSibling(fileName + BACKUP_FILE_SUFFIX);
+    }
+
+    /**
+     * Copies {@code filePath} to its backup path, replacing any older backup.
+     * Returns the backup path, or {@code Optional.empty()} if the copy could not be made.
+     */
+    static Optional<Path> backUpFile(Path filePath) {
+        requireNonNull(filePath);
+        Path backupPath = getBackupFilePath(filePath);
+        assert !backupPath.equals(filePath);
+
+        if (!Files.isRegularFile(filePath)) {
+            logger.warning("Data file " + filePath + " is not a regular file, so it was not backed up.");
+            return Optional.empty();
+        }
+
+        try {
+            Files.copy(filePath, backupPath, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException | SecurityException e) {
+            logger.warning("Could not back up data file " + filePath + " to " + backupPath + ": " + e);
+            return Optional.empty();
+        }
+
+        logger.warning("Data file " + filePath + " could not be loaded. A copy was saved to " + backupPath);
+        return Optional.of(backupPath);
     }
 
     /**
