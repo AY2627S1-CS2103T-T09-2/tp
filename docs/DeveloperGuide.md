@@ -160,6 +160,30 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section will describe noteworthy details of how Easy-Insurance features are implemented, starting with the follow-up and status features once their designs settle.
 
+### Viewing due follow-ups: `due`
+
+`due [DAYS]` shows contacts whose follow-up date is on or before today plus `DAYS`, earliest first.
+
+* `DueCommandParser` accepts no argument (0 days) or a whole number from 0 to 365, so the cutoff date can never overflow.
+* `DueCommand` works out the cutoff from a `Clock`. The app passes the system clock, and tests pass a fixed one, so the tests do not depend on the real date.
+* `FollowUpDueByPredicate` keeps contacts that have a follow-up on or before the cutoff. Contacts without a follow-up are left out.
+* `Model#updateFilteredPersonList(Predicate, Comparator)` filters and sorts the displayed list in one step. `ModelManager` wraps its `FilteredList` in a `SortedList`, and `getFilteredPersonList()` returns the sorted view, so index-based commands such as `done 1` act on the order the user sees.
+* The one-argument `updateFilteredPersonList(Predicate)` clears the comparator, so `list`, `find` and every command that resets the list go back to the stored order.
+
+The sequence diagram below shows how `due 7` is executed.
+
+<puml src="diagrams/DueSequenceDiagram.puml" alt="Interactions inside the Logic and Model components for the `due 7` command" />
+
+<box type="info" seamless>
+
+**Note:** The lifeline for `DueCommandParser` should end at the destroy marker (X) but due to a limitation of PlantUML, the lifeline continues till the end of diagram.
+</box>
+
+**Design considerations:**
+
+* **Sorting the displayed list (current choice):** the stored order is unchanged and only the view is sorted, so the data file stays the same and `list` restores the usual order.
+* **Sorting the stored contacts (alternative):** simpler to display, but it would permanently reorder the data file every time `due` is run.
+
 ## **Documentation, logging, testing, dev-ops**
 
 * [Documentation guide](Documentation.md)
