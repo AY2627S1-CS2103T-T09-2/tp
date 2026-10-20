@@ -21,7 +21,7 @@ import seedu.address.model.ReadOnlyAddressBook;
  */
 public class JsonAddressBookStorage {
 
-    public static final String BACKUP_FILE_SUFFIX = ".bak";
+    private static final String BACKUP_FILE_SUFFIX = ".bak";
 
     private static final Logger logger = LogsCenter.getLogger(JsonAddressBookStorage.class);
 
@@ -102,7 +102,7 @@ public class JsonAddressBookStorage {
     static Optional<Path> backUpFile(Path filePath) {
         requireNonNull(filePath);
         Path backupPath = getBackupFilePath(filePath);
-        assert !backupPath.equals(filePath);
+        assert !backupPath.equals(filePath) : "Backup must not overwrite the data file";
 
         if (!Files.isRegularFile(filePath)) {
             logger.warning("Data file " + filePath + " is not a regular file, so it was not backed up.");
@@ -116,7 +116,7 @@ public class JsonAddressBookStorage {
             return Optional.empty();
         }
 
-        logger.warning("Data file " + filePath + " could not be loaded. A copy was saved to " + backupPath);
+        logger.info("Backed up data file " + filePath + " to " + backupPath);
         return Optional.of(backupPath);
     }
 

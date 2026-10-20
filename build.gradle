@@ -49,7 +49,6 @@ dependencies {
     String jUnitVersion = '5.14.4'
     String javaFxVersion = '17.0.7'
 
-
     // Keep mac-aarch64 above mac. Both jars hold natives with the same names and shadowJar keeps
     // the first copy, so this order puts the Apple Silicon natives in the release JAR.
     implementation "org.openjfx:javafx-base:${javaFxVersion}:win"
