@@ -76,6 +76,22 @@ public class FollowUpTest {
     }
 
     @Test
+    public void isOnOrBefore() {
+        FollowUp followUp = new FollowUp("20-09-2026");
+
+        assertTrue(followUp.isOnOrBefore(LocalDate.of(2026, 9, 21))); // day after
+        assertTrue(followUp.isOnOrBefore(LocalDate.of(2026, 9, 20))); // same day
+        assertFalse(followUp.isOnOrBefore(LocalDate.of(2026, 9, 19))); // day before
+        assertThrows(NullPointerException.class, () -> followUp.isOnOrBefore(null));
+    }
+
+    @Test
+    public void format() {
+        assertEquals("05-01-2027", FollowUp.format(LocalDate.of(2027, 1, 5)));
+        assertThrows(NullPointerException.class, () -> FollowUp.format(null));
+    }
+
+    @Test
     public void isPast() {
         LocalDate today = LocalDate.now();
 

@@ -351,6 +351,10 @@
     -fx-font-size: 11;
 }
 
+.list-cell .label.follow_up_overdue {
+    -fx-text-fill: #ff8a80;
+}
+
 .status_label {
     -fx-text-fill: white;
     -fx-background-color: #3e7b91;

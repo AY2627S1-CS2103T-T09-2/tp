@@ -17,6 +17,7 @@ import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.DoneCommand;
+import seedu.address.logic.commands.DueCommand;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.logic.commands.ExitCommand;
@@ -98,6 +99,12 @@ public class CommandInputParserTest {
 
         assertEquals(expectedCommand, parser.parseCommand(DoneCommand.COMMAND_WORD + " 1"));
         assertEquals(expectedCommand, parser.parseCommand(DoneCommand.COMMAND_WORD + "   1   "));
+    }
+
+    @Test
+    public void parseCommand_due() throws ParseException {
+        assertEquals(new DueCommand(0), parser.parseCommand(DueCommand.COMMAND_WORD));
+        assertEquals(new DueCommand(7), parser.parseCommand(DueCommand.COMMAND_WORD + " 7"));
     }
 
     @Test

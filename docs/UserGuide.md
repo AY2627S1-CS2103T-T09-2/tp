@@ -215,6 +215,29 @@ Examples:
 * `list` followed by `done 2` completes the second displayed contact's follow-up, if it has one.
 * `find John` followed by `done 1` completes the first matching contact's follow-up, if it has one.
 
+### Viewing follow-ups that are due: `due`
+
+Shows contacts whose follow-up date is today or earlier, or within the next few days, earliest first.
+
+Format: `due [DAYS]`
+
+* `due` shows follow-ups due today, plus any overdue ones.
+* `due DAYS` also includes follow-ups in the next `DAYS` days. For example, on 21-10-2026, `due 7` shows everything up to and including 28-10-2026.
+* `DAYS` must be a whole number from 0 to 365.
+* Contacts without a follow-up date are not shown.
+* The list is sorted by follow-up date, earliest first. Contacts with the same date are sorted by name.
+* The result reports how many follow-ups are due, for example `3 follow-ups due by 28-10-2026.`
+  If none are due, the result is `No follow-ups due by 28-10-2026.` and the displayed list is empty.
+* The index numbers follow this sorted list, so `done 1` after `due` completes the earliest follow-up.
+* `list` shows all contacts again in their usual order.
+
+On the contact cards, a follow-up date that has already passed is shown in red with `(overdue)` after it.
+
+Examples:
+
+* `due` shows today's and overdue follow-ups.
+* `due 7` shows follow-ups due within the next week, including overdue ones.
+
 ### Clearing all contacts: `clear`
 
 Removes every contact from Easy-Insurance. There is no confirmation step, so use it with care.
@@ -267,6 +290,7 @@ Action     | Format, Examples
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Done**   | `done INDEX`<br> e.g., `done 1`
+**Due**    | `due [DAYS]`<br> e.g., `due 7`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...`<br> e.g., `edit 2 n/James Lee st/CLIENT f/25-12-2026`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List**   | `list [st/STATUS] [t/TAG]`<br> e.g., `list st/CLIENT t/referral`
