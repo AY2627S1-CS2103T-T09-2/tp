@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
+import seedu.address.model.person.PhoneContainsKeywordPredicate;
 
 public class FindCommandParserTest {
 
@@ -36,6 +37,8 @@ public class FindCommandParserTest {
         FindCommand expectedFindCommand =
                 new FindCommand(new NameContainsKeywordsPredicate(List.of("Alice", "Bob")));
         assertParseSuccess(parser, "Alice Bob", expectedFindCommand);
+        assertParseSuccess(parser, "p/9123",
+                new FindCommand(new PhoneContainsKeywordPredicate("9123")));
 
         // multiple whitespaces between keywords
         assertParseSuccess(parser, " \n Alice \n \t Bob  \t", expectedFindCommand);

@@ -7,6 +7,7 @@ import java.util.List;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
+import seedu.address.model.person.PhoneContainsKeywordPredicate;
 
 /**
  * Parses input arguments and creates a new FindCommand object
@@ -22,6 +23,14 @@ public class FindCommandParser implements Parser<FindCommand> {
         String trimmedArgs = args.trim();
         if (trimmedArgs.isEmpty()) {
             throw new ParseException(MESSAGE_EMPTY_KEYWORD);
+        }
+
+        if (trimmedArgs.startsWith("p/")) {
+            String phoneKeyword = trimmedArgs.substring(2).trim();
+            if (phoneKeyword.isEmpty() || phoneKeyword.contains(" ")) {
+                throw new ParseException(MESSAGE_EMPTY_KEYWORD);
+            }
+            return new FindCommand(new PhoneContainsKeywordPredicate(phoneKeyword));
         }
 
         String[] nameKeywords = trimmedArgs.split("\\s+");
