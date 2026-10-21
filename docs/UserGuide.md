@@ -111,6 +111,12 @@ The contact list shows blue, green, and grey badges respectively for these statu
 </box>
 
 Names with extra spaces are saved with single spaces. A contact cannot be added if its name matches an existing contact's name after ignoring case and extra spaces.
+Names must start with a letter, including accented letters. They may then contain letters, digits, spaces,
+hyphens (`-`), apostrophes (`'`), periods (`.`), commas (`,`), and slashes (`/`), so names such as
+`Anne-Marie`, `O'Connor`, and `Raj s/o Kumar` are accepted. Phone numbers must contain at least three
+digits. They may start with `+` and include spaces or dashes between digits, for example `+65 9123-4567`.
+Phone numbers are saved exactly as entered. If a name is already in the contact list, Easy-Insurance
+shows that contact's name and phone number.
 
 Examples:
 * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
@@ -122,6 +128,8 @@ Examples:
 Shows all contacts, or filters contacts by status, tag, or both.
 
 Format: `list [st/STATUS] [t/TAG]`
+
+Known issue: names containing `a/l` are interpreted as an address prefix by the command parser.
 
 * Plain `list` removes the current filter and shows all contacts.
 * `st/STATUS` accepts `PROSPECT`, `CLIENT`, or `INACTIVE`, ignoring case.

@@ -3,20 +3,24 @@ package seedu.address.model.person;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
+
 /**
  * Represents a Person's name in the address book.
- * Guarantees: immutable; is valid as declared in {@link #isValidName(String)}
+ * Guarantees: immutable; stored in Unicode NFC form; is valid as declared in {@link #isValidName(String)}
  */
 public class Name {
 
     public static final String MESSAGE_CONSTRAINTS =
-            "Names should only contain alphanumeric characters and spaces, and should not be blank";
+            "Names must start with a letter and may contain letters, digits, spaces, hyphens, apostrophes, "
+                    + "periods, commas and slashes.";
 
     /*
-     * The first character of the name must not be a whitespace,
-     * otherwise " " (a blank string) becomes a valid input.
+     * The first character must be a Unicode letter. The remaining characters may include
+     * punctuation used in names such as "s/o" and "d/o".
      */
-    public static final String VALIDATION_REGEX = "[\\p{Alnum}][\\p{Alnum} ]*";
+    public static final String VALIDATION_REGEX = "\\p{L}[\\p{L}\\p{M}\\p{N} '.,/-]*";
 
     public final String fullName;
 
@@ -28,14 +32,14 @@ public class Name {
     public Name(String name) {
         requireNonNull(name);
         checkArgument(isValidName(name), MESSAGE_CONSTRAINTS);
-        fullName = name.trim().replaceAll(" +", " ");
+        fullName = Normalizer.normalize(name.trim().replaceAll(" +", " "), Form.NFC);
     }
 
     /**
-     * Returns true if a given string is a valid name.
+     * Returns true if a given string is a valid name after Unicode NFC normalization.
      */
     public static boolean isValidName(String test) {
-        return test.matches(VALIDATION_REGEX);
+        return Normalizer.normalize(test, Form.NFC).matches(VALIDATION_REGEX);
     }
 
 
