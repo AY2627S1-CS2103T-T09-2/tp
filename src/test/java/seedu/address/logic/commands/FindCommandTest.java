@@ -7,6 +7,7 @@ import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.testutil.TypicalPersons.CARL;
 import static seedu.address.testutil.TypicalPersons.ELLE;
 import static seedu.address.testutil.TypicalPersons.FIONA;
+import static seedu.address.testutil.TypicalPersons.GEORGE;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.util.List;
@@ -17,6 +18,7 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
+import seedu.address.model.person.PhoneContainsKeywordPredicate;
 
 /**
  * Contains integration tests (interaction with the Model) for {@code FindCommand}.
@@ -80,6 +82,26 @@ public class FindCommandTest {
 
         assertCommandSuccess(command, model, "1 contact listed.", expectedModel);
         assertEquals(List.of(ELLE), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_namePrefix_matchesWordStart() {
+        NameContainsKeywordsPredicate predicate = new NameContainsKeywordsPredicate(List.of("kur"));
+        FindCommand command = new FindCommand(predicate);
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(command, model, "1 contact listed.", expectedModel);
+        assertEquals(List.of(CARL), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_phoneKeyword_matchesPhoneDigits() {
+        PhoneContainsKeywordPredicate predicate = new PhoneContainsKeywordPredicate("948");
+        FindCommand command = new FindCommand(predicate);
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(command, model, "3 contacts listed.", expectedModel);
+        assertEquals(List.of(ELLE, FIONA, GEORGE), model.getFilteredPersonList());
     }
 
     @Test

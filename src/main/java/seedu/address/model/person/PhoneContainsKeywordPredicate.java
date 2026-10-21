@@ -16,7 +16,8 @@ public class PhoneContainsKeywordPredicate implements Predicate<Person> {
 
     @Override
     public boolean test(Person person) {
-        return person.getPhone().value.contains(keyword);
+        String phoneDigits = person.getPhone().value.replaceAll("\\D", "");
+        return phoneDigits.contains(keyword);
     }
 
     @Override

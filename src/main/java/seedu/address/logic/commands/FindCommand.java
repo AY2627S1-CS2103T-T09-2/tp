@@ -10,20 +10,23 @@ import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 
 /**
- * Finds and lists all persons in the address book whose name contains any of the argument keywords.
- * Keyword matching is case insensitive.
+ * Finds and lists contacts by name-prefix or phone-number search.
  */
 public class FindCommand extends Command {
 
     public static final String COMMAND_WORD = "find";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Finds all contacts whose names contain any of "
-            + "the specified keywords (case-insensitive) and displays them as a list with index numbers.\n"
-            + "Parameters: KEYWORD [MORE_KEYWORDS]...\n"
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Finds contacts by name prefix or phone digits and "
+            + "displays them as a list with index numbers.\n"
+            + "Parameters: KEYWORD [MORE_KEYWORDS]... or p/PHONE_DIGITS\n"
             + "Example: " + COMMAND_WORD + " alice bob charlie";
 
     public static final String MESSAGE_EMPTY_KEYWORD =
             "Please enter at least one name keyword to search for. Example: find alice tan";
+    public static final String MESSAGE_EMPTY_PHONE_KEYWORD =
+            "Please enter at least one phone digit to search for. Example: find p/9123";
+    public static final String MESSAGE_INVALID_PHONE_KEYWORD =
+            "Phone search keywords must contain digits only. Example: find p/9123";
 
     private final Predicate<Person> predicate;
 

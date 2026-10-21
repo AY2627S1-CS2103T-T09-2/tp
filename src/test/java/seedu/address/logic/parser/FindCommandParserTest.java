@@ -3,6 +3,8 @@ package seedu.address.logic.parser;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static seedu.address.logic.commands.FindCommand.MESSAGE_EMPTY_KEYWORD;
+import static seedu.address.logic.commands.FindCommand.MESSAGE_EMPTY_PHONE_KEYWORD;
+import static seedu.address.logic.commands.FindCommand.MESSAGE_INVALID_PHONE_KEYWORD;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
 
@@ -42,6 +44,14 @@ public class FindCommandParserTest {
 
         // multiple whitespaces between keywords
         assertParseSuccess(parser, " \n Alice \n \t Bob  \t", expectedFindCommand);
+    }
+
+    @Test
+    public void parse_invalidPhoneKeyword_throwsParseException() {
+        assertParseFailure(parser, "p/", MESSAGE_EMPTY_PHONE_KEYWORD);
+        assertParseFailure(parser, "p/abc", MESSAGE_INVALID_PHONE_KEYWORD);
+        assertParseFailure(parser, "p/9123 alice", MESSAGE_INVALID_PHONE_KEYWORD);
+        assertParseFailure(parser, "alice p/9123", MESSAGE_INVALID_PHONE_KEYWORD);
     }
 
 }
