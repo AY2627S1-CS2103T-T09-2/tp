@@ -15,7 +15,6 @@ Class UserPrefs
 Class UniquePersonList
 Class Person {
   - status : Status
-  - followUp : Optional<FollowUp>
 }
 Class Address
 Class Email
@@ -34,7 +33,11 @@ Enum Status {
   + DEFAULT : Status
 }
 Class FollowUp {
+  + value : LocalDate
   + isValidFollowUp(String) : boolean
+  + hasValidFormat(String) : boolean
+  + isRealDate(String) : boolean
+  + isPast() : boolean
 }
 Class Tag
 
