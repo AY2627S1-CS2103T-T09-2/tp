@@ -69,6 +69,9 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 * `list` accepts optional `st/STATUS` and `t/TAG` filters.
   Each filter may appear at most once.
 
+* Command words are case-insensitive.
+  For example, `list`, `LIST`, and `LiSt` are treated as the same command.
+
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </box>
 
