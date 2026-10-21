@@ -52,6 +52,7 @@
         "common-classes": "Common classes",
         "implementation": "Implementation",
         "completing-a-follow-up": "Completing a follow-up",
+        "viewing-due-follow-ups": "Viewing due follow-ups",
         "documentation-logging-testing-dev-ops": "Documentation, logging, testing, dev-ops",
         "appendix-requirements": "Appendix: Requirements",
         "product-scope": "Product scope",
@@ -66,6 +67,7 @@
         "adding-a-contact-with-a-follow-up-date": "Adding a contact with a follow-up date",
         "editing-a-contact": "Editing a contact",
         "completing-a-follow-up-2": "Completing a follow-up",
+        "viewing-follow-ups-that-are-due": "Viewing follow-ups that are due",
         "saving-data": "Saving data"
       },
       "headingKeywords": {}
@@ -120,6 +122,7 @@
         "finding-contacts-by-name-find": "Finding contacts by name: find",
         "deleting-a-contact-delete": "Deleting a contact: delete",
         "completing-a-follow-up-done": "Completing a follow-up: done",
+        "viewing-follow-ups-that-are-due-due": "Viewing follow-ups that are due: due",
         "clearing-all-contacts-clear": "Clearing all contacts: clear",
         "exiting-the-program-exit": "Exiting the program: exit",
         "saving-the-data": "Saving the data",
