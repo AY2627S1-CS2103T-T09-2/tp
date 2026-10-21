@@ -26,6 +26,14 @@ public class NameTest {
     }
 
     @Test
+    public void constructor_decomposedUnicode_normalizesToNfc() {
+        Name decomposedName = new Name("Jose\u0301 Núñez");
+
+        assertEquals("José Núñez", decomposedName.fullName);
+        assertEquals(new Name("José Núñez"), decomposedName);
+    }
+
+    @Test
     public void isValidName() {
         // null name
         assertThrows(NullPointerException.class, () -> Name.isValidName(null));
@@ -51,6 +59,7 @@ public class NameTest {
         assertTrue(Name.isValidName("Raj s/o Kumar"));
         assertTrue(Name.isValidName("Aisha d/o Rahman"));
         assertTrue(Name.isValidName("José Núñez"));
+        assertTrue(Name.isValidName("Jose\u0301 Núñez"));
     }
 
     @Test
