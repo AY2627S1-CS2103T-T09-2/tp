@@ -11,9 +11,14 @@ Class UiManager
 Class MainWindow
 
 Class HelpWindow {
-    + USERGUIDE_URL : String
-    - copyUrl() : void
+    + {static} USERGUIDE_URL : String
+    + show() : void
+    + hide() : void
+    + isShowing() : boolean
+    + focus() : void
 }
+
+show HelpWindow members
 
 Class ResultDisplay
 Class PersonListPanel
