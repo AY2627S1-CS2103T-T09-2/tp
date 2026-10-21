@@ -158,7 +158,43 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 ## **Implementation**
 
-This section will describe noteworthy details of how Easy-Insurance features are implemented, starting with the follow-up and status features once their designs settle.
+### Completing a follow-up
+
+The `done INDEX` command clears the pending follow-up of the contact at the specified index in the currently
+displayed list. It preserves the contact's name, phone, email, address, status and tags.
+
+The sequence diagram below shows a successful `done 1` command when the first displayed contact has a pending
+follow-up. Individual field getters and the internal calls within `Model` and `Storage` are omitted for clarity.
+
+<puml src="diagrams/DoneSequenceDiagram.puml" alt="Completing a pending follow-up" />
+
+1. `LogicManager` passes the command text to `CommandInputParser`, which creates a `DoneCommandParser`.
+2. `DoneCommandParser` validates the argument using `ParserUtil.parseIndex` and creates a `DoneCommand` with
+   the resulting index. The command is returned to `LogicManager` for execution.
+3. `DoneCommand` obtains the currently displayed contacts from `Model`, checks the index and selects the
+   contact. It then checks that the selected contact has a pending follow-up.
+4. The command constructs a replacement `Person`, copying the other contact details and setting the
+   follow-up to `Optional.empty()`. It calls `Model.setPerson` to replace the original contact in memory.
+5. The command returns a `CommandResult` containing `Marked follow-up for <name> as completed.`.
+   `LogicManager` obtains the updated address book from `Model` and passes it to `Storage.saveAddressBook`.
+   After the save succeeds, `LogicManager` returns the result to its caller.
+
+`DoneCommand` interacts with the `Model` interface to update the contact. `LogicManager` coordinates saving
+through the `Storage` interface; the model does not call storage directly.
+
+#### Unsuccessful outcomes
+
+* An invalid index argument, such as a missing, zero, negative or non-numeric index, causes a `ParseException`.
+* A positive index outside the currently displayed list causes a `CommandException`.
+* A contact without a pending follow-up causes a `CommandException` with the message
+  `<name> does not have a pending follow-up.`.
+
+These validation failures leave the contact unchanged. Execution stops before `Model.setPerson` and
+`Storage.saveAddressBook` are called.
+
+If saving fails with an `IOException`, `LogicManager` throws a `CommandException`.
+The follow-up has already been cleared in memory and is not rolled back.
+The change may not have been saved to disk.
 
 ## **Documentation, logging, testing, dev-ops**
 
