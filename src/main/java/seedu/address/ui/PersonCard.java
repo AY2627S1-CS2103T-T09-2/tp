@@ -17,6 +17,10 @@ import seedu.address.model.person.Person;
 public class PersonCard extends UiPart<Region> {
 
     private static final String FXML = "PersonListCard.fxml";
+    private static final String FOLLOW_UP_LABEL_PREFIX = "Follow-up: ";
+    private static final String NO_FOLLOW_UP_TEXT = "None";
+    private static final String OVERDUE_SUFFIX = " (overdue)";
+    private static final String OVERDUE_STYLE_CLASS = "follow_up_overdue";
 
     /**
      * Note: Certain keywords such as "location" and "resources" are reserved keywords in JavaFX.
@@ -60,7 +64,12 @@ public class PersonCard extends UiPart<Region> {
         email.setText(person.getEmail().value);
         status.setText(person.getStatus().name());
         status.getStyleClass().add("status_" + person.getStatus().name().toLowerCase(Locale.ROOT));
-        followUp.setText("Follow-up: " + person.getFollowUp().map(FollowUp::toString).orElse("None"));
+        String followUpDate = person.getFollowUp().map(FollowUp::toString).orElse(NO_FOLLOW_UP_TEXT);
+        boolean isFollowUpOverdue = person.getFollowUp().map(FollowUp::isPast).orElse(false);
+        followUp.setText(FOLLOW_UP_LABEL_PREFIX + followUpDate + (isFollowUpOverdue ? OVERDUE_SUFFIX : ""));
+        if (isFollowUpOverdue) {
+            followUp.getStyleClass().add(OVERDUE_STYLE_CLASS);
+        }
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
                 .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));

@@ -78,15 +78,31 @@ public class FollowUp {
     }
 
     /**
+     * Returns true if this follow-up date is on or before the given date.
+     */
+    public boolean isOnOrBefore(LocalDate date) {
+        requireNonNull(date);
+        return !value.isAfter(date);
+    }
+
+    /**
      * Returns true if this follow-up date is before today.
      */
     public boolean isPast() {
         return isBefore(LocalDate.now());
     }
 
+    /**
+     * Returns the given date in the DD-MM-YYYY format used for follow-up dates.
+     */
+    public static String format(LocalDate date) {
+        requireNonNull(date);
+        return date.format(FORMATTER);
+    }
+
     @Override
     public String toString() {
-        return value.format(FORMATTER);
+        return format(value);
     }
 
     @Override

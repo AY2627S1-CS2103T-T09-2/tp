@@ -200,6 +200,30 @@ If saving fails with an `IOException`, `LogicManager` throws a `CommandException
 The follow-up has already been cleared in memory and is not rolled back.
 The change may not have been saved to disk.
 
+### Viewing due follow-ups
+
+`due [DAYS]` shows contacts whose follow-up date is on or before today plus `DAYS`, earliest first.
+
+* `DueCommandParser` accepts no argument (0 days) or a whole number from 0 to 365, so the cutoff date can never overflow.
+* `DueCommand` works out the cutoff from a `Clock`. The app passes the system clock, and tests pass a fixed one, so the tests do not depend on the real date.
+* `FollowUpDueByPredicate` keeps contacts that have a follow-up on or before the cutoff. Contacts without a follow-up are left out.
+* `Model#updateFilteredPersonList(Predicate, Comparator)` filters and sorts the displayed list in one step. `ModelManager` wraps its `FilteredList` in a `SortedList`, and `getFilteredPersonList()` returns the sorted view, so index-based commands such as `done 1` act on the order the user sees.
+* The one-argument `updateFilteredPersonList(Predicate)` clears the comparator, so `list`, `find` and every command that resets the list go back to the stored order.
+
+The sequence diagram below shows how `due 7` is executed.
+
+<puml src="diagrams/DueSequenceDiagram.puml" alt="Interactions inside the Logic and Model components for the `due 7` command" />
+
+<box type="info" seamless>
+
+**Note:** The lifeline for `DueCommandParser` should end at the destroy marker (X) but due to a limitation of PlantUML, the lifeline continues till the end of diagram.
+</box>
+
+**Design considerations:**
+
+* **Sorting the displayed list (current choice):** the stored order is unchanged and only the view is sorted, so the data file stays the same and `list` restores the usual order.
+* **Sorting the stored contacts (alternative):** simpler to display, but it would permanently reorder the data file every time `due` is run.
+
 ## **Documentation, logging, testing, dev-ops**
 
 * [Documentation guide](Documentation.md)
@@ -608,6 +632,28 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: Close the app, relaunch it, and run `find Followup`.<br>
       Expected: The contact still shows `Follow-up: None`, and all its other details remain unchanged.
+
+### Viewing follow-ups that are due
+
+1. Listing due follow-ups in date order
+
+   1. Prerequisites: Add three contacts with follow-ups, one overdue, one today and one in 3 days. For example, if today is 21-10-2026:<br>
+      `add n/Due Past p/91110001 e/duepast@example.com a/1 Test Road f/01-10-2026`<br>
+      `add n/Due Today p/91110002 e/duetoday@example.com a/2 Test Road f/21-10-2026`<br>
+      `add n/Due Soon p/91110003 e/duesoon@example.com a/3 Test Road f/24-10-2026`
+
+   1. Test case: `due`<br>
+      Expected: `Due Past` then `Due Today` are shown, plus any other contact due by today. `Due Soon` is not shown.
+      The result shows `N follow-ups due by 21-10-2026.` The `Due Past` card shows its date in red with `(overdue)`.
+
+   1. Test case: `due 3`<br>
+      Expected: `Due Soon` is now included, after the other two.
+
+   1. Test case: `due` followed by `done 1`<br>
+      Expected: The earliest follow-up in the sorted list is completed.
+
+   1. Other incorrect commands to try: `due -1`, `due 366`, `due abc`, `due 7 days`<br>
+      Expected: No change to the list. Error: `Number of days must be a whole number from 0 to 365, e.g. due 7`
 
 ### Saving data
 

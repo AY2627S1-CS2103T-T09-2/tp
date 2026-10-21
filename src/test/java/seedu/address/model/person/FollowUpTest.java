@@ -76,6 +76,22 @@ public class FollowUpTest {
     }
 
     @Test
+    public void isOnOrBefore() {
+        FollowUp followUp = new FollowUp("20-09-2026");
+
+        assertTrue(followUp.isOnOrBefore(LocalDate.of(2026, 9, 21))); // day after
+        assertTrue(followUp.isOnOrBefore(LocalDate.of(2026, 9, 20))); // same day
+        assertFalse(followUp.isOnOrBefore(LocalDate.of(2026, 9, 19))); // day before
+        assertThrows(NullPointerException.class, () -> followUp.isOnOrBefore(null));
+    }
+
+    @Test
+    public void format() {
+        assertEquals("05-01-2027", FollowUp.format(LocalDate.of(2027, 1, 5)));
+        assertThrows(NullPointerException.class, () -> FollowUp.format(null));
+    }
+
+    @Test
     public void isPast() {
         LocalDate today = LocalDate.now();
 
@@ -111,15 +127,19 @@ public class FollowUpTest {
     }
 
     @Test
-    public void hasValidFormat_and_isRealDate() {
-        assertTrue(FollowUp.hasValidFormat("31-02-2026"));
+    public void hasValidFormat() {
+        assertTrue(FollowUp.hasValidFormat("31-02-2026")); // right shape, impossible date
+        assertFalse(FollowUp.hasValidFormat("2026-02-28")); // year first
+    }
+
+    @Test
+    public void isRealDate() {
         assertFalse(FollowUp.isRealDate("31-02-2026"));
-        assertFalse(FollowUp.hasValidFormat("2026-02-28"));
         assertTrue(FollowUp.isRealDate("28-02-2026"));
     }
 
     @Test
-    public void getPastDateWarning_containsDate() {
+    public void getPastDateWarning_pastDate_returnsWarningWithDate() {
         assertEquals("\nNote: 01-01-2020 is in the past; it was saved anyway.",
                 new FollowUp("01-01-2020").getPastDateWarning());
     }
