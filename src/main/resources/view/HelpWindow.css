@@ -7,6 +7,11 @@
     -fx-font-size: 12px;
 }
 
+.command-guide-cell {
+    -fx-wrap-text: true;
+    -fx-min-width: 0;
+}
+
 .command-guide-column-heading {
     -fx-font-weight: bold;
 }

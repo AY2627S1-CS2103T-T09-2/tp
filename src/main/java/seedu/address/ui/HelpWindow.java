@@ -73,8 +73,10 @@ public class HelpWindow extends UiPart<Stage> {
      */
     private void fitToScreen() {
         Stage stage = getRoot();
-        double width = stage.getWidth() > 0 ? stage.getWidth() : DEFAULT_WIDTH;
-        double height = stage.getHeight() > 0 ? stage.getHeight() : DEFAULT_HEIGHT;
+        double width = stage.getWidth();
+        double height = stage.getHeight();
+        width = Double.isNaN(width) || width <= 0 ? DEFAULT_WIDTH : width;
+        height = Double.isNaN(height) || height <= 0 ? DEFAULT_HEIGHT : height;
         Screen screen = Screen.getPrimary();
 
         if (!Double.isNaN(stage.getX()) && !Double.isNaN(stage.getY())) {
