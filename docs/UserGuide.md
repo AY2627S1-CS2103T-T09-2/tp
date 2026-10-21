@@ -35,7 +35,7 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
 
-   * `clear` : Deletes all contacts.
+   * `clear confirm` : Deletes all contacts after confirmation.
 
    * `exit` : Exits the app.
 
