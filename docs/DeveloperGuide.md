@@ -192,6 +192,10 @@ through the `Storage` interface; the model does not call storage directly.
 These validation failures leave the contact unchanged. Execution stops before `Model.setPerson` and
 `Storage.saveAddressBook` are called.
 
+If saving fails with an `IOException`, `LogicManager` throws a `CommandException`.
+The follow-up has already been cleared in memory and is not rolled back.
+The change may not have been saved to disk.
+
 ## **Documentation, logging, testing, dev-ops**
 
 * [Documentation guide](Documentation.md)

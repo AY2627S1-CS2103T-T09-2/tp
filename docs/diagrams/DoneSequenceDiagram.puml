@@ -7,6 +7,7 @@ participant ":LogicManager" as LogicManager LOGIC_COLOR
 participant ":CommandInputParser" as CommandInputParser LOGIC_COLOR
 participant ":DoneCommandParser" as DoneCommandParser LOGIC_COLOR
 participant "d:DoneCommand" as DoneCommand LOGIC_COLOR
+participant "r:CommandResult" as CommandResult LOGIC_COLOR
 end box
 
 box Model MODEL_COLOR_T1
@@ -45,6 +46,8 @@ deactivate DoneCommand
 
 DoneCommandParser --> CommandInputParser : d
 deactivate DoneCommandParser
+DoneCommandParser -[hidden]-> CommandInputParser
+destroy DoneCommandParser
 CommandInputParser --> LogicManager : d
 deactivate CommandInputParser
 
@@ -72,10 +75,11 @@ activate Model
 Model --> DoneCommand
 deactivate Model
 
-note right of DoneCommand
-Construct r:CommandResult with the
-follow-up completion message.
-end note
+create CommandResult
+DoneCommand -> CommandResult : CommandResult(message)
+activate CommandResult
+CommandResult --> DoneCommand
+deactivate CommandResult
 
 DoneCommand --> LogicManager : r
 deactivate DoneCommand
