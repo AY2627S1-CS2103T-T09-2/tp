@@ -35,7 +35,7 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
 
-   * `clear` : Deletes all contacts.
+   * `clear confirm` : Deletes all contacts after confirmation.
 
    * `exit` : Exits the app.
 
@@ -61,10 +61,19 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* `help`, `list`, `clear`, and `exit` accept no parameters.<br>
+* `help` and `exit` accept no parameters.<br>
   Extra parameters are rejected with an error naming the command.<br>
   For example, `clear 123` shows `The clear command does not accept additional parameters.`
   and leaves all contacts unchanged.
+
+* `clear` accepts either no arguments or exactly `confirm`.
+  Other parameters are rejected with an error naming the command.
+  
+* `list` accepts optional `st/STATUS` and `t/TAG` filters.
+  Each filter may appear at most once.
+
+* Command words are case-insensitive.
+  For example, `list`, `LIST`, and `LiSt` are treated as the same command.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </box>
@@ -88,6 +97,7 @@ Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DA
 <box type="tip" seamless>
 
 **Status:** `st/STATUS` is optional and case-insensitive. `PROSPECT` means a potential client, `CLIENT` means a policyholder, and `INACTIVE` means a contact no longer being pursued. The default is `PROSPECT`.
+The contact list shows blue, green, and grey badges respectively for these statuses.
 </box>
 
 <box type="tip" seamless>
@@ -111,15 +121,35 @@ shows that contact's name and phone number.
 Examples:
 * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
 * `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT t/referral`
-* `add n/Sarah Lim p/92345678 e/sarah@example.com a/10 Tampines Street 1 st/CLIENT f/25-12-2026`
+* `add n/Ravi Kumar p/92345678 e/ravi@example.com a/10 Tampines Street 1 st/CLIENT f/25-12-2026`
+
+### Listing contacts: `list`
+
+Shows all contacts, or filters contacts by status, tag, or both.
+
+Format: `list [st/STATUS] [t/TAG]`
 
 Known issue: names containing `a/l` are interpreted as an address prefix by the command parser.
 
-### Listing all contacts: `list`
+* Plain `list` removes the current filter and shows all contacts.
+* `st/STATUS` accepts `PROSPECT`, `CLIENT`, or `INACTIVE`, ignoring case.
+* `t/TAG` matches a complete tag name, ignoring case.
+  For example, `t/REFERRAL` matches the tag `referral`, but `t/ref` does not.
+* When both filters are supplied, a contact must match both.
+* Filters may appear in either order.
+* Each filter may appear at most once, and its value cannot be blank.
+* Invalid filter values and unrelated arguments are rejected.
+* A filtered result reports the number of matching contacts.
+  If no contacts match, the displayed list is empty.
+* Each new `list` command replaces the previous filter.
 
-Shows a list of all contacts in Easy-Insurance, with each contact's status.
+Examples:
 
-Format: `list`
+* `list` shows all contacts and reports `Listed all contacts.`
+* `list st/CLIENT` shows only clients.
+* `list t/referral` shows contacts tagged `referral`, regardless of the tag's case.
+* `list st/CLIENT t/referral` shows clients with the referral tag.
+* `list t/REFERRAL st/client` applies the same combined filter.
 
 ### Editing a contact: `edit`
 
@@ -171,9 +201,9 @@ Format: `delete INDEX`
 
 Examples:
 * `list` followed by `delete 2` deletes the 2nd contact in Easy-Insurance.
-* `find Betsy` followed by `delete 1` deletes the 1st contact in the results of the `find` command.
+* `find Priya` followed by `delete 1` deletes the 1st contact in the results of the `find` command.
 
-The result shows the deleted contact's name, for example `Deleted contact: Betsy Crowe`.
+The result shows the deleted contact's name, for example `Deleted contact: Priya Nair`.
 
 ### Completing a follow-up: `done`
 
@@ -202,9 +232,19 @@ Examples:
 
 ### Clearing all contacts: `clear`
 
-Removes every contact from Easy-Insurance. There is no confirmation step, so use it with care.
+Requests confirmation before removing all contacts from Easy-Insurance.
 
 Format: `clear`
+
+* `clear` does not remove any contacts immediately.
+* It shows how many contacts would be deleted and asks you to type `clear confirm`.
+* `clear confirm` removes all contacts from Easy-Insurance.
+* Any other additional parameter is rejected.
+
+Examples:
+
+* `clear` shows `This deletes all N contacts. Type 'clear confirm' to proceed.`
+* `clear confirm` clears all contacts.
 
 ### Exiting the program: `exit`
 
@@ -214,16 +254,16 @@ Format: `exit`
 
 ### Saving the data
 
-Easy-Insurance automatically saves data after every command. You do not need to save manually.
+Easy-Insurance saves your data automatically after every successful command. You do not need to save manually.
 
 ### Editing the data file
 
-Easy-Insurance data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
+Easy-Insurance data is saved automatically as a JSON file `data/addressbook.json`, inside the folder you run the app from. If you follow the Quick start, that is your home folder. Advanced users are welcome to update data directly by editing that data file.
 
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, Easy-Insurance starts with an empty contact list at the next run. The invalid file remains on disk until you run a command (Easy-Insurance saves after every command). Still, we recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, Easy-Insurance copies it to `addressbook.json.bak` in the same `data` folder and then starts with an empty contact list. The invalid `addressbook.json` is overwritten after your next successful command, but the `.bak` copy is kept. To recover, close the app, fix the `.bak` file and rename it back to `addressbook.json`. A later backup replaces the previous `.bak` file, so we still recommend keeping your own copy before editing.<br>
 Two contacts whose names differ only in case or extra spaces also make the data file invalid and cause it to load as an empty contact list.<br>
 Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
@@ -249,11 +289,11 @@ Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...` <br> e.g., `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT f/25-12-2026 t/referral`
-**Clear**  | `clear`
+**Clear**  | `clear` to request confirmation<br>`clear confirm` to clear all contacts
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...`<br> e.g., `edit 2 n/James Lee st/CLIENT f/25-12-2026`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
-**List**   | `list`
+**List**   | `list [st/STATUS] [t/TAG]`<br> e.g., `list st/CLIENT t/referral`
 **Help**   | `help`
 **Exit**   | `exit`

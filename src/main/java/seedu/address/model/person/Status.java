@@ -13,6 +13,8 @@ public enum Status {
     CLIENT,
     INACTIVE;
 
+    public static final Status DEFAULT = PROSPECT;
+
     public static final String MESSAGE_CONSTRAINTS =
             "Status must be one of: PROSPECT, CLIENT, INACTIVE.";
 

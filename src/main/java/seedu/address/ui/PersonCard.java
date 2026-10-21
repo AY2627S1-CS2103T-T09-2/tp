@@ -1,6 +1,7 @@
 package seedu.address.ui;
 
 import java.util.Comparator;
+import java.util.Locale;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -58,6 +59,7 @@ public class PersonCard extends UiPart<Region> {
         address.setText(person.getAddress().value);
         email.setText(person.getEmail().value);
         status.setText(person.getStatus().name());
+        status.getStyleClass().add("status_" + person.getStatus().name().toLowerCase(Locale.ROOT));
         followUp.setText("Follow-up: " + person.getFollowUp().map(FollowUp::toString).orElse("None"));
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))

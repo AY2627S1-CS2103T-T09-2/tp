@@ -1,19 +1,103 @@
-#copyButton, #helpMessage {
-    -fx-text-fill: white;
+#helpWindowRoot {
+    -fx-background-color: #f4f6f8;
+    -fx-padding: 20;
+    -fx-font-family: "System";
+    -fx-font-size: 14px;
+}
+
+.command-guide-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #20364b;
+}
+
+.command-guide-hint {
+    -fx-font-size: 13px;
+    -fx-text-fill: #526173;
+}
+
+#commandGuideScrollPane {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+#commandGuideScrollPane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.command-guide-table-heading {
+    -fx-background-color: #e4eaf0;
+    -fx-background-radius: 6 6 0 0;
+    -fx-padding: 12 16;
+}
+
+.command-guide-row {
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #e1e7ed transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 14 16;
+}
+
+.command-guide-cell {
+    -fx-wrap-text: true;
+    -fx-min-width: 0;
+    -fx-alignment: top-left;
+    -fx-text-fill: #263648;
+    -fx-line-spacing: 2;
+}
+
+.command-guide-column-heading {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #40546a;
+}
+
+.command-guide-name {
+    -fx-font-family: "Monospaced";
+    -fx-font-weight: bold;
+    -fx-text-fill: #203f59;
+}
+
+.command-guide-code {
+    -fx-font-family: "Monospaced";
+    -fx-font-size: 14px;
+}
+
+.command-guide-caption {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #526173;
+}
+
+.command-guide-compact {
+    -fx-padding: 16;
+}
+
+.command-guide-footer {
+    -fx-padding: 0 2;
 }
 
 #copyButton {
-    -fx-background-color: dimgray;
+    -fx-background-color: #294e6b;
+    -fx-background-radius: 4;
+    -fx-border-color: transparent;
+    -fx-border-radius: 4;
+    -fx-border-width: 2;
+    -fx-padding: 7 12;
+    -fx-font-size: 13px;
+    -fx-text-fill: white;
+    -fx-cursor: hand;
 }
 
 #copyButton:hover {
-    -fx-background-color: gray;
+    -fx-background-color: #365f7e;
 }
 
 #copyButton:armed {
-    -fx-background-color: darkgray;
+    -fx-background-color: #203f59;
 }
 
-#helpMessageContainer {
-    -fx-background-color: derive(#1d1d1d, 20%);
+#copyButton:focused {
+    -fx-border-color: #86b6d8;
 }
