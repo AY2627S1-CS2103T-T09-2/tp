@@ -48,6 +48,14 @@ public interface Storage {
     Optional<ReadOnlyAddressBook> readAddressBook() throws DataLoadingException;
 
     /**
+     * Same as {@link #readAddressBook()}, but backs up a data file that exists and cannot be loaded,
+     * so that it is not lost when the app later saves over it.
+     *
+     * @throws DataLoadingException if loading the data from storage failed.
+     */
+    Optional<ReadOnlyAddressBook> readAddressBookWithBackup() throws DataLoadingException;
+
+    /**
      * Saves the given {@link ReadOnlyAddressBook} to the storage.
      * @param addressBook cannot be null.
      * @throws IOException if there was any problem writing to the file.
