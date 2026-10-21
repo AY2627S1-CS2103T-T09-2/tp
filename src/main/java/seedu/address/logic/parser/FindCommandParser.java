@@ -1,12 +1,16 @@
 package seedu.address.logic.parser;
 
 import static seedu.address.logic.commands.FindCommand.MESSAGE_EMPTY_KEYWORD;
+import static seedu.address.logic.commands.FindCommand.MESSAGE_EMPTY_PHONE_KEYWORD;
+import static seedu.address.logic.commands.FindCommand.MESSAGE_INVALID_PHONE_KEYWORD;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
 
 import java.util.List;
 
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
+import seedu.address.model.person.PhoneContainsKeywordPredicate;
 
 /**
  * Parses input arguments and creates a new FindCommand object
@@ -22,6 +26,22 @@ public class FindCommandParser implements Parser<FindCommand> {
         String trimmedArgs = args.trim();
         if (trimmedArgs.isEmpty()) {
             throw new ParseException(MESSAGE_EMPTY_KEYWORD);
+        }
+
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(" " + args, PREFIX_PHONE);
+        if (argMultimap.getValue(PREFIX_PHONE).isPresent()) {
+            argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_PHONE);
+            if (!argMultimap.getPreamble().isEmpty()) {
+                throw new ParseException(MESSAGE_INVALID_PHONE_KEYWORD);
+            }
+            String phoneKeyword = argMultimap.getValue(PREFIX_PHONE).get();
+            if (phoneKeyword.isEmpty()) {
+                throw new ParseException(MESSAGE_EMPTY_PHONE_KEYWORD);
+            }
+            if (!phoneKeyword.matches("\\d+")) {
+                throw new ParseException(MESSAGE_INVALID_PHONE_KEYWORD);
+            }
+            return new FindCommand(new PhoneContainsKeywordPredicate(phoneKeyword));
         }
 
         String[] nameKeywords = trimmedArgs.split("\\s+");

@@ -123,6 +123,16 @@ public class StringUtilTest {
         assertTrue(StringUtil.containsWordIgnoreCase("AAA bBb ccc  bbb", "bbB"));
     }
 
+    //---------------- Tests for containsWordStartingWithIgnoreCase --------------------------
+
+    @Test
+    public void containsWordStartingWithIgnoreCase_validInputs_correctResult() {
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Alice Tan", "ta"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Alice Tan", "ALI"));
+        assertFalse(StringUtil.containsWordStartingWithIgnoreCase("Alice Tan", "lic"));
+        assertFalse(StringUtil.containsWordStartingWithIgnoreCase("Alice Tan", "tanley"));
+    }
+
     //---------------- Tests for getDetails --------------------------------------
 
     /*

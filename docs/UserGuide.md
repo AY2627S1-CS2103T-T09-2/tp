@@ -173,17 +173,17 @@ Examples:
 *  `edit 1 st/CLIENT f/25-12-2026` Changes the 1st contact's status and follow-up date.
 *  `edit 1 f/` Clears the 1st contact's follow-up date.
 
-### Finding contacts by name: `find`
+### Finding contacts by name or phone: `find`
 
-Finds contacts whose names contain any of the given keywords.
+Finds contacts whose names start with any of the given keywords, or whose phone numbers contain the given digits.
 
-Format: `find KEYWORD [MORE_KEYWORDS]`
+Format: `find KEYWORD [MORE_KEYWORDS]` or `find p/PHONE_DIGITS`
 
-* The search is case-insensitive; for example, `hans` matches `Hans`.
-* Only complete words match; for example, `Han` does not match `Hans`.
+* Name searches are case-insensitive and match the start of any word; for example, `han` matches `Hans`.
 * Any keyword may match; for example, `find Hans Bo` returns contacts whose names contain either `Hans` or `Bo`.
-* The search considers contact names only.
+* Phone searches match contacts whose phone number contains the supplied digits; for example, `find p/9123`.
 * If no keyword is provided, Easy-Insurance shows: `Please enter at least one name keyword to search for. Example: find alice tan`.
+* If no phone digits are provided, Easy-Insurance shows: `Please enter at least one phone digit to search for. Example: find p/9123`.
 
 Examples:
 * `find John` returns `john` and `John Doe`
@@ -317,7 +317,7 @@ Action     | Format, Examples
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Due**    | `due [DAYS]`<br> e.g., `due 7`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...`<br> e.g., `edit 2 n/James Lee st/CLIENT f/25-12-2026`
-**Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
+**Find**   | `find KEYWORD [MORE_KEYWORDS]` or `find p/PHONE_DIGITS`<br> e.g., `find James Jake` or `find p/9123`
 **List**   | `list [st/STATUS] [t/TAG]`<br> e.g., `list st/CLIENT t/referral`
 **Help**   | `help`
 **Exit**   | `exit`
