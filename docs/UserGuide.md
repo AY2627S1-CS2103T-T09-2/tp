@@ -111,7 +111,7 @@ Names with extra spaces are saved with single spaces. A contact cannot be added 
 Examples:
 * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
 * `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT t/referral`
-* `add n/Sarah Lim p/92345678 e/sarah@example.com a/10 Tampines Street 1 st/CLIENT f/25-12-2026`
+* `add n/Ravi Kumar p/92345678 e/ravi@example.com a/10 Tampines Street 1 st/CLIENT f/25-12-2026`
 
 ### Listing contacts: `list`
 
@@ -189,9 +189,9 @@ Format: `delete INDEX`
 
 Examples:
 * `list` followed by `delete 2` deletes the 2nd contact in Easy-Insurance.
-* `find Betsy` followed by `delete 1` deletes the 1st contact in the results of the `find` command.
+* `find Priya` followed by `delete 1` deletes the 1st contact in the results of the `find` command.
 
-The result shows the deleted contact's name, for example `Deleted contact: Betsy Crowe`.
+The result shows the deleted contact's name, for example `Deleted contact: Priya Nair`.
 
 ### Completing a follow-up: `done`
 
