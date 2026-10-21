@@ -354,7 +354,23 @@
 .status_label {
     -fx-text-fill: white;
     -fx-background-color: #3e7b91;
+    -fx-opacity: 1;
     -fx-padding: 2 6 2 6;
     -fx-background-radius: 3;
     -fx-font-size: 11;
+}
+
+.status_label.status_prospect {
+    -fx-background-color: #176b91;
+    -fx-text-fill: white;
+}
+
+.status_label.status_client {
+    -fx-background-color: #276c3c;
+    -fx-text-fill: white;
+}
+
+.status_label.status_inactive {
+    -fx-background-color: #665b68;
+    -fx-text-fill: white;
 }

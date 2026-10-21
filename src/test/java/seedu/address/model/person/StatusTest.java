@@ -10,6 +10,11 @@ import org.junit.jupiter.api.Test;
 public class StatusTest {
 
     @Test
+    public void default_isProspect() {
+        assertEquals(Status.PROSPECT, Status.DEFAULT);
+    }
+
+    @Test
     public void isValidStatus() {
         assertThrows(NullPointerException.class, () -> Status.isValidStatus(null));
 
