@@ -59,6 +59,13 @@ public class AddCommandParserTest {
     private AddCommandParser parser = new AddCommandParser();
 
     @Test
+    public void parse_statusOmitted_usesDefault() {
+        Person expectedPerson = new PersonBuilder(AMY).withTags().withStatus(Status.DEFAULT.name()).build();
+        assertParseSuccess(parser, NAME_DESC_AMY + PHONE_DESC_AMY + EMAIL_DESC_AMY + ADDRESS_DESC_AMY,
+                new AddCommand(expectedPerson));
+    }
+
+    @Test
     public void parse_statusProvided_setsStatus() {
         Person expectedPerson = new PersonBuilder(AMY).withTags().withStatus("CLIENT").build();
         assertParseSuccess(parser, NAME_DESC_AMY + PHONE_DESC_AMY + EMAIL_DESC_AMY + ADDRESS_DESC_AMY

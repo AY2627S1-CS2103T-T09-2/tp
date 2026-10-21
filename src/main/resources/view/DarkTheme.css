@@ -354,6 +354,7 @@
 .status_label {
     -fx-text-fill: white;
     -fx-background-color: #3e7b91;
+    -fx-opacity: 1;
     -fx-padding: 2 6 2 6;
     -fx-background-radius: 3;
     -fx-font-size: 11;
