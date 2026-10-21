@@ -43,6 +43,7 @@ We are a team based in the [School of Computing, National University of Singapor
 [[github](https://github.com/pbez02)]
 
 * Role: Developer
+* Responsibilities: Project scheduling, UI and command usability
 
 ### Jovan Ong
 
