@@ -196,7 +196,7 @@ If saving fails with an `IOException`, `LogicManager` throws a `CommandException
 The follow-up has already been cleared in memory and is not rolled back.
 The change may not have been saved to disk.
 
-### Viewing due follow-ups: `due`
+### Viewing due follow-ups
 
 `due [DAYS]` shows contacts whose follow-up date is on or before today plus `DAYS`, earliest first.
 
