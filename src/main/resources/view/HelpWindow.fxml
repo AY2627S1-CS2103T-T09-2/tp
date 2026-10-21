@@ -151,6 +151,26 @@
 
                       <GridPane hgap="20.0" vgap="6.0" styleClass="command-guide-row">
                         <children>
+                          <Label text="due"
+                                 styleClass="command-guide-cell, command-guide-name"
+                                 maxWidth="Infinity" />
+                          <Label text="due [DAYS]"
+                                 styleClass="command-guide-cell, command-guide-code, command-guide-format"
+                                 maxWidth="Infinity" />
+                          <Label text="due 7"
+                                 styleClass="command-guide-cell, command-guide-code, command-guide-example"
+                                 maxWidth="Infinity" />
+                          <Label text="Format"
+                                 styleClass="command-guide-cell, command-guide-caption, command-guide-format"
+                                 visible="false" managed="false" />
+                          <Label text="Example"
+                                 styleClass="command-guide-cell, command-guide-caption, command-guide-example"
+                                 visible="false" managed="false" />
+                        </children>
+                      </GridPane>
+
+                      <GridPane hgap="20.0" vgap="6.0" styleClass="command-guide-row">
+                        <children>
                           <Label text="edit"
                                  styleClass="command-guide-cell, command-guide-name"
                                  maxWidth="Infinity" />
