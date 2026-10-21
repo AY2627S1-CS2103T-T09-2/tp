@@ -163,15 +163,36 @@ public class CommandInputParserTest {
     }
 
     @Test
+    public void parseCommand_commandWordCaseInsensitive_returnsCommand() throws ParseException {
+        assertTrue(parser.parseCommand("LIST") instanceof ListCommand);
+        assertTrue(parser.parseCommand("HeLp") instanceof HelpCommand);
+        assertTrue(parser.parseCommand("eXiT") instanceof ExitCommand);
+    }
+
+    @Test
+    public void parseCommand_caseInsensitiveCommandWord_preservesArguments() throws Exception {
+        Person person = new PersonBuilder().build();
+        String addCommand = PersonUtil.getAddCommand(person);
+        String upperCaseCommandWord = addCommand.replaceFirst("^add", "ADD");
+
+        AddCommand command = (AddCommand) parser.parseCommand(upperCaseCommandWord);
+
+        assertEquals(new AddCommand(person), command);
+    }
+
+    @Test
     public void parseCommand_unrecognisedInput_throwsParseException() {
         assertThrows(ParseException.class,
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, HelpCommand.MESSAGE_USAGE), ()
-                -> parser.parseCommand(""));
+                        -> parser.parseCommand(""));
     }
 
     @Test
     public void parseCommand_unknownCommand_throwsParseException() {
-        assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, ()
+        String expectedMessage = "Unknown command. Type help to see all commands.";
+
+        assertEquals(expectedMessage, MESSAGE_UNKNOWN_COMMAND);
+        assertThrows(ParseException.class, expectedMessage, ()
                 -> parser.parseCommand("unknownCommand"));
     }
 }
