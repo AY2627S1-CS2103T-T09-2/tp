@@ -51,7 +51,7 @@ public class AddCommandParser implements Parser<AddCommand> {
         Email email = ParserUtil.parseEmail(argMultimap.getValue(PREFIX_EMAIL).get());
         Address address = ParserUtil.parseAddress(argMultimap.getValue(PREFIX_ADDRESS).get());
         Status status = argMultimap.getValue(PREFIX_STATUS).isPresent()
-                ? ParserUtil.parseStatus(argMultimap.getValue(PREFIX_STATUS).get()) : Status.PROSPECT;
+                ? ParserUtil.parseStatus(argMultimap.getValue(PREFIX_STATUS).get()) : Status.DEFAULT;
         Set<Tag> tagList = ParserUtil.parseTags(argMultimap.getAllValues(PREFIX_TAG));
         Optional<FollowUp> followUp = argMultimap.getValue(PREFIX_FOLLOW_UP).isPresent()
                 ? Optional.of(ParserUtil.parseFollowUp(argMultimap.getValue(PREFIX_FOLLOW_UP).get()))

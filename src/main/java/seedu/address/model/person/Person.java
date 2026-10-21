@@ -33,7 +33,7 @@ public class Person {
      * Every field must be present and not null.
      */
     public Person(Name name, Phone phone, Email email, Address address, Set<Tag> tags) {
-        this(name, phone, email, address, Status.PROSPECT, tags, Optional.empty());
+        this(name, phone, email, address, Status.DEFAULT, tags, Optional.empty());
     }
 
     /**

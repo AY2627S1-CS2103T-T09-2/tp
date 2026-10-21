@@ -122,6 +122,10 @@ How the parsing works:
 
 <puml src="diagrams/ModelClassDiagram.puml" width="450" />
 
+`Status.DEFAULT` is `PROSPECT`. Each `Person` stores one status and optionally one follow-up date.
+`Name` accepts Unicode letters and common name punctuation after an initial letter; `Phone` accepts
+an optional leading plus sign and separators between at least three digits.
+
 
 The `Model` component,
 
