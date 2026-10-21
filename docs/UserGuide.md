@@ -61,11 +61,14 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* `help`, `clear`, and `exit` accept no parameters.<br>
+* `help` and `exit` accept no parameters.<br>
   Extra parameters are rejected with an error naming the command.<br>
   For example, `clear 123` shows `The clear command does not accept additional parameters.`
   and leaves all contacts unchanged.
 
+* `clear` accepts either no arguments or exactly `confirm`.
+  Other parameters are rejected with an error naming the command.
+  
 * `list` accepts optional `st/STATUS` and `t/TAG` filters.
   Each filter may appear at most once.
 
@@ -217,9 +220,19 @@ Examples:
 
 ### Clearing all contacts: `clear`
 
-Removes every contact from Easy-Insurance. There is no confirmation step, so use it with care.
+Requests confirmation before removing all contacts from Easy-Insurance.
 
 Format: `clear`
+
+* `clear` does not remove any contacts immediately.
+* It shows how many contacts would be deleted and asks you to type `clear confirm`.
+* `clear confirm` removes all contacts from Easy-Insurance.
+* Any other additional parameter is rejected.
+
+Examples:
+
+* `clear` shows `This deletes all N contacts. Type 'clear confirm' to proceed.`
+* `clear confirm` clears all contacts.
 
 ### Exiting the program: `exit`
 
@@ -264,7 +277,7 @@ Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...` <br> e.g., `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT f/25-12-2026 t/referral`
-**Clear**  | `clear`
+**Clear**  | `clear` to request confirmation<br>`clear confirm` to clear all contacts
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...`<br> e.g., `edit 2 n/James Lee st/CLIENT f/25-12-2026`
