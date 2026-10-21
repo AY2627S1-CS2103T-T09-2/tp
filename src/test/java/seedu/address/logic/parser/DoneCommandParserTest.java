@@ -3,6 +3,7 @@ package seedu.address.logic.parser;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
+import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_INDEX;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
@@ -32,11 +33,14 @@ public class DoneCommandParserTest {
 
     @Test
     public void parse_invalidArgs_throwsParseException() {
-        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, DoneCommand.MESSAGE_USAGE);
-        String[] invalidArgs = {"", "   ", "0", "-1", "+1", "abc", "1 extra", "1 2", "2147483648"};
+        String expectedMessage = MESSAGE_INVALID_INDEX;
+        String[] invalidArgs = {"0", "-1", "+1", "abc", "2147483648"};
 
         for (String args : invalidArgs) {
             assertParseFailure(parser, args, expectedMessage);
         }
+        String usageMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, DoneCommand.MESSAGE_USAGE);
+        assertParseFailure(parser, "", usageMessage);
+        assertParseFailure(parser, "1 extra", usageMessage);
     }
 }

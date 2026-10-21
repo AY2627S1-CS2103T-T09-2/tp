@@ -23,12 +23,15 @@ public class DoneCommandParser implements Parser<DoneCommand> {
     @Override
     public DoneCommand parse(String args) throws ParseException {
         requireNonNull(args);
+        String trimmedArgs = args.trim();
+        if (trimmedArgs.isEmpty() || trimmedArgs.matches(".*\\s+.*")) {
+            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, DoneCommand.MESSAGE_USAGE));
+        }
         try {
             Index index = ParserUtil.parseIndex(args);
             return new DoneCommand(index);
         } catch (ParseException exception) {
-            throw new ParseException(
-                    String.format(MESSAGE_INVALID_COMMAND_FORMAT, DoneCommand.MESSAGE_USAGE), exception);
+            throw exception;
         }
     }
 }

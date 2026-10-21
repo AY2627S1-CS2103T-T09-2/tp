@@ -91,7 +91,8 @@ public class DoneCommandTest {
         Index invalidIndex = Index.fromOneBased(model.getFilteredPersonList().size() + 1);
 
         assertCommandFailure(new DoneCommand(invalidIndex), model,
-                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+                Messages.getInvalidPersonDisplayedIndexMessage(invalidIndex.getOneBased(),
+                        model.getFilteredPersonList().size()));
     }
 
     @Test
@@ -99,7 +100,8 @@ public class DoneCommandTest {
         showPersonAtIndex(model, INDEX_FIRST_PERSON);
 
         assertCommandFailure(new DoneCommand(INDEX_SECOND_PERSON), model,
-                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+                Messages.getInvalidPersonDisplayedIndexMessage(INDEX_SECOND_PERSON.getOneBased(),
+                        model.getFilteredPersonList().size()));
     }
 
     @Test

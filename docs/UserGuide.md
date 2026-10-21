@@ -223,7 +223,7 @@ If the contact has no pending follow-up, the result is:
 `<name> does not have a pending follow-up.`
 
 For an index beyond the displayed list, the result is:
-`The contact index provided is invalid.`
+`There is no contact INDEX. The list shows N contacts.`
 
 Examples:
 

@@ -40,10 +40,15 @@ public class EditCommandParser implements Parser<EditCommand> {
 
         Index index;
 
+        String preamble = argMultimap.getPreamble();
+        if (preamble.isEmpty() || preamble.matches(".*\\s+.*")) {
+            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE));
+        }
+
         try {
-            index = ParserUtil.parseIndex(argMultimap.getPreamble());
+            index = ParserUtil.parseIndex(preamble);
         } catch (ParseException pe) {
-            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE), pe);
+            throw pe;
         }
 
         argMultimap.verifyNoDuplicatePrefixesFor(

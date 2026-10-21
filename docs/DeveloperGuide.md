@@ -545,10 +545,10 @@ testers are expected to do more *exploratory* testing.
       Expected: The first contact is removed from the list. The result shows `Deleted contact: ` followed by that contact's name.
 
    1. Test case: `delete 0`<br>
-      Expected: No contact is deleted. The result shows the invalid-command-format error with the delete usage.
+      Expected: No contact is deleted. The result shows `Index must be a positive integer.`
 
    1. Test case: `delete 99` (where 99 is larger than the list size)<br>
-      Expected: No contact is deleted. The result shows `The contact index provided is invalid.`
+      Expected: No contact is deleted. The result shows `There is no contact 99. The list shows N contacts.`
 
    1. Other incorrect delete commands to try: `delete`, `delete x`, `delete 1 2`<br>
       Expected: No contact is deleted. An error explains the problem.
@@ -621,10 +621,11 @@ testers are expected to do more *exploratory* testing.
       Expected: The result shows `Followup Test does not have a pending follow-up.` No contact details change.
 
    1. Test case: `done 2` while only the test contact is displayed.<br>
-      Expected: The result shows `The contact index provided is invalid.` No contact details change.
+      Expected: The result shows `There is no contact 2. The list shows 1 contact.` No contact details change.
 
    1. Other incorrect commands to try: `done`, `done 0`, `done x`, `done 1 extra`<br>
-      Expected: The result shows the invalid-command-format error with `done INDEX`. No contact details change.
+      Expected: `done 0` and `done x` show `Index must be a positive integer.` Other malformed forms show the
+      invalid-command-format error with `done INDEX`. No contact details change.
 
 1. Saving a completed follow-up
 
