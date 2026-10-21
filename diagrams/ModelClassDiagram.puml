@@ -13,13 +13,32 @@ Class ModelManager
 Class UserPrefs
 
 Class UniquePersonList
-Class Person
+Class Person {
+  - status : Status
+}
 Class Address
 Class Email
-Class Name
-Class Phone
-Class Status
-Class FollowUp
+Class Name {
+  + VALIDATION_REGEX : String
+  + isValidName(String) : boolean
+}
+Class Phone {
+  + VALIDATION_REGEX : String
+  + isValidPhone(String) : boolean
+}
+Enum Status {
+  PROSPECT
+  CLIENT
+  INACTIVE
+  + DEFAULT : Status
+}
+Class FollowUp {
+  + value : LocalDate
+  + isValidFollowUp(String) : boolean
+  + hasValidFormat(String) : boolean
+  + isRealDate(String) : boolean
+  + isPast() : boolean
+}
 Class Tag
 
 Class I #FFFFFF
@@ -55,4 +74,6 @@ Phone -[hidden]right-> Address
 Address -[hidden]right-> Email
 
 ModelManager --> "~* filtered" Person
+note bottom of Name : Starts with a Unicode letter; allows digits, spaces, - ' . , /
+note bottom of Phone : At least three digits; optional leading +; spaces and dashes between digits
 @enduml
