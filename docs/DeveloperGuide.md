@@ -105,7 +105,7 @@ How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to a `CommandInputParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
-1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
+1. The command can communicate with the `Model` when it is executed (e.g. to delete a contact).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
@@ -125,9 +125,9 @@ How the parsing works:
 
 The `Model` component,
 
-* stores the address book data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
+* stores the contact data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
-* stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
+* stores a `UserPrefs` object that represents the user's preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
 
@@ -146,7 +146,7 @@ The `Model` component,
 <puml src="diagrams/StorageClassDiagram.puml" width="550" />
 
 The `Storage` component,
-* can save both address book data and user preference data in JSON format, and read them back into corresponding objects.
+* can save both contact data and user preference data in JSON format, and read them back into corresponding objects.
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonAddressBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
@@ -255,7 +255,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 |----------|------------------------------------------|---------------------------------------------------------|-----------------------------------------------------------------------|
 | `* * *`  | new insurance agent                      | add a new prospect                                      | keep track of people I may want to follow up with                    |
 | `* * *`  | insurance agent                          | view my list of prospects and clients                   | see the people I am currently managing                               |
-| `* * *`  | insurance agent looking for a person     | search for a contact by name                            | quickly retrieve the person's information                            |
+| `* * *`  | insurance agent looking for a person     | search for a contact by name                            | quickly retrieve the contact's information                           |
 | `* * *`  | insurance agent                          | edit a contact's details                                | keep their information up to date when it changes                    |
 | `* * *`  | insurance agent                          | delete a contact                                        | remove people who no longer want to hear from me                     |
 | `* * *`  | insurance agent                          | set a contact's status to prospect, client or inactive  | tell at a glance who is still worth chasing                          |
@@ -265,7 +265,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* *`    | insurance agent                          | record when I last contacted someone                    | see who I have not spoken to in a while                              |
 | `* *`    | insurance agent planning my day          | see all follow-ups due today                            | know who to call before I start                                      |
 | `* *`    | insurance agent unfamiliar with CLI      | get a clear error message when I type a command wrongly | learn from the error and type it correctly next time                 |
-| `* *`    | insurance agent                          | filter my list by tag                                   | focus on prospects when planning outreach                            |
+| `* * *`  | insurance agent                          | filter my list by status                                | focus on prospects when planning outreach                            |
+| `* *`    | insurance agent                          | filter my list by tag                                   | reach everyone in one group, such as all referrals, at once          |
 | `* *`    | insurance agent with many contacts       | search by partial name or phone number                  | find someone when I only remember part of it                         |
 | `* *`    | insurance agent                          | see overdue follow-ups                                  | catch the people I missed                                            |
 | `* *`    | insurance agent                          | see follow-ups due this week                            | plan ahead when today is already full                                |
@@ -273,7 +274,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* *`    | insurance agent                          | record the policies a client has bought                 | avoid pitching what they already have                                |
 | `* *`    | insurance agent                          | see renewals due in the next month                      | plan retention calls early                                           |
 | `* *`    | insurance agent                          | sort contacts by how many times I met them              | identify prospects who are more engaged with me                      |
-| `* *`    | insurance agent                          | be warned when I add a duplicate                        | keep my list clean                                                   |
+| `* * *`  | insurance agent                          | be stopped from adding a contact whose name already exists | keep my list clean                                               |
 | `* *`    | insurance agent                          | be asked to confirm before deleting                     | avoid deleting someone by accident                                   |
 | `* *`    | insurance agent                          | undo my last change                                     | recover from a mistake quickly                                       |
 | `* *`    | insurance agent                          | see the contacts I added most recently                  | check what I keyed in after a busy day                               |
@@ -380,7 +381,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1. Agent views a contact with a pending follow-up.
 2. System shows the scheduled follow-up date.
 3. Agent requests to mark that follow-up as done.
-4. System records the follow-up as completed and shows the updated contact.
+4. System clears the follow-up and shows the updated contact.
 
    Use case ends.
 
@@ -433,10 +434,14 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Client**: A contact who has bought a policy from the agent.
 * **Inactive**: A contact the agent is no longer actively pursuing but keeps in the app.
 * **Follow-up**: The date on which the agent intends to next contact a prospect or client. It may be in the past, for example when recording a follow-up that already happened.
-* **Pending follow-up**: A follow-up that has not been marked as done.
+* **Pending follow-up**: A follow-up date that is still recorded on a contact. Marking it done removes the date.
 * **Duplicate contact**: A contact whose name matches an existing contact's name after ignoring letter case and extra spaces. Easy-Insurance refuses to add a duplicate.
 * **Index**: The number shown next to a contact in the currently displayed list. Commands such as `edit`, `delete` and `done` refer to contacts by index.
 * **Name keyword**: A non-empty, complete word used by `find` to match contact names, ignoring letter case. Partial-name matching is outside the initial version.
+* **Tag**: A short label made of letters and digits, such as `referral`, that the agent attaches to a contact. A contact can have any number of tags.
+* **Card**: The box in the contact list that shows one contact's details, including its status and follow-up date.
+* **CLI**: Command line interface. The agent types commands into the command box instead of clicking buttons.
+
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Appendix: Instructions for manual testing**
@@ -561,13 +566,13 @@ testers are expected to do more *exploratory* testing.
 1. Adding a contact with a past follow-up date
 
    1. Test case: `add n/Ben Ong p/93456789 e/ben@example.com a/5 Bishan Road f/01-01-2020`<br>
-      Expected: The contact is added. The result message ends with a note that `01-01-2020` is in the past.
+      Expected: The contact is added. The result message ends with `Note: 01-01-2020 is in the past; it was saved anyway.`
 
 1. Adding a contact with an impossible or badly formatted date
 
    1. Test case: `add n/Ann Lee p/94567890 e/ann@example.com a/1 Clementi Ave f/31-02-2026`<br>
       Expected: No contact is added. Error: `31-02-2026 is not a real date.`
-   1. Test case: `... f/2026-12-25`<br>
+   1. Test case: `add n/Ann Lee p/94567890 e/ann@example.com a/1 Clementi Ave f/2026-12-25`<br>
       Expected: No contact is added. Error: `Follow-up date must be in DD-MM-YYYY format, e.g. 25-12-2026.`
 
 ### Editing a contact
@@ -650,17 +655,17 @@ testers are expected to do more *exploratory* testing.
 
 1. Dealing with a missing data file
 
-   1. Close the app. Delete `data/addressbook.json` from the folder containing the JAR.
+   1. Close the app. Delete `data/addressbook.json` from the folder you ran the app from.
 
    1. Relaunch the app.<br>
-      Expected: The app starts with the sample contacts and recreates the data file on the next change.
+      Expected: The app starts with the sample contacts. The data file is created again after the next command that runs without an error, such as `list`.
 
 1. Dealing with a corrupted data file
 
    1. Close the app. Open `data/addressbook.json` and change one contact's `"status"` value to `"lead"`.
 
    1. Relaunch the app.<br>
-      Expected: The app starts with an empty contact list, because the file could not be read. Restoring the original value and relaunching brings the contacts back.
+      Expected: The app starts with an empty contact list, because the file could not be read. A copy of the invalid file is saved as `data/addressbook.json.bak`. Restoring the original value and relaunching brings the contacts back.
 
 1. Dealing with an older data file
 

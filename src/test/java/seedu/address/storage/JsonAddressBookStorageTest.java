@@ -2,6 +2,7 @@ package seedu.address.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.HOON;
@@ -9,8 +10,10 @@ import static seedu.address.testutil.TypicalPersons.IDA;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -106,5 +109,87 @@ public class JsonAddressBookStorageTest {
     @Test
     public void saveAddressBook_nullFilePath_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> saveAddressBook(new AddressBook(), null));
+    }
+
+    @Test
+    public void getBackupFilePath_dataFile_appendsBakSuffix() {
+        assertEquals(Paths.get("data", "addressbook.json.bak"),
+                JsonAddressBookStorage.getBackupFilePath(Paths.get("data", "addressbook.json")));
+    }
+
+    @Test
+    public void readAddressBookWithBackup_notJsonFormat_backupCreatedWithSameContent() throws Exception {
+        assertCorruptedFileBackedUp("notJsonFormatAddressBook.json");
+    }
+
+    @Test
+    public void readAddressBookWithBackup_invalidPerson_backupCreatedWithSameContent() throws Exception {
+        assertCorruptedFileBackedUp("invalidPersonAddressBook.json");
+    }
+
+    @Test
+    public void readAddressBookWithBackup_existingBackup_backupReplaced() throws Exception {
+        Path backupPath = testFolder.resolve("addressbook.json.bak");
+        Files.writeString(backupPath, "old backup");
+        assertCorruptedFileBackedUp("notJsonFormatAddressBook.json");
+    }
+
+    @Test
+    public void readAddressBookWithBackup_missingFile_noBackup() throws Exception {
+        Path filePath = testFolder.resolve("addressbook.json");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        assertFalse(storage.readAddressBookWithBackup().isPresent());
+        assertFalse(Files.exists(JsonAddressBookStorage.getBackupFilePath(filePath)));
+    }
+
+    @Test
+    public void readAddressBookWithBackup_validFile_noBackup() throws Exception {
+        Path filePath = testFolder.resolve("addressbook.json");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+        storage.saveAddressBook(getTypicalAddressBook());
+
+        Optional<ReadOnlyAddressBook> readBack = storage.readAddressBookWithBackup();
+
+        assertEquals(getTypicalAddressBook(), new AddressBook(readBack.get()));
+        assertFalse(Files.exists(JsonAddressBookStorage.getBackupFilePath(filePath)));
+    }
+
+    @Test
+    public void readAddressBookWithBackup_backupFails_stillThrowsDataLoadingException() throws Exception {
+        Path filePath = testFolder.resolve("addressbook.json");
+        Files.copy(TEST_DATA_FOLDER.resolve("notJsonFormatAddressBook.json"), filePath);
+        // A non-empty folder at the backup path cannot be replaced, so the copy fails
+        Path backupPath = JsonAddressBookStorage.getBackupFilePath(filePath);
+        Files.createDirectories(backupPath.resolve("blocker"));
+
+        assertThrows(DataLoadingException.class, () -> new JsonAddressBookStorage(filePath)
+                .readAddressBookWithBackup());
+        assertTrue(Files.isDirectory(backupPath));
+    }
+
+    @Test
+    public void backUpFile_notRegularFile_noBackup() throws Exception {
+        Path folder = testFolder.resolve("addressbook.json");
+        Files.createDirectories(folder);
+
+        assertFalse(JsonAddressBookStorage.backUpFile(folder).isPresent());
+        assertFalse(Files.exists(JsonAddressBookStorage.getBackupFilePath(folder)));
+    }
+
+    /**
+     * Copies {@code fileInTestDataFolder} to a temporary data file, reads it with backup,
+     * and checks that the read fails and the backup matches the original byte for byte.
+     */
+    private void assertCorruptedFileBackedUp(String fileInTestDataFolder) throws IOException {
+        Path filePath = testFolder.resolve("addressbook.json");
+        Files.copy(TEST_DATA_FOLDER.resolve(fileInTestDataFolder), filePath);
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        assertThrows(DataLoadingException.class, storage::readAddressBookWithBackup);
+
+        Path backupPath = JsonAddressBookStorage.getBackupFilePath(filePath);
+        assertTrue(Files.exists(backupPath));
+        assertEquals(-1L, Files.mismatch(filePath, backupPath));
     }
 }

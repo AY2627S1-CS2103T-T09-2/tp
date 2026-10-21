@@ -35,7 +35,7 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
 
-   * `clear` : Deletes all contacts.
+   * `clear confirm` : Deletes all contacts after confirmation.
 
    * `exit` : Exits the app.
 
@@ -61,11 +61,14 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* `help`, `clear`, and `exit` accept no parameters.<br>
+* `help` and `exit` accept no parameters.<br>
   Extra parameters are rejected with an error naming the command.<br>
   For example, `clear 123` shows `The clear command does not accept additional parameters.`
   and leaves all contacts unchanged.
 
+* `clear` accepts either no arguments or exactly `confirm`.
+  Other parameters are rejected with an error naming the command.
+  
 * `list` accepts optional `st/STATUS` and `t/TAG` filters.
   Each filter may appear at most once.
 
@@ -111,7 +114,7 @@ Names with extra spaces are saved with single spaces. A contact cannot be added 
 Examples:
 * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
 * `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT t/referral`
-* `add n/Sarah Lim p/92345678 e/sarah@example.com a/10 Tampines Street 1 st/CLIENT f/25-12-2026`
+* `add n/Ravi Kumar p/92345678 e/ravi@example.com a/10 Tampines Street 1 st/CLIENT f/25-12-2026`
 
 ### Listing contacts: `list`
 
@@ -189,9 +192,9 @@ Format: `delete INDEX`
 
 Examples:
 * `list` followed by `delete 2` deletes the 2nd contact in Easy-Insurance.
-* `find Betsy` followed by `delete 1` deletes the 1st contact in the results of the `find` command.
+* `find Priya` followed by `delete 1` deletes the 1st contact in the results of the `find` command.
 
-The result shows the deleted contact's name, for example `Deleted contact: Betsy Crowe`.
+The result shows the deleted contact's name, for example `Deleted contact: Priya Nair`.
 
 ### Completing a follow-up: `done`
 
@@ -243,9 +246,19 @@ Examples:
 
 ### Clearing all contacts: `clear`
 
-Removes every contact from Easy-Insurance. There is no confirmation step, so use it with care.
+Requests confirmation before removing all contacts from Easy-Insurance.
 
 Format: `clear`
+
+* `clear` does not remove any contacts immediately.
+* It shows how many contacts would be deleted and asks you to type `clear confirm`.
+* `clear confirm` removes all contacts from Easy-Insurance.
+* Any other additional parameter is rejected.
+
+Examples:
+
+* `clear` shows `This deletes all N contacts. Type 'clear confirm' to proceed.`
+* `clear confirm` clears all contacts.
 
 ### Exiting the program: `exit`
 
@@ -255,16 +268,16 @@ Format: `exit`
 
 ### Saving the data
 
-Easy-Insurance automatically saves data after every command. You do not need to save manually.
+Easy-Insurance saves your data automatically after every successful command. You do not need to save manually.
 
 ### Editing the data file
 
-Easy-Insurance data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
+Easy-Insurance data is saved automatically as a JSON file `data/addressbook.json`, inside the folder you run the app from. If you follow the Quick start, that is your home folder. Advanced users are welcome to update data directly by editing that data file.
 
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, Easy-Insurance starts with an empty contact list at the next run. The invalid file remains on disk until you run a command (Easy-Insurance saves after every command). Still, we recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, Easy-Insurance copies it to `addressbook.json.bak` in the same `data` folder and then starts with an empty contact list. The invalid `addressbook.json` is overwritten after your next successful command, but the `.bak` copy is kept. To recover, close the app, fix the `.bak` file and rename it back to `addressbook.json`. A later backup replaces the previous `.bak` file, so we still recommend keeping your own copy before editing.<br>
 Two contacts whose names differ only in case or extra spaces also make the data file invalid and cause it to load as an empty contact list.<br>
 Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
@@ -290,7 +303,7 @@ Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...` <br> e.g., `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT f/25-12-2026 t/referral`
-**Clear**  | `clear`
+**Clear**  | `clear` to request confirmation<br>`clear confirm` to clear all contacts
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Due**    | `due [DAYS]`<br> e.g., `due 7`
