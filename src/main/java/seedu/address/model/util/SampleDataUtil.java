@@ -1,6 +1,7 @@
 package seedu.address.model.util;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -8,6 +9,7 @@ import seedu.address.model.AddressBook;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -20,25 +22,26 @@ import seedu.address.model.tag.Tag;
 public class SampleDataUtil {
     public static Person[] getSamplePersons() {
         return new Person[] {
-            new Person(new Name("Alex Yeoh"), new Phone("87438807"), new Email("alexyeoh@example.com"),
-                new Address("Blk 30 Geylang Street 29, #06-40"),
-                getTagSet("friends")),
-            new Person(new Name("Bernice Yu"), new Phone("99272758"), new Email("berniceyu@example.com"),
-                new Address("Blk 30 Lorong 3 Serangoon Gardens, #07-18"),
-                Status.CLIENT,
-                getTagSet("colleagues", "friends")),
-            new Person(new Name("Charlotte Oliveiro"), new Phone("93210283"), new Email("charlotte@example.com"),
-                new Address("Blk 11 Ang Mo Kio Street 74, #11-04"),
-                getTagSet("neighbours")),
-            new Person(new Name("David Li"), new Phone("91031282"), new Email("lidavid@example.com"),
-                new Address("Blk 436 Serangoon Gardens Street 26, #16-43"),
-                getTagSet("family")),
-            new Person(new Name("Irfan Ibrahim"), new Phone("92492021"), new Email("irfan@example.com"),
-                new Address("Blk 47 Tampines Street 20, #17-35"),
-                getTagSet("classmates")),
-            new Person(new Name("Roy Balakrishnan"), new Phone("92624417"), new Email("royb@example.com"),
-                new Address("Blk 45 Aljunied Street 85, #11-31"),
-                getTagSet("colleagues"))
+            new Person(new Name("John Tan"), new Phone("91234567"), new Email("johntan@example.com"),
+                new Address("21 Clementi Ave 3"), Status.PROSPECT, getTagSet("referral", "hotLead"),
+                Optional.of(new FollowUp("01-10-2026"))),
+            new Person(new Name("Mei Ling Wong"), new Phone("92345678"), new Email("meiling@example.com"),
+                new Address("18 Bishan Street 12"), Status.CLIENT, getTagSet("lifePolicy", "familyPlan"),
+                Optional.of(new FollowUp("16-10-2026"))),
+            new Person(new Name("Aisha Rahman"), new Phone("93456789"), new Email("aisha@example.com"),
+                new Address("7 Tampines Ave 4"), Status.PROSPECT, getTagSet("referral"),
+                Optional.of(new FollowUp("05-11-2026"))),
+            new Person(new Name("Daniel Lim"), new Phone("94567890"), new Email("daniel@example.com"),
+                new Address("42 Ang Mo Kio Ave 10"), Status.CLIENT, getTagSet("lifePolicy"), Optional.empty()),
+            new Person(new Name("Priya Nair"), new Phone("95678901"), new Email("priya@example.com"),
+                new Address("15 Jurong West Street 65"), Status.PROSPECT, getTagSet("hotLead", "familyPlan"),
+                Optional.empty()),
+            new Person(new Name("Marcus Lee"), new Phone("96789012"), new Email("marcus@example.com"),
+                new Address("33 Bedok North Road"), Status.INACTIVE, getTagSet("referral"), Optional.empty()),
+            new Person(new Name("Nur Farah Hassan"), new Phone("97890123"), new Email("farah@example.com"),
+                new Address("10 Woodlands Drive 16"), Status.CLIENT, getTagSet("familyPlan"), Optional.empty()),
+            new Person(new Name("Wei Ming Chen"), new Phone("98901234"), new Email("weiming@example.com"),
+                new Address("28 Bukit Batok Street 23"), Status.INACTIVE, getTagSet("lifePolicy"), Optional.empty())
         };
     }
 

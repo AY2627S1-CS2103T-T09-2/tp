@@ -61,10 +61,13 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* `help`, `list`, `clear`, and `exit` accept no parameters.<br>
+* `help`, `clear`, and `exit` accept no parameters.<br>
   Extra parameters are rejected with an error naming the command.<br>
   For example, `clear 123` shows `The clear command does not accept additional parameters.`
   and leaves all contacts unchanged.
+
+* `list` accepts optional `st/STATUS` and `t/TAG` filters.
+  Each filter may appear at most once.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </box>
@@ -78,7 +81,6 @@ The help window also provides a **Copy URL** button for copying the full User Gu
 ![help message](images/helpMessage.png)
 
 Format: `help`
-
 
 ### Adding a contact: `add`
 
@@ -105,47 +107,72 @@ Names with extra spaces are saved with single spaces. A contact cannot be added 
 
 Examples:
 * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
-* `add n/John Tan p/91234567 e/johntan@example.com a/21 Clementi Ave 3 st/PROSPECT t/referral`
+* `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT t/referral`
 * `add n/Sarah Lim p/92345678 e/sarah@example.com a/10 Tampines Street 1 st/CLIENT f/25-12-2026`
 
-### Listing all contacts: `list`
+### Listing contacts: `list`
 
-Shows a list of all contacts in Easy-Insurance, with each contact's status.
+Shows all contacts, or filters contacts by status, tag, or both.
 
-Format: `list`
+Format: `list [st/STATUS] [t/TAG]`
 
-### Editing a person: `edit`
-
-Edits an existing person in the address book.
-
-Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]... `
-
-* Edits the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list. The index **must be a positive integer** 1, 2, 3, ...
-* At least one of the optional fields must be provided.
-* Existing values will be updated to the input values.
-* When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
-* To remove all of a person's tags, enter `t/` without a tag after it.
+* Plain `list` removes the current filter and shows all contacts.
+* `st/STATUS` accepts `PROSPECT`, `CLIENT`, or `INACTIVE`, ignoring case.
+* `t/TAG` matches a complete tag name, ignoring case.
+  For example, `t/REFERRAL` matches the tag `referral`, but `t/ref` does not.
+* When both filters are supplied, a contact must match both.
+* Filters may appear in either order.
+* Each filter may appear at most once, and its value cannot be blank.
+* Invalid filter values and unrelated arguments are rejected.
+* A filtered result reports the number of matching contacts.
+  If no contacts match, the displayed list is empty.
+* Each new `list` command replaces the previous filter.
 
 Examples:
-*  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
-*  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd person to be `Betsy Crower` and clears all existing tags.
 
-### Locating persons by name: `find`
+* `list` shows all contacts and reports `Listed all contacts.`
+* `list st/CLIENT` shows only clients.
+* `list t/referral` shows contacts tagged `referral`, regardless of the tag's case.
+* `list st/CLIENT t/referral` shows clients with the referral tag.
+* `list t/REFERRAL st/client` applies the same combined filter.
 
-Finds persons whose names contain any of the given keywords.
+### Editing a contact: `edit`
+
+Edits an existing contact in Easy-Insurance.
+
+Format: `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...`
+
+* Edits the contact at the specified `INDEX`. The index refers to the index number shown in the displayed contact list. The index **must be a positive integer** 1, 2, 3, ...
+* At least one of the optional fields must be provided.
+* Existing values will be updated to the input values.
+* `st/STATUS` changes the contact's status. Status is case-insensitive.
+* `f/FOLLOW_UP_DATE` changes the follow-up date. The date must be real and in `DD-MM-YYYY` format.
+* Past follow-up dates are accepted with a warning.
+* To clear an existing follow-up, enter `f/` without a date after it.
+* When editing tags, all of the contact's existing tags are removed; adding tags is not cumulative.
+* To remove all of a contact's tags, enter `t/` without a tag after it.
+
+Examples:
+*  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st contact to be `91234567` and `johndoe@example.com` respectively.
+*  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd contact to be `Betsy Crower` and clears all existing tags.
+*  `edit 1 st/CLIENT f/25-12-2026` Changes the 1st contact's status and follow-up date.
+*  `edit 1 f/` Clears the 1st contact's follow-up date.
+
+### Finding contacts by name: `find`
+
+Finds contacts whose names contain any of the given keywords.
 
 Format: `find KEYWORD [MORE_KEYWORDS]`
 
 * The search is case-insensitive; for example, `hans` matches `Hans`.
-* Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
-* The search considers only names.
-* Only full words match; for example, `Han` does not match `Hans`.
-* Persons matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
+* Only complete words match; for example, `Han` does not match `Hans`.
+* Any keyword may match; for example, `find Hans Bo` returns contacts whose names contain either `Hans` or `Bo`.
+* The search considers contact names only.
+* If no keyword is provided, Easy-Insurance shows: `Please enter at least one name keyword to search for. Example: find alice tan`.
 
 Examples:
 * `find John` returns `john` and `John Doe`
-* `find alex david` returns `Alex Yeoh`, `David Li`<br>
-  ![result for 'find alex david'](images/findAlexDavidResult.png)
+* `find alex david` returns contacts matching either `alex` or `david`.
 
 ### Deleting a contact: `delete`
 
@@ -163,26 +190,30 @@ Examples:
 
 The result shows the deleted contact's name, for example `Deleted contact: Betsy Crowe`.
 
-### Selecting a contact for follow-up completion: `done`
+### Completing a follow-up: `done`
 
-Checks the index of the contact whose follow-up you want to complete.
+Marks a contact's pending follow-up as completed by removing its scheduled follow-up date.
 
 Format: `done INDEX`
 
 * The index refers to the number shown in the displayed contact list.
 * The index must be a positive integer and refer to a displayed contact.
-* This preliminary version leaves the contact and its follow-up unchanged.
+* The contact must have a pending follow-up.
+* The contact's other details remain unchanged. Its card shows `Follow-up: None` after completion.
 
-For a valid index, the result is:
-`<name> selected; completing follow-ups is coming soon.`
+On success, the result is:
+`Marked follow-up for <name> as completed.`
+
+If the contact has no pending follow-up, the result is:
+`<name> does not have a pending follow-up.`
 
 For an index beyond the displayed list, the result is:
 `The contact index provided is invalid.`
 
 Examples:
 
-* `list` followed by `done 2` identifies the second displayed contact.
-* `find John` followed by `done 1` identifies the first matching contact.
+* `list` followed by `done 2` completes the second displayed contact's follow-up, if it has one.
+* `find John` followed by `done 1` completes the first matching contact's follow-up, if it has one.
 
 ### Clearing all contacts: `clear`
 
@@ -232,12 +263,12 @@ Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways
 
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-**Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...` <br> e.g., `add n/John Tan p/91234567 e/johntan@example.com a/21 Clementi Ave 3 st/PROSPECT f/25-12-2026 t/referral`
+**Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...` <br> e.g., `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT f/25-12-2026 t/referral`
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
-**Done**   | `done INDEX`<br> e.g., `done 1`<br> Selection only in this preliminary version
-**Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]... `<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
+**Done**   | `done INDEX`<br> e.g., `done 1`
+**Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...`<br> e.g., `edit 2 n/James Lee st/CLIENT f/25-12-2026`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
-**List**   | `list`
+**List**   | `list [st/STATUS] [t/TAG]`<br> e.g., `list st/CLIENT t/referral`
 **Help**   | `help`
 **Exit**   | `exit`

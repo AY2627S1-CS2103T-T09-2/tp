@@ -49,6 +49,17 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_editStatus_success() throws Exception {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withStatus("CLIENT")
+                .build();
+
+        new EditCommand(INDEX_FIRST_PERSON, descriptor).execute(model);
+
+        assertEquals(Status.CLIENT, model.getFilteredPersonList().get(0).getStatus());
+    }
+
+    @Test
     public void execute_allFieldsSpecifiedUnfilteredList_success() {
         Person editedPerson = new PersonBuilder().build();
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(editedPerson).build();
@@ -76,6 +87,49 @@ public class EditCommandTest {
 
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
         expectedModel.setPerson(firstPersonWithFollowUp, editedPerson);
+
+        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_editFollowUp_success() throws Exception {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withFollowUp("25-12-2099")
+                .build();
+
+        new EditCommand(INDEX_FIRST_PERSON, descriptor).execute(model);
+
+        assertEquals("25-12-2099", model.getFilteredPersonList()
+                .get(INDEX_FIRST_PERSON.getZeroBased()).getFollowUp().get().toString());
+    }
+
+    @Test
+    public void execute_clearFollowUp_success() throws Exception {
+        Person person = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        Person personWithFollowUp = new PersonBuilder(person).withFollowUp("25-12-2099").build();
+        model.setPerson(person, personWithFollowUp);
+
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withFollowUp().build();
+        new EditCommand(INDEX_FIRST_PERSON, descriptor).execute(model);
+
+        assertTrue(model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased())
+                .getFollowUp().isEmpty());
+    }
+
+    @Test
+    public void execute_editPastFollowUp_showsWarning() throws Exception {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withFollowUp("01-01-2020")
+                .build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
+        Person personToEdit = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        Person editedPerson = new PersonBuilder(personToEdit).withFollowUp("01-01-2020").build();
+
+        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS,
+                Messages.format(editedPerson)) + editedPerson.getFollowUp().get().getPastDateWarning();
+
+        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+        expectedModel.setPerson(personToEdit, editedPerson);
 
         assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
     }
