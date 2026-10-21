@@ -51,6 +51,7 @@
         "storage-component": "Storage component",
         "common-classes": "Common classes",
         "implementation": "Implementation",
+        "completing-a-follow-up": "Completing a follow-up",
         "documentation-logging-testing-dev-ops": "Documentation, logging, testing, dev-ops",
         "appendix-requirements": "Appendix: Requirements",
         "product-scope": "Product scope",
@@ -64,7 +65,7 @@
         "deleting-a-contact": "Deleting a contact",
         "adding-a-contact-with-a-follow-up-date": "Adding a contact with a follow-up date",
         "editing-a-contact": "Editing a contact",
-        "completing-a-follow-up": "Completing a follow-up",
+        "completing-a-follow-up-2": "Completing a follow-up",
         "saving-data": "Saving data"
       },
       "headingKeywords": {}
