@@ -552,10 +552,11 @@ testers are expected to do more *exploratory* testing.
       Expected: The result shows `Followup Test does not have a pending follow-up.` No contact details change.
 
    1. Test case: `done 2` while only the test contact is displayed.<br>
-      Expected: The result shows `The contact index provided is invalid.` No contact details change.
+      Expected: The result shows `There is no contact 2. The list shows 1 contact.` No contact details change.
 
    1. Other incorrect commands to try: `done`, `done 0`, `done x`, `done 1 extra`<br>
-      Expected: The result shows the invalid-command-format error with `done INDEX`. No contact details change.
+      Expected: `done 0` and `done x` show `Index must be a positive integer.` Other malformed forms show the
+      invalid-command-format error with `done INDEX`. No contact details change.
 
 1. Saving a completed follow-up
 

@@ -102,12 +102,14 @@ public class CommandInputParserTest {
 
     @Test
     public void parseCommand_doneWithInvalidArgs_throwsParseException() {
-        String expectedMessage = ParserUtil.MESSAGE_INVALID_INDEX;
-        String[] invalidCommands = {"done", "done 0", "done -1", "done abc", "done 1 extra"};
-
-        for (String commandText : invalidCommands) {
-            assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(commandText));
+        String invalidIndexMessage = ParserUtil.MESSAGE_INVALID_INDEX;
+        String[] invalidIndexCommands = {"done 0", "done -1", "done abc"};
+        for (String commandText : invalidIndexCommands) {
+            assertThrows(ParseException.class, invalidIndexMessage, () -> parser.parseCommand(commandText));
         }
+        String usageMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, DoneCommand.MESSAGE_USAGE);
+        assertThrows(ParseException.class, usageMessage, () -> parser.parseCommand("done"));
+        assertThrows(ParseException.class, usageMessage, () -> parser.parseCommand("done 1 extra"));
     }
 
     @Test

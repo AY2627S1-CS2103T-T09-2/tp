@@ -15,7 +15,7 @@ public class Messages {
     public static final String MESSAGE_UNKNOWN_COMMAND = "Unknown command.";
     public static final String MESSAGE_INVALID_COMMAND_FORMAT = "Invalid command format!\n%1$s";
     public static final String MESSAGE_INVALID_PERSON_DISPLAYED_INDEX =
-            "There is no contact %1$d. The list shows %2$d contacts.";
+            "There is no contact %1$d. The list shows %2$s.";
     public static final String MESSAGE_PERSONS_LISTED_OVERVIEW = "%1$d contacts listed.";
     public static final String MESSAGE_PERSON_LISTED_OVERVIEW = "1 contact listed.";
     public static final String MESSAGE_DUPLICATE_FIELDS =
@@ -36,7 +36,9 @@ public class Messages {
 
     /** Returns an error message for an index outside the displayed contact list. */
     public static String getInvalidPersonDisplayedIndexMessage(int index, int numberOfContacts) {
-        return String.format(MESSAGE_INVALID_PERSON_DISPLAYED_INDEX, index, numberOfContacts);
+        String contactCount = numberOfContacts == 1
+                ? "1 contact" : String.format("%d contacts", numberOfContacts);
+        return String.format(MESSAGE_INVALID_PERSON_DISPLAYED_INDEX, index, contactCount);
     }
 
     /**
