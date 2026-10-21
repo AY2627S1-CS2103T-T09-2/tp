@@ -9,7 +9,12 @@ Class "<<interface>>\nUi" as Ui
 Class "{abstract}\nUiPart" as UiPart
 Class UiManager
 Class MainWindow
-Class HelpWindow
+
+Class HelpWindow {
+    + USERGUIDE_URL : String
+    - copyUrl() : void
+}
+
 Class ResultDisplay
 Class PersonListPanel
 Class PersonCard
@@ -30,7 +35,7 @@ HiddenOutside ..> Ui
 
 UiManager .left.|> Ui
 UiManager -down-> "1" MainWindow
-MainWindow *-down->  "1" CommandBox
+MainWindow *-down-> "1" CommandBox
 MainWindow *-down-> "1" ResultDisplay
 MainWindow *-down-> "1" PersonListPanel
 MainWindow *-down-> "1" StatusBarFooter
@@ -50,6 +55,12 @@ HelpWindow --|> UiPart
 PersonCard ..> Model
 UiManager -right-> Logic
 MainWindow -left-> Logic
+
+note right of HelpWindow
+Displays the Easy-Insurance
+Command Guide and provides
+access to the User Guide.
+end note
 
 PersonListPanel -[hidden]left- HelpWindow
 HelpWindow -[hidden]left- CommandBox
