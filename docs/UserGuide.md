@@ -82,7 +82,7 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 
 Opens the Easy-Insurance Command Guide, which shows the available commands together with their formats and examples.
 
-The help window also provides a **Copy URL** button for copying the full User Guide link.
+The help window also provides a **Copy User Guide URL** button for copying the full User Guide link.
 
 ![help message](images/helpMessage.png)
 
@@ -257,7 +257,7 @@ Examples:
 
 Requests confirmation before removing all contacts from Easy-Insurance.
 
-Format: `clear`
+Format: `clear [confirm]`
 
 * `clear` does not remove any contacts immediately.
 * It shows how many contacts would be deleted and asks you to type `clear confirm`.

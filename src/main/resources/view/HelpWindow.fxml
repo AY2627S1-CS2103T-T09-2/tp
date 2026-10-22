@@ -94,10 +94,10 @@
                           <Label text="clear"
                                  styleClass="command-guide-cell, command-guide-name"
                                  maxWidth="Infinity" />
-                          <Label text="clear"
+                          <Label text="clear [confirm]"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-format"
                                  maxWidth="Infinity" />
-                          <Label text="clear"
+                          <Label text="clear&#10;clear confirm"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-example"
                                  maxWidth="Infinity" />
                           <Label text="Format"
@@ -194,10 +194,10 @@
                           <Label text="find"
                                  styleClass="command-guide-cell, command-guide-name"
                                  maxWidth="Infinity" />
-                          <Label text="find KEYWORD [MORE_KEYWORDS]"
+                          <Label text="find KEYWORD [MORE_KEYWORDS]&#10;or find p/PHONE_DIGITS"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-format"
                                  maxWidth="Infinity" />
-                          <Label text="find John Tan"
+                          <Label text="find ta&#10;find p/9123"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-example"
                                  maxWidth="Infinity" />
                           <Label text="Format"
