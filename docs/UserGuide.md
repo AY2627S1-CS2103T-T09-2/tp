@@ -257,7 +257,7 @@ Examples:
 
 Requests confirmation before removing all contacts from Easy-Insurance.
 
-Format: `clear`
+Format: `clear [confirm]`
 
 * `clear` does not remove any contacts immediately.
 * It shows how many contacts would be deleted and asks you to type `clear confirm`.
