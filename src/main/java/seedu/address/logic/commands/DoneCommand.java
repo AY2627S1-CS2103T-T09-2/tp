@@ -4,7 +4,9 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
@@ -21,6 +23,8 @@ public class DoneCommand extends Command {
     public static final String MESSAGE_USAGE = COMMAND_WORD + " INDEX";
     public static final String MESSAGE_SUCCESS = "Marked follow-up for %1$s as completed.";
     public static final String MESSAGE_NO_PENDING_FOLLOW_UP = "%1$s does not have a pending follow-up.";
+
+    private static final Logger logger = LogsCenter.getLogger(DoneCommand.class);
 
     private final Index targetIndex;
 
@@ -49,12 +53,15 @@ public class DoneCommand extends Command {
         List<Person> lastShownList = model.getFilteredPersonList();
 
         if (targetIndex.getZeroBased() >= lastShownList.size()) {
+            logger.fine(() -> "Rejected done; displayedIndex=" + targetIndex.getOneBased()
+                    + ", displayedCount=" + lastShownList.size());
             throw new CommandException(Messages.getInvalidPersonDisplayedIndexMessage(
                     targetIndex.getOneBased(), lastShownList.size()));
         }
 
         Person personToComplete = lastShownList.get(targetIndex.getZeroBased());
         if (personToComplete.getFollowUp().isEmpty()) {
+            logger.fine(() -> "Rejected done; no pending follow-up, displayedIndex=" + targetIndex.getOneBased());
             throw new CommandException(
                     String.format(MESSAGE_NO_PENDING_FOLLOW_UP, personToComplete.getName()));
         }
@@ -64,6 +71,7 @@ public class DoneCommand extends Command {
                 personToComplete.getAddress(), personToComplete.getStatus(), personToComplete.getTags(),
                 Optional.empty());
         model.setPerson(personToComplete, completedPerson);
+        logger.info(() -> "Cleared pending follow-up in model; displayedIndex=" + targetIndex.getOneBased());
 
         return new CommandResult(String.format(MESSAGE_SUCCESS, personToComplete.getName()));
     }

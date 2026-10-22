@@ -3,7 +3,9 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Optional;
+import java.util.logging.Logger;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.model.Model;
 import seedu.address.model.person.PersonMatchesFiltersPredicate;
@@ -23,6 +25,7 @@ public class ListCommand extends Command {
     public static final String MESSAGE_SUCCESS = "Listed all contacts.";
 
     private static final String MESSAGE_FILTERED_SUCCESS = "Listed %1$d %2$s with %3$s.";
+    private static final Logger logger = LogsCenter.getLogger(ListCommand.class);
 
     private final PersonMatchesFiltersPredicate predicate;
 
@@ -55,7 +58,10 @@ public class ListCommand extends Command {
     public CommandResult execute(Model model) {
         requireNonNull(model);
         model.updateFilteredPersonList(predicate);
-        return new CommandResult(getFeedbackMessage(model.getFilteredPersonList().size()));
+        int resultCount = model.getFilteredPersonList().size();
+        logger.info(() -> "Applied list filters; status=" + predicate.getStatus().map(Status::name).orElse("ALL")
+                + ", tagFilter=" + predicate.getTagName().isPresent() + ", resultCount=" + resultCount);
+        return new CommandResult(getFeedbackMessage(resultCount));
     }
 
     /**
