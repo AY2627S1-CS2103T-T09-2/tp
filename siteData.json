@@ -82,9 +82,9 @@
     },
     {
       "src": "Logging.md",
-      "title": "Logging guide",
       "headings": {
-        "logging-guide": "Logging guide"
+        "logging-guide": "Logging guide",
+        "follow-up-list-and-help-diagnostics": "Follow-up, list and Help diagnostics"
       },
       "headingKeywords": {}
     },
