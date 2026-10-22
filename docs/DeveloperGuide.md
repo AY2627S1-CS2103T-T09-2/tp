@@ -332,13 +332,17 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   * 5a1. System saves the date and warns the agent that it is in the past.
   * Use case ends.
 
-**Use case: Find contacts by name**
+**Use case: Find contacts by name or phone**
 
 **MSS**
 
-1. Agent enters `find KEYWORD [MORE_KEYWORDS]`.
-2. System ignores leading and trailing spaces and checks that at least one keyword was supplied.
-3. System searches contact names case-insensitively. A complete word matching any supplied keyword is sufficient.
+1. Agent enters `find KEYWORD [MORE_KEYWORDS]` or `find p/PHONE_DIGITS`.
+2. System ignores leading and trailing spaces and checks that the search value is present.
+   A phone search must contain digits only.
+3. For a name search, the system matches the start of any word in a contact's name against any supplied keyword,
+   ignoring case. For example, `find ta` matches `John Tan`.
+   For a phone search, it looks for the supplied consecutive digits in the phone number, ignoring stored formatting
+   such as spaces and dashes.
 4. System shows only matching contacts and reports how many were found.
 
    Use case ends.
@@ -348,7 +352,13 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 2a. No name keyword was supplied.
   * 2a1. System shows `Please enter at least one name keyword to search for. Example: find alice tan`.
   * Use case ends without changing the contact list.
-* 3a. No contact name contains a matching complete word.
+* 2b. No phone digits were supplied after `p/`.
+  * 2b1. System shows `Please enter at least one phone digit to search for. Example: find p/9123`.
+  * Use case ends without changing the contact list.
+* 2c. A phone search contains non-digit characters.
+  * 2c1. System explains that the phone search must contain digits only.
+  * Use case ends without changing the contact list.
+* 3a. No contact matches the name keywords or phone digits.
   * 3a1. System shows an empty result list and reports `0 contacts listed.`
   * Use case ends.
 
@@ -441,7 +451,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Pending follow-up**: A follow-up date that is still recorded on a contact. Marking it done removes the date.
 * **Duplicate contact**: A contact whose name matches an existing contact's name after ignoring letter case and extra spaces. Easy-Insurance refuses to add a duplicate.
 * **Index**: The number shown next to a contact in the currently displayed list. Commands such as `edit`, `delete` and `done` refer to contacts by index.
-* **Name keyword**: A non-empty, complete word used by `find` to match contact names, ignoring letter case. Partial-name matching is outside the initial version.
+* **Name keyword**: Non-empty text used by `find` to match the start of any word in a contact's name, ignoring letter case.
+* **Phone search digits**: A non-empty sequence of digits used by `find p/PHONE_DIGITS` to match consecutive digits in a phone number, ignoring stored formatting.
 * **Tag**: A short label made of letters and digits, such as `referral`, that the agent attaches to a contact. A contact can have any number of tags.
 * **Card**: The box in the contact list that shows one contact's details, including its status and follow-up date.
 * **CLI**: Command line interface. The agent types commands into the command box instead of clicking buttons.
