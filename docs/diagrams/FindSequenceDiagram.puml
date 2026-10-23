@@ -1,0 +1,18 @@
+@startuml
+!include style.puml
+
+actor User
+participant ":FindCommandParser" as Parser
+participant ":FindCommand" as Command
+participant ":Model" as Model
+participant ":NameContainsKeywordsPredicate" as Predicate
+
+User -> Parser: parse("find alice")
+Parser -> Command: create FindCommand
+User -> Command: execute()
+Command -> Predicate: create keyword predicate
+Command -> Model: updateFilteredPersonList(Predicate)
+Model --> Command: matching contacts
+Command --> User: display matching contacts
+
+@enduml
