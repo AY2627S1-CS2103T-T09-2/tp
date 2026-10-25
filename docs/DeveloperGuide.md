@@ -179,7 +179,8 @@ follow-up. Individual field getters and the internal calls within `Model` and `S
 1. `LogicManager` passes the command text to `CommandInputParser`, which creates a `DoneCommandParser`.
 2. `DoneCommandParser` validates the argument using `ParserUtil.parseIndex` and creates a `DoneCommand` with
    the resulting index. The command is returned to `LogicManager` for execution.
-3. `DoneCommand` obtains the currently displayed contacts from `Model`, checks the index and selects the
+3. Before execution, `LogicManager` copies the address book and remembers the current list filter and sort order.
+   `DoneCommand` obtains the currently displayed contacts from `Model`, checks the index and selects the
    contact. It then checks that the selected contact has a pending follow-up.
 4. The command constructs a replacement `Person`, copying the other contact details and setting the
    follow-up to `Optional.empty()`. It calls `Model.setPerson` to replace the original contact in memory.
@@ -200,9 +201,20 @@ through the `Storage` interface; the model does not call storage directly.
 These validation failures leave the contact unchanged. Execution stops before `Model.setPerson` and
 `Storage.saveAddressBook` are called.
 
-If saving fails with an `IOException`, `LogicManager` throws a `CommandException`.
-The follow-up has already been cleared in memory and is not rolled back.
-The change may not have been saved to disk.
+If saving fails with an `IOException` (including `AccessDeniedException`), `LogicManager` restores the
+pre-command address book, filter and sort order, then throws a `CommandException` with a save-error message.
+The restored contact still has its pending follow-up, and the displayed indexes return to their previous order.
+No success result is returned. This rollback applies to all commands executed through `LogicManager`.
+
+`JsonAddressBookStorage` writes the complete replacement JSON to a temporary file in the destination's
+directory, then atomically replaces the destination. A failed write or replacement leaves the previous JSON
+intact. It deletes the temporary file on failure; if cleanup also fails, that exception is retained with the
+original failure for diagnosis. If the file system does not support atomic replacement, saving fails safely
+instead of falling back to an operation that could damage the existing file.
+
+Future undo integration must record a change only after saving succeeds. A failed undo save must restore the
+data and view from before that attempt and retain the undo entry for retry. Notes, last-contact dates and undo
+are not part of the current implementation; their preservation tests must be added when those features merge.
 
 ### Viewing due follow-ups
 

@@ -2,6 +2,9 @@ package seedu.address.logic;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.util.Comparator;
+import java.util.function.Predicate;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javafx.collections.ObservableList;
@@ -12,6 +15,7 @@ import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.CommandInputParser;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 import seedu.address.storage.Storage;
@@ -44,16 +48,26 @@ public class LogicManager implements Logic {
     public CommandResult execute(String commandText) throws CommandException, ParseException {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
-        CommandResult commandResult;
         Command command = commandInputParser.parseCommand(commandText);
-        commandResult = command.execute(model);
+        // Copy the contact list: keeping the live address book reference would retain failed edits too.
+        AddressBook previousData = new AddressBook(model.getAddressBook());
+        Predicate<? super Person> previousPredicate = model.getPersonListPredicate();
+        Comparator<? super Person> previousComparator = model.getPersonListComparator();
+        CommandResult commandResult = command.execute(model);
 
         try {
             storage.saveAddressBook(model.getAddressBook());
-        } catch (AccessDeniedException e) {
-            throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
-        } catch (IOException ioe) {
-            throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
+        } catch (IOException e) {
+            model.setAddressBook(previousData);
+            if (previousComparator == null) {
+                model.updateFilteredPersonList(previousPredicate);
+            } else {
+                model.updateFilteredPersonList(previousPredicate, previousComparator);
+            }
+            logger.log(Level.WARNING, "Save failed; restored previous contact data and displayed list.", e);
+            String errorFormat = e instanceof AccessDeniedException
+                    ? FILE_OPS_PERMISSION_ERROR_FORMAT : FILE_OPS_ERROR_FORMAT;
+            throw new CommandException(String.format(errorFormat, e.getMessage()), e);
         }
 
         return commandResult;

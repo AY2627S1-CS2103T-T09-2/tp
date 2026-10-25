@@ -279,6 +279,9 @@ Format: `exit`
 
 Easy-Insurance saves your data automatically after every successful command. You do not need to save manually.
 
+If saving fails, the app shows an error and restores your previous contacts and displayed list. Resolve the
+reported file or folder problem, then enter the command again. The previous saved data remains unchanged.
+
 ### Editing the data file
 
 Easy-Insurance data is saved automatically as a JSON file `data/addressbook.json`, inside the folder you run the app from. If you follow the Quick start, that is your home folder. Advanced users are welcome to update data directly by editing that data file.
