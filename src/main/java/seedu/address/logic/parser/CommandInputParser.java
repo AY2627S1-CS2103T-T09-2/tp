@@ -19,7 +19,9 @@ import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
+import seedu.address.logic.commands.HistoryCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.NoteCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 
 /**
@@ -63,6 +65,8 @@ public class CommandInputParser {
             case ClearCommand.COMMAND_WORD -> new ClearCommandParser().parse(arguments);
             case FindCommand.COMMAND_WORD -> new FindCommandParser().parse(arguments);
             case ListCommand.COMMAND_WORD -> new ListCommandParser().parse(arguments);
+            case NoteCommand.COMMAND_WORD -> new NoteCommandParser().parse(arguments);
+            case HistoryCommand.COMMAND_WORD -> new HistoryCommandParser().parse(arguments);
             case ExitCommand.COMMAND_WORD -> new ExitCommandParser().parse(arguments);
             case HelpCommand.COMMAND_WORD -> new HelpCommandParser().parse(arguments);
             default -> {
