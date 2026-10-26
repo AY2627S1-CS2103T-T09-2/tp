@@ -2,6 +2,8 @@ package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
+import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -31,13 +33,11 @@ public class HistoryCommand extends Command {
     public static final String MESSAGE_HISTORY_HEADER =
             "Interaction history for %1$s:";
 
+    private static final DateTimeFormatter TIMESTAMP_FORMATTER =
+            DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+
     private final Index targetIndex;
 
-    /**
-     * Creates a {@code HistoryCommand}.
-     *
-     * @param targetIndex Index of the contact in the displayed list.
-     */
     public HistoryCommand(Index targetIndex) {
         this.targetIndex = requireNonNull(targetIndex);
     }
@@ -51,11 +51,16 @@ public class HistoryCommand extends Command {
         if (targetIndex.getZeroBased() >= lastShownList.size()) {
             throw new CommandException(
                     Messages.getInvalidPersonDisplayedIndexMessage(
-                            targetIndex.getOneBased(), lastShownList.size()));
+                            targetIndex.getOneBased(),
+                            lastShownList.size()));
         }
 
         Person person = lastShownList.get(targetIndex.getZeroBased());
-        List<InteractionNote> notes = person.getInteractionNotes();
+
+        List<InteractionNote> notes = person.getInteractionNotes().stream()
+                .sorted(Comparator.comparing(
+                        InteractionNote::getCreatedAt).reversed())
+                .toList();
 
         if (notes.isEmpty()) {
             return new CommandResult(
@@ -66,10 +71,14 @@ public class HistoryCommand extends Command {
                 String.format(MESSAGE_HISTORY_HEADER, person.getName()));
 
         for (int i = 0; i < notes.size(); i++) {
+            InteractionNote note = notes.get(i);
+
             history.append(System.lineSeparator())
                     .append(i + 1)
-                    .append(". ")
-                    .append(notes.get(i));
+                    .append(". [")
+                    .append(note.getCreatedAt().format(TIMESTAMP_FORMATTER))
+                    .append("] ")
+                    .append(note.getValue());
         }
 
         return new CommandResult(history.toString());
