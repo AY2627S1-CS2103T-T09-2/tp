@@ -13,9 +13,11 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
+import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.DeleteCommand;
+import seedu.address.logic.commands.DeleteNoteCommand;
 import seedu.address.logic.commands.DoneCommand;
 import seedu.address.logic.commands.DueCommand;
 import seedu.address.logic.commands.EditCommand;
@@ -71,6 +73,19 @@ public class CommandInputParserTest {
     }
 
     @Test
+    public void parseCommand_deleteNote() throws ParseException {
+        DeleteNoteCommand expectedCommand =
+                new DeleteNoteCommand(
+                        INDEX_FIRST_PERSON,
+                        Index.fromOneBased(2));
+
+        assertEquals(
+                expectedCommand,
+                parser.parseCommand(
+                        DeleteNoteCommand.COMMAND_WORD + " 1 2"));
+    }
+
+    @Test
     public void parseCommand_edit() throws Exception {
         Person person = new PersonBuilder().build();
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(person).build();
@@ -117,6 +132,7 @@ public class CommandInputParserTest {
         for (String commandText : invalidIndexCommands) {
             assertThrows(ParseException.class, invalidIndexMessage, () -> parser.parseCommand(commandText));
         }
+
         String usageMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, DoneCommand.MESSAGE_USAGE);
         assertThrows(ParseException.class, usageMessage, () -> parser.parseCommand("done"));
         assertThrows(ParseException.class, usageMessage, () -> parser.parseCommand("done 1 extra"));
