@@ -30,29 +30,25 @@ public class DeleteNoteCommandParserTest {
 
     @Test
     public void parse_missingNoteIndex_throwsParseException() {
-        assertThrows(
-                ParseException.class,
+        assertThrows(ParseException.class,
                 () -> parser.parse("1"));
     }
 
     @Test
     public void parse_extraArguments_throwsParseException() {
-        assertThrows(
-                ParseException.class,
+        assertThrows(ParseException.class,
                 () -> parser.parse("1 2 3"));
     }
 
     @Test
     public void parse_invalidContactIndex_throwsParseException() {
-        assertThrows(
-                ParseException.class,
+        assertThrows(ParseException.class,
                 () -> parser.parse("0 1"));
     }
 
     @Test
     public void parse_invalidNoteIndex_throwsParseException() {
-        assertThrows(
-                ParseException.class,
+        assertThrows(ParseException.class,
                 () -> parser.parse("1 0"));
     }
 }
