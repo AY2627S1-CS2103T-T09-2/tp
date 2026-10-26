@@ -6,7 +6,7 @@
 
 # Easy-Insurance User Guide
 
-Easy-Insurance is a **desktop app for junior insurance agents to keep track of their prospects and clients**. It records each contact's details, their status (prospect, client or inactive) and when you should next follow up with them. It is optimized for use through a Command Line Interface (CLI) while keeping a Graphical User Interface (GUI), so if you type quickly, you can manage your contacts faster than with a mouse-driven app.
+Easy-Insurance is a **desktop app for junior insurance agents to keep track of their prospects and clients**. It records each contact's details, their status (prospect, client or inactive), when you should next follow up with them, and notes from past client interactions. It is optimized for use through a Command Line Interface (CLI) while keeping a Graphical User Interface (GUI), so if you type quickly, you can manage your contacts faster than with a mouse-driven app.
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -34,6 +34,10 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
    * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a contact named `John Doe` to Easy-Insurance.
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
+  
+   * `note 2 nt/Discussed hospital coverage with client` : Adds an interaction note to the 2nd displayed contact.
+
+   * `history 2` : Shows the interaction history of the 2nd displayed contact.
 
    * `clear confirm` : Deletes all contacts after confirmation.
 
@@ -230,6 +234,46 @@ Examples:
 * `list` followed by `done 2` completes the second displayed contact's follow-up, if it has one.
 * `find John` followed by `done 1` completes the first matching contact's follow-up, if it has one.
 
+### Adding an interaction note: `note`
+
+Adds a note about an interaction with an existing contact.
+
+Format: `note INDEX nt/NOTE`
+
+* The index refers to the number shown in the displayed contact list.
+* The index must be a positive integer and refer to a displayed contact.
+* `nt/NOTE` is required and cannot be blank.
+* The note may contain spaces.
+* New notes are appended to the contact's existing interaction history. Existing notes are not replaced.
+* Interaction notes remain attached to the contact when other contact details are edited or when a follow-up is marked as completed.
+
+On success, the result is:
+
+`Added interaction note for <name>.`
+
+Examples:
+
+* `note 1 nt/Called client to discuss renewal options`
+* `note 2 nt/Discussed hospital coverage and requested updated quotation`
+
+### Viewing interaction history: `history`
+
+Shows all interaction notes recorded for an existing contact.
+
+Format: `history INDEX`
+
+* The index refers to the number shown in the displayed contact list.
+* The index must be a positive integer and refer to a displayed contact.
+* Notes are shown in the order they were recorded, with the oldest note first.
+* `history` does not modify the contact or its notes.
+
+If notes have been recorded, the result is shown in this format:
+
+```text
+Interaction history for John Tan:
+1. Called client
+2. Discussed renewal options
+
 ### Viewing follow-ups that are due: `due`
 
 Shows contacts whose follow-up date is today or earlier, or within the next few days, earliest first.
@@ -277,7 +321,7 @@ Format: `exit`
 
 ### Saving the data
 
-Easy-Insurance saves your data automatically after every successful command. You do not need to save manually.
+Easy-Insurance automatically saves contact details, follow-up information and interaction notes after every successful command. You do not need to save manually.
 
 ### Editing the data file
 
@@ -319,5 +363,7 @@ Action     | Format, Examples
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...`<br> e.g., `edit 2 n/James Lee st/CLIENT f/25-12-2026`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]` or `find p/PHONE_DIGITS`<br> e.g., `find James Jake` or `find p/9123`
 **List**   | `list [st/STATUS] [t/TAG]`<br> e.g., `list st/CLIENT t/referral`
+**History**| `history INDEX`<br> e.g., `history 2`
+**Note**   | `note INDEX nt/NOTE`<br> e.g., `note 2 nt/Discussed hospital coverage`
 **Help**   | `help`
 **Exit**   | `exit`
