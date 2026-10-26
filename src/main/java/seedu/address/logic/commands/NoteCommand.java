@@ -55,13 +55,16 @@ public class NoteCommand extends Command {
         if (targetIndex.getZeroBased() >= lastShownList.size()) {
             throw new CommandException(
                     Messages.getInvalidPersonDisplayedIndexMessage(
-                            targetIndex.getOneBased(), lastShownList.size()));
+                            targetIndex.getOneBased(),
+                            lastShownList.size()));
         }
 
-        Person personToUpdate = lastShownList.get(targetIndex.getZeroBased());
+        Person personToUpdate =
+                lastShownList.get(targetIndex.getZeroBased());
 
         List<InteractionNote> updatedNotes =
                 new ArrayList<>(personToUpdate.getInteractionNotes());
+
         updatedNotes.add(interactionNote);
 
         Person updatedPerson = new Person(
@@ -77,7 +80,9 @@ public class NoteCommand extends Command {
         model.setPerson(personToUpdate, updatedPerson);
 
         return new CommandResult(
-                String.format(MESSAGE_SUCCESS, personToUpdate.getName()));
+                String.format(
+                        MESSAGE_SUCCESS,
+                        personToUpdate.getName()));
     }
 
     @Override
@@ -91,12 +96,15 @@ public class NoteCommand extends Command {
         }
 
         return targetIndex.equals(otherNoteCommand.targetIndex)
-                && interactionNote.equals(otherNoteCommand.interactionNote);
+                && interactionNote.getValue()
+                        .equals(otherNoteCommand.interactionNote.getValue());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(targetIndex, interactionNote);
+        return Objects.hash(
+                targetIndex,
+                interactionNote.getValue());
     }
 
     @Override
