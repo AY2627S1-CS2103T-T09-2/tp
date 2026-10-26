@@ -39,7 +39,7 @@ public class NoteCommandTest {
 
         Person updatedPerson =
                 new PersonBuilder(personToUpdate)
-                        .withInteractionNotes("Discussed hospital coverage")
+                        .withInteractionNotes(note)
                         .build();
 
         Model expectedModel =
@@ -64,9 +64,15 @@ public class NoteCommandTest {
         Person originalPerson =
                 model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
 
+        InteractionNote existingNote =
+                new InteractionNote("First meeting");
+
+        InteractionNote newNote =
+                new InteractionNote("Second meeting");
+
         Person personWithExistingNote =
                 new PersonBuilder(originalPerson)
-                        .withInteractionNotes("First meeting")
+                        .withInteractionNotes(existingNote)
                         .build();
 
         model.setPerson(originalPerson, personWithExistingNote);
@@ -74,13 +80,13 @@ public class NoteCommandTest {
         NoteCommand command =
                 new NoteCommand(
                         INDEX_FIRST_PERSON,
-                        new InteractionNote("Second meeting"));
+                        newNote);
 
         Person expectedPerson =
                 new PersonBuilder(personWithExistingNote)
                         .withInteractionNotes(
-                                "First meeting",
-                                "Second meeting")
+                                existingNote,
+                                newNote)
                         .build();
 
         Model expectedModel =
@@ -107,14 +113,17 @@ public class NoteCommandTest {
         Person personToUpdate =
                 model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
 
+        InteractionNote note =
+                new InteractionNote("Called client");
+
         NoteCommand command =
                 new NoteCommand(
                         INDEX_FIRST_PERSON,
-                        new InteractionNote("Called client"));
+                        note);
 
         Person updatedPerson =
                 new PersonBuilder(personToUpdate)
-                        .withInteractionNotes("Called client")
+                        .withInteractionNotes(note)
                         .build();
 
         Model expectedModel =
