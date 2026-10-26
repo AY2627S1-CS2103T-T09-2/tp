@@ -38,10 +38,10 @@ public class PersonTest {
                 ALICE.getFollowUp(),
                 List.of(new InteractionNote("Met client")));
 
-        assertThrows(
-                UnsupportedOperationException.class,
-                () -> person.getInteractionNotes().add(
-                        new InteractionNote("Another note")));
+        List<InteractionNote> notes = person.getInteractionNotes();
+
+        assertThrows(UnsupportedOperationException.class, () -> notes.add(
+                new InteractionNote("Another note")));
     }
 
     @Test
@@ -80,8 +80,7 @@ public class PersonTest {
                 .build();
         assertTrue(BOB.isSamePerson(editedBob));
 
-        String nameWithRepeatedSpaces =
-                VALID_NAME_BOB.replace(" ", "   ");
+        String nameWithRepeatedSpaces = VALID_NAME_BOB.replace(" ", "   ");
         editedBob = new PersonBuilder(BOB)
                 .withName(nameWithRepeatedSpaces)
                 .build();
@@ -166,10 +165,9 @@ public class PersonTest {
     public void getFollowUp() {
         assertTrue(ALICE.getFollowUp().isEmpty());
 
-        Person aliceWithFollowUp =
-                new PersonBuilder(ALICE)
-                        .withFollowUp("25-12-2099")
-                        .build();
+        Person aliceWithFollowUp = new PersonBuilder(ALICE)
+                .withFollowUp("25-12-2099")
+                .build();
 
         assertEquals(
                 new FollowUp("25-12-2099"),
@@ -183,8 +181,7 @@ public class PersonTest {
 
     @Test
     public void getInteractionNotes_withNotes_returnsNotes() {
-        InteractionNote note =
-                new InteractionNote("Discussed hospital coverage");
+        InteractionNote note = new InteractionNote("Discussed hospital coverage");
 
         Person aliceWithNote = new Person(
                 ALICE.getName(),
@@ -203,16 +200,15 @@ public class PersonTest {
 
     @Test
     public void toStringMethod() {
-        String expected =
-                Person.class.getCanonicalName()
-                        + "{name=" + ALICE.getName()
-                        + ", phone=" + ALICE.getPhone()
-                        + ", email=" + ALICE.getEmail()
-                        + ", address=" + ALICE.getAddress()
-                        + ", status=" + ALICE.getStatus()
-                        + ", tags=" + ALICE.getTags()
-                        + ", followUp=none"
-                        + ", interactionNotes=[]}";
+        String expected = Person.class.getCanonicalName()
+                + "{name=" + ALICE.getName()
+                + ", phone=" + ALICE.getPhone()
+                + ", email=" + ALICE.getEmail()
+                + ", address=" + ALICE.getAddress()
+                + ", status=" + ALICE.getStatus()
+                + ", tags=" + ALICE.getTags()
+                + ", followUp=none"
+                + ", interactionNotes=[]}";
 
         assertEquals(expected, ALICE.toString());
     }
