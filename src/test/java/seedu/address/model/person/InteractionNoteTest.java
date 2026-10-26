@@ -17,22 +17,22 @@ public class InteractionNoteTest {
 
     @Test
     public void constructor_null_throwsNullPointerException() {
-        assertThrows(NullPointerException.class,
-                () -> new InteractionNote(null));
+        assertThrows(NullPointerException.class, () ->
+                new InteractionNote(null));
     }
 
     @Test
     public void constructor_blankNote_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new InteractionNote("   "));
+        assertThrows(IllegalArgumentException.class, () ->
+                new InteractionNote("   "));
     }
 
     @Test
     public void constructor_noteOverMaximumLength_throwsIllegalArgumentException() {
         String tooLongNote = "a".repeat(InteractionNote.MAX_LENGTH + 1);
 
-        assertThrows(IllegalArgumentException.class,
-                () -> new InteractionNote(tooLongNote));
+        assertThrows(IllegalArgumentException.class, () ->
+                new InteractionNote(tooLongNote));
     }
 
     @Test
