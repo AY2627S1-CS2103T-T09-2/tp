@@ -17,15 +17,13 @@ public class InteractionNoteTest {
 
     @Test
     public void constructor_null_throwsNullPointerException() {
-        assertThrows(
-                NullPointerException.class,
+        assertThrows(NullPointerException.class,
                 () -> new InteractionNote(null));
     }
 
     @Test
     public void constructor_blankNote_throwsIllegalArgumentException() {
-        assertThrows(
-                IllegalArgumentException.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new InteractionNote("   "));
     }
 
@@ -33,8 +31,7 @@ public class InteractionNoteTest {
     public void constructor_noteOverMaximumLength_throwsIllegalArgumentException() {
         String tooLongNote = "a".repeat(InteractionNote.MAX_LENGTH + 1);
 
-        assertThrows(
-                IllegalArgumentException.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new InteractionNote(tooLongNote));
     }
 
@@ -71,9 +68,8 @@ public class InteractionNoteTest {
 
     @Test
     public void isValidNote_validNote_returnsTrue() {
-        assertTrue(
-                InteractionNote.isValidNote(
-                        "Discussed hospital coverage"));
+        assertTrue(InteractionNote.isValidNote(
+                "Discussed hospital coverage"));
     }
 
     @Test
@@ -81,8 +77,7 @@ public class InteractionNoteTest {
         String noteAtMaximumLength =
                 "a".repeat(InteractionNote.MAX_LENGTH);
 
-        assertTrue(
-                InteractionNote.isValidNote(noteAtMaximumLength));
+        assertTrue(InteractionNote.isValidNote(noteAtMaximumLength));
     }
 
     @Test
@@ -90,8 +85,7 @@ public class InteractionNoteTest {
         String noteOverMaximumLength =
                 "a".repeat(InteractionNote.MAX_LENGTH + 1);
 
-        assertFalse(
-                InteractionNote.isValidNote(noteOverMaximumLength));
+        assertFalse(InteractionNote.isValidNote(noteOverMaximumLength));
     }
 
     @Test
