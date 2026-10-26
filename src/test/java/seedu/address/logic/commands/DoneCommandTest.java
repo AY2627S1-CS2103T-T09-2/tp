@@ -75,7 +75,7 @@ public class DoneCommandTest {
             assertNoContactDetails(logs);
         }
     }
-    
+
     @Test
     public void execute_completeFollowUp_preservesInteractionNotes() {
         Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
@@ -106,7 +106,7 @@ public class DoneCommandTest {
                 expectedMessage,
                 expectedModel);
     }
-    
+
     @Test
     public void execute_noPendingFollowUp_throwsCommandException() {
         Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
@@ -161,6 +161,7 @@ public class DoneCommandTest {
     public void execute_modelUpdateFails_doesNotLogCompletion() {
         Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         model.setPerson(originalPerson, personWithFollowUp);
+
         Model rejectingModel = new ModelManager(model.getAddressBook(), new UserPrefs()) {
             @Override
             public void setPerson(Person target, Person editedPerson) {
@@ -172,6 +173,7 @@ public class DoneCommandTest {
             assertThrows(IllegalArgumentException.class, "Model update failed", () -> {
                 new DoneCommand(INDEX_FIRST_PERSON).execute(rejectingModel);
             });
+
             assertTrue(logs.getRecords().isEmpty());
             assertEquals(model.getAddressBook(), rejectingModel.getAddressBook());
         }
@@ -179,7 +181,9 @@ public class DoneCommandTest {
 
     @Test
     public void execute_nullModel_throwsNullPointerException() {
-        assertThrows(NullPointerException.class, () -> new DoneCommand(INDEX_FIRST_PERSON).execute(null));
+        assertThrows(
+                NullPointerException.class,
+                () -> new DoneCommand(INDEX_FIRST_PERSON).execute(null));
     }
 
     @Test
@@ -191,11 +195,14 @@ public class DoneCommandTest {
         assertFalse(firstCommand.equals(new DoneCommand(INDEX_SECOND_PERSON)));
         assertFalse(firstCommand.equals(null));
         assertFalse(firstCommand.equals(new Object()));
-        assertEquals(firstCommand.hashCode(), new DoneCommand(Index.fromOneBased(1)).hashCode());
+        assertEquals(
+                firstCommand.hashCode(),
+                new DoneCommand(Index.fromOneBased(1)).hashCode());
     }
 
     private void assertNoContactDetails(LogCapture logs) {
         String message = logs.getRecords().getFirst().getMessage();
+
         assertFalse(message.contains("John Tan"));
         assertFalse(message.contains("91234567"));
         assertFalse(message.contains("johntan@example.com"));
