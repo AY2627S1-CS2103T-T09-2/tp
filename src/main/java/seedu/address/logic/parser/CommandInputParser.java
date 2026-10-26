@@ -36,6 +36,13 @@ public class CommandInputParser {
     private static final Logger logger =
             LogsCenter.getLogger(CommandInputParser.class);
 
+    /**
+     * Parses user input into a command for execution.
+     *
+     * @param userInput Full user input.
+     * @return The command based on the user input.
+     * @throws ParseException If the user input does not conform to the expected format.
+     */
     public Command parseCommand(String userInput) throws ParseException {
         final Matcher matcher =
                 BASIC_COMMAND_FORMAT.matcher(userInput.trim());
