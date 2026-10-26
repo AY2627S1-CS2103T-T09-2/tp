@@ -73,15 +73,15 @@ public class PersonBuilder {
     }
 
     /**
-     * Parses the {@code tags} into a {@code Set<Tag>} and sets it to the {@code Person} that we are building.
+     * Parses the {@code tags} into a {@code Set<Tag>}.
      */
-    public PersonBuilder withTags(String ... tags) {
+    public PersonBuilder withTags(String... tags) {
         this.tags = SampleDataUtil.getTagSet(tags);
         return this;
     }
 
     /**
-     * Sets the {@code Address} of the {@code Person} that we are building.
+     * Sets the {@code Address} of the {@code Person}.
      */
     public PersonBuilder withAddress(String address) {
         this.address = new Address(address);
@@ -89,7 +89,7 @@ public class PersonBuilder {
     }
 
     /**
-     * Sets the {@code Phone} of the {@code Person} that we are building.
+     * Sets the {@code Phone} of the {@code Person}.
      */
     public PersonBuilder withPhone(String phone) {
         this.phone = new Phone(phone);
@@ -97,7 +97,7 @@ public class PersonBuilder {
     }
 
     /**
-     * Sets the {@code Email} of the {@code Person} that we are building.
+     * Sets the {@code Email} of the {@code Person}.
      */
     public PersonBuilder withEmail(String email) {
         this.email = new Email(email);
@@ -113,7 +113,7 @@ public class PersonBuilder {
     }
 
     /**
-     * Sets the {@code FollowUp} of the {@code Person} that we are building.
+     * Sets the {@code FollowUp} of the {@code Person}.
      */
     public PersonBuilder withFollowUp(String followUp) {
         this.followUp = Optional.of(new FollowUp(followUp));
@@ -121,7 +121,7 @@ public class PersonBuilder {
     }
 
     /**
-     * Sets the interaction notes of the person being built.
+     * Creates and sets interaction notes using the supplied note text.
      */
     public PersonBuilder withInteractionNotes(String... notes) {
         interactionNotes = new ArrayList<>();
@@ -130,6 +130,14 @@ public class PersonBuilder {
             interactionNotes.add(new InteractionNote(note));
         }
 
+        return this;
+    }
+
+    /**
+     * Sets the interaction notes using existing note objects.
+     */
+    public PersonBuilder withInteractionNotes(InteractionNote... notes) {
+        interactionNotes = new ArrayList<>(List.of(notes));
         return this;
     }
 
