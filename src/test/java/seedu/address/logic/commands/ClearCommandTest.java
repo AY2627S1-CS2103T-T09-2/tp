@@ -14,6 +14,8 @@ public class ClearCommandTest {
 
     @Test
     public void execute_unconfirmedEmptyAddressBook_showsWarning() {
+        // EP: confirmation is absent and the address book is empty; a warning is still required.
+        // Boundary value: zero contacts.
         Model model = new ModelManager();
         Model expectedModel = new ModelManager();
 
@@ -28,6 +30,7 @@ public class ClearCommandTest {
 
     @Test
     public void execute_unconfirmedNonEmptyAddressBook_dataUnchanged() {
+        // EP: confirmation is absent and contacts exist; the warning must leave them unchanged.
         Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
         Model expectedModel = new ModelManager(getTypicalAddressBook(), new UserPrefs());
 
@@ -44,6 +47,8 @@ public class ClearCommandTest {
 
     @Test
     public void execute_confirmedEmptyAddressBook_success() {
+        // EP: confirmation is present and the address book is already empty; clearing is still valid.
+        // Boundary value: zero contacts.
         Model model = new ModelManager();
         Model expectedModel = new ModelManager();
 
@@ -56,6 +61,7 @@ public class ClearCommandTest {
 
     @Test
     public void execute_confirmedNonEmptyAddressBook_success() {
+        // EP: confirmation is present and contacts exist; every contact must be removed.
         Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
         Model expectedModel = new ModelManager(getTypicalAddressBook(), new UserPrefs());
         expectedModel.setAddressBook(new AddressBook());

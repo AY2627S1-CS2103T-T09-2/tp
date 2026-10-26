@@ -26,26 +26,26 @@ public class PersonTest {
 
     @Test
     public void isSamePerson() {
-        // same object -> returns true
+        // EP: the same object is always the same contact.
         assertTrue(ALICE.isSamePerson(ALICE));
 
-        // null -> returns false
+        // EP: null cannot identify a contact.
         assertFalse(ALICE.isSamePerson(null));
 
-        // same name, all other attributes different -> returns true
+        // EP: the same name with different non-identity fields still identifies the same contact.
         Person editedAlice = new PersonBuilder(ALICE).withPhone(VALID_PHONE_BOB).withEmail(VALID_EMAIL_BOB)
                 .withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND).build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
-        // different name, all other attributes same -> returns false
+        // EP: a different name identifies a different contact, even when other fields match.
         editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB).build();
         assertFalse(ALICE.isSamePerson(editedAlice));
 
-        // name differs only in case -> returns true
+        // EP: names differing only in case identify the same contact.
         Person editedBob = new PersonBuilder(BOB).withName(VALID_NAME_BOB.toLowerCase()).build();
         assertTrue(BOB.isSamePerson(editedBob));
 
-        // name has extra spaces -> returns true
+        // EP: names equivalent after whitespace normalization identify the same contact.
         String nameWithTrailingSpaces = VALID_NAME_BOB + " ";
         editedBob = new PersonBuilder(BOB).withName(nameWithTrailingSpaces).build();
         assertTrue(BOB.isSamePerson(editedBob));
@@ -104,7 +104,10 @@ public class PersonTest {
 
     @Test
     public void getFollowUp() {
+        // EP: a contact with no pending follow-up.
         assertTrue(ALICE.getFollowUp().isEmpty());
+
+        // EP: a contact with a pending follow-up.
         Person aliceWithFollowUp = new PersonBuilder(ALICE).withFollowUp("25-12-2099").build();
         assertEquals(new FollowUp("25-12-2099"), aliceWithFollowUp.getFollowUp().get());
     }

@@ -44,6 +44,8 @@ public class DoneCommandTest {
 
     @Test
     public void execute_validIndexUnfilteredList_completesFollowUp() {
+        // EP: displayed contact has a pending follow-up; completing it preserves its other fields.
+        // Boundary value: index 1 is the first valid index in the unfiltered list.
         Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         model.setPerson(originalPerson, personWithFollowUp);
 
@@ -60,6 +62,8 @@ public class DoneCommandTest {
 
     @Test
     public void execute_validIndexFilteredList_completesFollowUp() {
+        // EP: displayed contact has a pending follow-up after filtering.
+        // Displayed index 1 refers to the second stored contact, so stored indexes must not be used.
         Person originalPerson = model.getFilteredPersonList().get(INDEX_SECOND_PERSON.getZeroBased());
         model.setPerson(originalPerson, personWithFollowUp);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
@@ -78,6 +82,7 @@ public class DoneCommandTest {
 
     @Test
     public void execute_noPendingFollowUp_throwsCommandException() {
+        // EP: displayed contact has no pending follow-up, so there is nothing to complete.
         Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         model.setPerson(originalPerson, completedPerson);
 
@@ -91,6 +96,7 @@ public class DoneCommandTest {
 
     @Test
     public void execute_followUpAlreadyCompleted_throwsCommandException() {
+        // EP: no pending follow-up, reached by repeating a successful completion.
         Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         model.setPerson(originalPerson, personWithFollowUp);
         Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
@@ -103,6 +109,8 @@ public class DoneCommandTest {
 
     @Test
     public void execute_invalidIndexUnfilteredList_throwsCommandException() {
+        // EP: index exceeds the displayed list size.
+        // Boundary value: size + 1 is the first invalid index above the unfiltered list.
         Index invalidIndex = Index.fromOneBased(model.getFilteredPersonList().size() + 1);
 
         try (LogCapture logs = new LogCapture(DoneCommand.class)) {
@@ -116,6 +124,8 @@ public class DoneCommandTest {
 
     @Test
     public void execute_invalidIndexFilteredList_throwsCommandException() {
+        // EP: index exists in storage but is outside the filtered list.
+        // Boundary value: index 2 is just above the one-contact displayed list.
         showPersonAtIndex(model, INDEX_FIRST_PERSON);
 
         try (LogCapture logs = new LogCapture(DoneCommand.class)) {
@@ -128,6 +138,7 @@ public class DoneCommandTest {
 
     @Test
     public void execute_modelUpdateFails_doesNotLogCompletion() {
+        // EP: an otherwise valid completion is rejected by the model; success must not be logged.
         Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         model.setPerson(originalPerson, personWithFollowUp);
         Model rejectingModel = new ModelManager(model.getAddressBook(), new UserPrefs()) {
@@ -148,6 +159,7 @@ public class DoneCommandTest {
 
     @Test
     public void execute_nullModel_throwsNullPointerException() {
+        // EP: null model violates the command precondition.
         assertThrows(NullPointerException.class, () -> new DoneCommand(INDEX_FIRST_PERSON).execute(null));
     }
 
