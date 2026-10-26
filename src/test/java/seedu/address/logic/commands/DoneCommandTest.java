@@ -265,13 +265,9 @@ public class DoneCommandTest {
                 };
 
         try (LogCapture logs = new LogCapture(DoneCommand.class)) {
-            assertThrows(
-                    IllegalArgumentException.class,
-                    "Model update failed",
-                    () -> {
-                        new DoneCommand(INDEX_FIRST_PERSON)
-                                .execute(rejectingModel);
-                    });
+            assertThrows(IllegalArgumentException.class, "Model update failed", () -> {
+                new DoneCommand(INDEX_FIRST_PERSON).execute(rejectingModel);
+            });
 
             assertTrue(logs.getRecords().isEmpty());
             assertEquals(
@@ -282,8 +278,8 @@ public class DoneCommandTest {
 
     @Test
     public void execute_nullModel_throwsNullPointerException() {
-        assertThrows(NullPointerException.class,
-                () -> new DoneCommand(INDEX_FIRST_PERSON).execute(null));
+        assertThrows(NullPointerException.class, () ->
+                new DoneCommand(INDEX_FIRST_PERSON).execute(null));
     }
 
     @Test
