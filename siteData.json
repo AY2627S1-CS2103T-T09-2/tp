@@ -122,6 +122,8 @@
         "finding-contacts-by-name-or-phone-find": "Finding contacts by name or phone: find",
         "deleting-a-contact-delete": "Deleting a contact: delete",
         "completing-a-follow-up-done": "Completing a follow-up: done",
+        "adding-an-interaction-note-note": "Adding an interaction note: note",
+        "viewing-interaction-history-history": "Viewing interaction history: history",
         "viewing-follow-ups-that-are-due-due": "Viewing follow-ups that are due: due",
         "clearing-all-contacts-clear": "Clearing all contacts: clear",
         "exiting-the-program-exit": "Exiting the program: exit",
