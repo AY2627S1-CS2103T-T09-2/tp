@@ -181,8 +181,7 @@ public class DoneCommandTest {
 
     @Test
     public void execute_nullModel_throwsNullPointerException() {
-        assertThrows(
-                NullPointerException.class,
+        assertThrows(NullPointerException.class,
                 () -> new DoneCommand(INDEX_FIRST_PERSON).execute(null));
     }
 
