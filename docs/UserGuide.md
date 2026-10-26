@@ -273,10 +273,18 @@ If notes have been recorded, the result is shown in this format:
 Interaction history for John Tan:
 1. Called client
 2. Discussed renewal options
+```
+
+If the contact has no interaction notes, the result is:
+
+`No interaction notes recorded for <name>.`
+
+Examples:
+
+* `history 1`
+* `find John` followed by `history 1` shows the interaction history of the first displayed matching contact.
 
 ### Viewing follow-ups that are due: `due`
-
-Shows contacts whose follow-up date is today or earlier, or within the next few days, earliest first.
 
 Format: `due [DAYS]`
 
