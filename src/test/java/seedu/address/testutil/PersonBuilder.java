@@ -1,12 +1,15 @@
 package seedu.address.testutil;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.FollowUp;
+import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -31,6 +34,7 @@ public class PersonBuilder {
     private Status status;
     private Set<Tag> tags;
     private Optional<FollowUp> followUp;
+    private List<InteractionNote> interactionNotes;
 
     /**
      * Creates a {@code PersonBuilder} with the default details.
@@ -43,6 +47,7 @@ public class PersonBuilder {
         status = Status.PROSPECT;
         tags = new HashSet<>();
         followUp = Optional.empty();
+        interactionNotes = new ArrayList<>();
     }
 
     /**
@@ -56,6 +61,7 @@ public class PersonBuilder {
         status = personToCopy.getStatus();
         tags = new HashSet<>(personToCopy.getTags());
         followUp = personToCopy.getFollowUp();
+        interactionNotes = new ArrayList<>(personToCopy.getInteractionNotes());
     }
 
     /**
@@ -114,8 +120,31 @@ public class PersonBuilder {
         return this;
     }
 
-    public Person build() {
-        return new Person(name, phone, email, address, status, tags, followUp);
+    /**
+     * Sets the interaction notes of the person being built.
+     */
+    public PersonBuilder withInteractionNotes(String... notes) {
+        interactionNotes = new ArrayList<>();
+
+        for (String note : notes) {
+            interactionNotes.add(new InteractionNote(note));
+        }
+
+        return this;
     }
 
+    /**
+     * Builds the {@code Person}.
+     */
+    public Person build() {
+        return new Person(
+                name,
+                phone,
+                email,
+                address,
+                status,
+                tags,
+                followUp,
+                interactionNotes);
+    }
 }
