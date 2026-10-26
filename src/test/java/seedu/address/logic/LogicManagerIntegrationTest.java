@@ -1,0 +1,465 @@
+package seedu.address.logic;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import seedu.address.logic.commands.CommandResult;
+import seedu.address.logic.commands.DoneCommand;
+import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.AddressBook;
+import seedu.address.model.Model;
+import seedu.address.model.ModelManager;
+import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.UserPrefs;
+import seedu.address.model.person.FollowUp;
+import seedu.address.model.person.Person;
+import seedu.address.storage.JsonAddressBookStorage;
+import seedu.address.storage.JsonUserPrefsStorage;
+import seedu.address.storage.StorageManager;
+import seedu.address.testutil.PersonBuilder;
+
+/**
+ * Tests command sequences through the real parser, model and JSON storage.
+ */
+public class LogicManagerIntegrationTest {
+
+    @TempDir
+    private Path temporaryFolder;
+
+    private Path dataFile;
+    private Model model;
+    private Logic logic;
+    private Person noFollowUp;
+    private Person nextMonth;
+    private Person nextWeek;
+    private Person zaraOverdue;
+    private Person amyOverdue;
+    private Person oldestOverdue;
+    private List<Person> originalPersons;
+
+    @BeforeEach
+    public void setUp() throws Exception {
+        dataFile = temporaryFolder.resolve("addressBook.json");
+        LocalDate today = LocalDate.now();
+        // Keep dates away from midnight-sensitive cutoffs; fixed-clock unit tests cover exact date boundaries.
+        noFollowUp = new PersonBuilder().withName("Nora Tan").withPhone("81000001")
+                .withEmail("nora@example.com").withAddress("1 North Road").withTags("family").build();
+        nextMonth = new PersonBuilder().withName("Ben Lim").withPhone("81000002")
+                .withEmail("ben@example.com").withAddress("2 East Road").withStatus("CLIENT")
+                .withTags("referral").withFollowUp(FollowUp.format(today.plusDays(30))).build();
+        nextWeek = new PersonBuilder().withName("Cara Lee").withPhone("81000003")
+                .withEmail("cara@example.com").withAddress("3 West Road").withStatus("CLIENT")
+                .withTags("referral", "vip").withFollowUp(FollowUp.format(today.plusDays(3))).build();
+        zaraOverdue = new PersonBuilder().withName("Zara Goh").withPhone("81000004")
+                .withEmail("zara@example.com").withAddress("4 South Road").withStatus("CLIENT")
+                .withTags("vip").withFollowUp(FollowUp.format(today.minusDays(3))).build();
+        amyOverdue = new PersonBuilder().withName("amy Ng").withPhone("81000005")
+                .withEmail("amy@example.com").withAddress("5 Upper Road").withStatus("INACTIVE")
+                .withTags("referral").withFollowUp(FollowUp.format(today.minusDays(3))).build();
+        oldestOverdue = new PersonBuilder().withName("Dan Ong").withPhone("81000006")
+                .withEmail("dan@example.com").withAddress("6 Lower Road").withTags("family")
+                .withFollowUp(FollowUp.format(today.minusDays(10))).build();
+        // Insertion order deliberately differs from due-date and alphabetical order.
+        originalPersons = List.of(noFollowUp, nextMonth, nextWeek, zaraOverdue, amyOverdue, oldestOverdue);
+        initialize(originalPersons);
+    }
+
+    @Test
+    public void execute_dueThenDoneFirst_completesFirstDisplayedContact() throws Exception {
+        // EP: several due contacts, with a hidden contact and a later follow-up outside the cutoff.
+        logic.execute("due 7");
+        assertState(originalPersons, List.of(oldestOverdue, amyOverdue, zaraOverdue, nextWeek));
+
+        // Boundary: the first displayed index differs from the first stored index.
+        CommandResult result = logic.execute("done 1");
+        assertEquals(new CommandResult(String.format(DoneCommand.MESSAGE_SUCCESS, oldestOverdue.getName())), result);
+        assertState(replace(originalPersons, oldestOverdue, complete(oldestOverdue)),
+                List.of(amyOverdue, zaraOverdue, nextWeek));
+    }
+
+    @Test
+    public void execute_repeatedDoneInDueView_reindexesRemainingContacts() throws Exception {
+        // EP: equal dates use case-insensitive name order, rather than insertion order.
+        logic.execute("due 7");
+        List<Person> remainingPersons = new ArrayList<>(List.of(oldestOverdue, amyOverdue, zaraOverdue, nextWeek));
+        List<Person> expectedPersons = originalPersons;
+        assertState(expectedPersons, remainingPersons);
+
+        for (Person person : List.copyOf(remainingPersons)) {
+            logic.execute("done 1");
+            expectedPersons = replace(expectedPersons, person, complete(person));
+            remainingPersons.remove(0);
+            assertState(expectedPersons, remainingPersons);
+        }
+
+        // Boundary: completing the last match leaves an empty due view, not an empty address book.
+        assertFailure("done 1", CommandException.class);
+        logic.execute("list");
+        assertState(expectedPersons, expectedPersons);
+    }
+
+    @Test
+    public void execute_doneAtLastDueIndex_completesUpcomingContactOnly() throws Exception {
+        logic.execute("due 7");
+        assertState(originalPersons, List.of(oldestOverdue, amyOverdue, zaraOverdue, nextWeek));
+
+        // Boundary: the last valid displayed index selects a future follow-up.
+        logic.execute("done 4");
+        assertState(replace(originalPersons, nextWeek, complete(nextWeek)),
+                List.of(oldestOverdue, amyOverdue, zaraOverdue));
+    }
+
+    @Test
+    public void execute_editAfterListFilters_updatesDisplayedContact() throws Exception {
+        // EP: status only, tag only, and both filters; first and last displayed indices are boundaries.
+        assertFilteredEdit("list st/CLIENT", List.of(nextMonth, nextWeek, zaraOverdue));
+        assertFilteredEdit("list t/ReFeRrAl", List.of(nextMonth, nextWeek, amyOverdue));
+        assertFilteredEdit("list st/client t/referral", List.of(nextMonth, nextWeek));
+    }
+
+    @Test
+    public void execute_deleteAfterListFilters_removesDisplayedContact() throws Exception {
+        // EP: each filter type retains the other matches after deletion.
+        assertFilteredDelete("list st/CLIENT", List.of(nextMonth, nextWeek, zaraOverdue));
+        assertFilteredDelete("list t/ReFeRrAl", List.of(nextMonth, nextWeek, amyOverdue));
+        assertFilteredDelete("list st/client t/referral", List.of(nextMonth, nextWeek));
+    }
+
+    @Test
+    public void execute_doneAfterListFilters_preservesOtherFieldsAndMatches() throws Exception {
+        // EP: completing a follow-up does not remove a status/tag match from the display.
+        assertFilteredDone("list st/CLIENT", List.of(nextMonth, nextWeek, zaraOverdue));
+        assertFilteredDone("list t/ReFeRrAl", List.of(nextMonth, nextWeek, amyOverdue));
+        assertFilteredDone("list st/client t/referral", List.of(nextMonth, nextWeek));
+    }
+
+    @Test
+    public void execute_listAfterDue_restoresAllContactsInInsertionOrder() throws Exception {
+        assertViewThenList("due 7", List.of(oldestOverdue, amyOverdue, zaraOverdue, nextWeek));
+    }
+
+    @Test
+    public void execute_listAfterFind_restoresAllContactsInInsertionOrder() throws Exception {
+        // EP: name-prefix search and phone search, including zero matches.
+        assertViewThenList("find ca", List.of(nextWeek));
+        assertViewThenList("find p/0005", List.of(amyOverdue));
+        assertViewThenList("find Nobody", List.of());
+        assertViewThenList("find p/9999", List.of());
+    }
+
+    @Test
+    public void execute_listAfterFilters_restoresAllContactsInInsertionOrder() throws Exception {
+        // EP: status only, tag only, both, and no matching contacts.
+        assertViewThenList("list st/CLIENT", List.of(nextMonth, nextWeek, zaraOverdue));
+        assertViewThenList("list t/referral", List.of(nextMonth, nextWeek, amyOverdue));
+        assertViewThenList("list st/CLIENT t/referral", List.of(nextMonth, nextWeek));
+        assertViewThenList("list st/INACTIVE t/vip", List.of());
+    }
+
+    @Test
+    public void execute_dueWithDefaultAndBoundaryDays_preservesStoredOrder() throws Exception {
+        // EP: omitted days and explicit minimum (0) include overdue contacts.
+        for (String command : List.of("due", "due 0")) {
+            logic.execute(command);
+            assertState(originalPersons, List.of(oldestOverdue, amyOverdue, zaraOverdue));
+        }
+
+        // Boundary: maximum accepted days (365) includes all dated contacts, excluding missing dates.
+        logic.execute("due 365");
+        assertState(originalPersons, List.of(oldestOverdue, amyOverdue, zaraOverdue, nextWeek, nextMonth));
+    }
+
+    @Test
+    public void execute_doneWithSingleDueMatch_savesCompletionAndEmptyView() throws Exception {
+        // Boundary: one due match among contacts with no date and a later date.
+        initialize(List.of(noFollowUp, nextMonth, nextWeek));
+        logic.execute("due 7");
+        assertState(List.of(noFollowUp, nextMonth, nextWeek), List.of(nextWeek));
+
+        logic.execute("done 1");
+        List<Person> expectedPersons = List.of(noFollowUp, nextMonth, complete(nextWeek));
+        assertState(expectedPersons, List.of());
+        logic.execute("list");
+        assertState(expectedPersons, expectedPersons);
+    }
+
+    @Test
+    public void execute_mutationsThenReload_preservesDataAndSupportsFurtherCommands() throws Exception {
+        // EP: a sequence of different mutations, followed by a fresh model and storage reader.
+        logic.execute("due 7");
+        logic.execute("done 1");
+        List<Person> expectedPersons = replace(originalPersons, oldestOverdue, complete(oldestOverdue));
+        assertState(expectedPersons, List.of(amyOverdue, zaraOverdue, nextWeek));
+
+        logic.execute("list st/CLIENT t/referral");
+        assertState(expectedPersons, List.of(nextMonth, nextWeek));
+        logic.execute("edit 2 e/cara.updated@example.com");
+        Person editedPerson = new PersonBuilder(nextWeek).withEmail("cara.updated@example.com").build();
+        expectedPersons = replace(expectedPersons, nextWeek, editedPerson);
+        assertState(expectedPersons, expectedPersons);
+
+        logic.execute("find p/0004");
+        assertState(expectedPersons, List.of(zaraOverdue));
+        logic.execute("delete 1");
+        expectedPersons = remove(expectedPersons, zaraOverdue);
+        assertState(expectedPersons, List.of());
+
+        reload();
+        assertState(expectedPersons, expectedPersons);
+        logic.execute("list st/INACTIVE");
+        assertState(expectedPersons, List.of(amyOverdue));
+        logic.execute("done 1");
+        expectedPersons = replace(expectedPersons, amyOverdue, complete(amyOverdue));
+        assertState(expectedPersons, List.of(complete(amyOverdue)));
+
+        reload();
+        assertState(expectedPersons, expectedPersons);
+    }
+
+    @Test
+    public void execute_addThenReload_preservesExplicitAndDefaultFields() throws Exception {
+        initialize(List.of());
+        // EP: explicit status, multiple tags and a pending date are retained through parsing and storage.
+        String followUpDate = nextWeek.getFollowUp().orElseThrow().toString();
+        logic.execute("add n/Cara Lee p/81000003 e/cara@example.com a/3 West Road"
+                + " st/CLIENT t/referral t/vip f/" + followUpDate);
+        assertState(List.of(nextWeek), List.of(nextWeek));
+
+        // EP: omitted status, tags and follow-up use the documented defaults.
+        logic.execute("add n/Nora Tan p/81000001 e/nora@example.com a/1 North Road");
+        Person defaultPerson = new PersonBuilder(noFollowUp).withTags().build();
+        List<Person> expectedPersons = List.of(nextWeek, defaultPerson);
+        assertState(expectedPersons, expectedPersons);
+        reload();
+        assertState(expectedPersons, expectedPersons);
+    }
+
+    @Test
+    public void execute_deleteOnlyContact_savesAndReloadsEmptyAddressBook() throws Exception {
+        // Boundary: deleting the sole contact persists an empty collection.
+        initialize(List.of(nextWeek));
+        logic.execute("list st/CLIENT t/referral");
+        logic.execute("delete 1");
+        assertState(List.of(), List.of());
+        reload();
+        assertState(List.of(), List.of());
+    }
+
+    @Test
+    public void execute_invalidSyntax_preservesDataViewAndFile() throws Exception {
+        for (String viewCommand : List.of("list", "due 7", "list st/CLIENT t/referral")) {
+            logic.execute(viewCommand);
+
+            // EP: missing/unsupported arguments, invalid fields, and repeated prefixes.
+            for (String command : List.of("unknown", "done", "done 1 2", "edit 1", "edit 1 p/abc",
+                    "edit 1 st/UNKNOWN", "edit 1 f/31-02-2026", "list st/UNKNOWN", "list t/",
+                    "list st/CLIENT st/PROSPECT", "list t/referral t/vip", "list n/Cara",
+                    "find", "find p/abc", "due text", "due 7 8")) {
+                assertFailure(command, ParseException.class);
+            }
+
+            // Boundary: days just outside the permitted range, and a value exceeding the integer range.
+            for (String command : List.of("due -1", "due 366", "due 2147483648")) {
+                assertFailure(command, ParseException.class);
+            }
+        }
+    }
+
+    @Test
+    public void execute_invalidIndexSyntax_preservesDataViewAndFile() throws Exception {
+        logic.execute("due 7");
+        // EP: non-positive indices, non-numeric indices and integer overflow.
+        for (String index : List.of("0", "-1", "text", "2147483648")) {
+            assertFailure("done " + index, ParseException.class);
+            assertFailure("delete " + index, ParseException.class);
+            assertFailure("edit " + index + " p/89999999", ParseException.class);
+        }
+    }
+
+    @Test
+    public void execute_indexOutsideFilteredList_rejectsHiddenContactIndex() throws Exception {
+        // Boundary: index 3 exists in storage, but is one beyond the two displayed contacts.
+        logic.execute("list st/CLIENT t/referral");
+        assertState(originalPersons, List.of(nextMonth, nextWeek));
+        assertFailure("done 3", CommandException.class);
+        assertFailure("delete 3", CommandException.class);
+        assertFailure("edit 3 p/89999999", CommandException.class);
+
+        // Boundary: the same distinction applies to the sorted due view (four of six contacts).
+        logic.execute("due 7");
+        assertFailure("done 5", CommandException.class);
+        assertFailure("delete 5", CommandException.class);
+        assertFailure("edit 5 p/89999999", CommandException.class);
+    }
+
+    @Test
+    public void execute_indexIntoEmptyView_preservesHiddenContacts() throws Exception {
+        // Boundary: the first positive index is invalid when the filter matches no contacts.
+        logic.execute("list st/INACTIVE t/vip");
+        assertState(originalPersons, List.of());
+        assertFailure("done 1", CommandException.class);
+        assertFailure("delete 1", CommandException.class);
+        assertFailure("edit 1 p/89999999", CommandException.class);
+    }
+
+    @Test
+    public void execute_doneWithoutPendingFollowUp_preservesDataViewAndFile() throws Exception {
+        // EP: a valid displayed contact has no pending date.
+        logic.execute("list t/family");
+        assertState(originalPersons, List.of(noFollowUp, oldestOverdue));
+        assertFailure("done 1", CommandException.class);
+    }
+
+    @Test
+    public void execute_doneAlreadyCompleted_preservesCompletedContact() throws Exception {
+        logic.execute("list st/CLIENT t/referral");
+        logic.execute("done 2");
+        assertState(replace(originalPersons, nextWeek, complete(nextWeek)), List.of(nextMonth, complete(nextWeek)));
+
+        // EP: repeated completion is rejected while the contact remains at the same filtered index.
+        assertFailure("done 2", CommandException.class);
+    }
+
+    @Test
+    public void execute_editToHiddenDuplicate_preservesDataViewAndFile() throws Exception {
+        logic.execute("list st/CLIENT t/referral");
+        // EP: the duplicate exists outside the displayed results; matching ignores name case.
+        assertFailure("edit 1 n/nora tan", CommandException.class);
+    }
+
+    @Test
+    public void execute_commandsOnEmptyAddressBook_preservesEmptyData() throws Exception {
+        initialize(List.of());
+        // Boundary: valid queries return zero contacts and remain safe to save and reload.
+        for (String command : List.of("due 7", "list", "find Cara", "list st/CLIENT")) {
+            logic.execute(command);
+            assertState(List.of(), List.of());
+        }
+        assertFailure("done 1", CommandException.class);
+        assertFailure("delete 1", CommandException.class);
+        assertFailure("edit 1 p/89999999", CommandException.class);
+        reload();
+        assertState(List.of(), List.of());
+    }
+
+    private void assertFilteredEdit(String filterCommand, List<Person> displayedPersons) throws Exception {
+        for (int index : List.of(1, displayedPersons.size())) {
+            initialize(originalPersons);
+            logic.execute(filterCommand);
+            assertState(originalPersons, displayedPersons);
+            Person selectedPerson = displayedPersons.get(index - 1);
+            Person editedPerson = new PersonBuilder(selectedPerson).withPhone("89999999").build();
+
+            logic.execute("edit " + index + " p/89999999");
+            List<Person> expectedPersons = replace(originalPersons, selectedPerson, editedPerson);
+            // Edit deliberately restores all contacts in insertion order.
+            assertState(expectedPersons, expectedPersons);
+        }
+    }
+
+    private void assertFilteredDelete(String filterCommand, List<Person> displayedPersons) throws Exception {
+        for (int index : List.of(1, displayedPersons.size())) {
+            initialize(originalPersons);
+            logic.execute(filterCommand);
+            assertState(originalPersons, displayedPersons);
+            Person selectedPerson = displayedPersons.get(index - 1);
+
+            logic.execute("delete " + index);
+            assertState(remove(originalPersons, selectedPerson), remove(displayedPersons, selectedPerson));
+        }
+    }
+
+    private void assertFilteredDone(String filterCommand, List<Person> displayedPersons) throws Exception {
+        for (int index : List.of(1, displayedPersons.size())) {
+            initialize(originalPersons);
+            logic.execute(filterCommand);
+            assertState(originalPersons, displayedPersons);
+            Person selectedPerson = displayedPersons.get(index - 1);
+            Person completedPerson = complete(selectedPerson);
+
+            logic.execute("done " + index);
+            assertState(replace(originalPersons, selectedPerson, completedPerson),
+                    replace(displayedPersons, selectedPerson, completedPerson));
+        }
+    }
+
+    private void assertViewThenList(String viewCommand, List<Person> displayedPersons) throws Exception {
+        // Start sorted so a later query must also clear any stale due comparator.
+        logic.execute("due 7");
+        logic.execute(viewCommand);
+        assertState(originalPersons, displayedPersons);
+
+        CommandResult result = logic.execute("list");
+        assertEquals(new CommandResult(ListCommand.MESSAGE_SUCCESS), result);
+        assertState(originalPersons, originalPersons);
+    }
+
+    private void assertFailure(String command, Class<? extends Exception> exceptionType) throws Exception {
+        List<Person> storedBefore = List.copyOf(model.getAddressBook().getPersonList());
+        List<Person> displayedBefore = List.copyOf(logic.getFilteredPersonList());
+        byte[] fileBefore = Files.readAllBytes(dataFile);
+
+        assertThrows(exceptionType, () -> logic.execute(command), command);
+        assertState(storedBefore, displayedBefore);
+        assertArrayEquals(fileBefore, Files.readAllBytes(dataFile), command + " must not change the saved file");
+    }
+
+    private void assertState(List<Person> storedPersons, List<Person> displayedPersons) throws Exception {
+        // Person.equals compares all fields, including status, tags and the optional follow-up date.
+        assertEquals(storedPersons, model.getAddressBook().getPersonList(), "Complete stored contact values and order");
+        assertEquals(displayedPersons, logic.getFilteredPersonList(), "Complete displayed contact values and order");
+        ReadOnlyAddressBook savedAddressBook = new JsonAddressBookStorage(dataFile).readAddressBook().orElseThrow();
+        assertEquals(storedPersons, savedAddressBook.getPersonList(), "Complete contact values read back from JSON");
+    }
+
+    private void initialize(List<Person> persons) throws Exception {
+        AddressBook addressBook = new AddressBook();
+        for (Person person : persons) {
+            addressBook.addPerson(person);
+        }
+        new JsonAddressBookStorage(dataFile).saveAddressBook(addressBook);
+        createLogic(addressBook);
+    }
+
+    private void reload() throws Exception {
+        createLogic(new JsonAddressBookStorage(dataFile).readAddressBook().orElseThrow());
+    }
+
+    private void createLogic(ReadOnlyAddressBook addressBook) {
+        model = new ModelManager(addressBook, new UserPrefs());
+        StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json")));
+        logic = new LogicManager(model, storage);
+    }
+
+    private Person complete(Person person) {
+        return new Person(person.getName(), person.getPhone(), person.getEmail(), person.getAddress(),
+                person.getStatus(), person.getTags(), Optional.empty());
+    }
+
+    private List<Person> replace(List<Person> persons, Person originalPerson, Person replacementPerson) {
+        List<Person> updatedPersons = new ArrayList<>(persons);
+        updatedPersons.set(updatedPersons.indexOf(originalPerson), replacementPerson);
+        return updatedPersons;
+    }
+
+    private List<Person> remove(List<Person> persons, Person person) {
+        List<Person> remainingPersons = new ArrayList<>(persons);
+        remainingPersons.remove(person);
+        return remainingPersons;
+    }
+}
