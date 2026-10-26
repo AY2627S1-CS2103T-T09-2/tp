@@ -18,6 +18,7 @@ import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.FollowUp;
+import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -108,6 +109,91 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
+    public void toModelType_validInteractionNotes_returnsPersonWithNotes() throws Exception {
+        Person bensonWithNotes = new PersonBuilder(BENSON)
+                .withInteractionNotes(
+                        "Met client",
+                        "Discussed hospital coverage")
+                .build();
+
+        JsonAdaptedPerson person = new JsonAdaptedPerson(bensonWithNotes);
+
+        assertEquals(bensonWithNotes, person.toModelType());
+    }
+
+    @Test
+    public void jsonSerialization_interactionNotesRoundTrip_returnsPerson() throws Exception {
+        Person bensonWithNotes = new PersonBuilder(BENSON)
+                .withInteractionNotes(
+                        "Met client",
+                        "Client requested revised quotation")
+                .build();
+
+        String json = JsonUtil.toJsonString(new JsonAdaptedPerson(bensonWithNotes));
+        JsonAdaptedPerson restored = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class);
+
+        assertEquals(bensonWithNotes, restored.toModelType());
+    }
+
+    @Test
+    public void toModelType_nullInteractionNotes_returnsEmptyHistory() throws Exception {
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(
+                        VALID_NAME,
+                        VALID_PHONE,
+                        VALID_EMAIL,
+                        VALID_ADDRESS,
+                        null,
+                        VALID_TAGS,
+                        null,
+                        null);
+
+        assertTrue(person.toModelType().getInteractionNotes().isEmpty());
+    }
+
+    @Test
+    public void toModelType_invalidInteractionNote_throwsIllegalValueException() {
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(
+                        VALID_NAME,
+                        VALID_PHONE,
+                        VALID_EMAIL,
+                        VALID_ADDRESS,
+                        null,
+                        VALID_TAGS,
+                        null,
+                        List.of("   "));
+
+        assertThrows(
+                IllegalValueException.class,
+                InteractionNote.MESSAGE_CONSTRAINTS,
+                person::toModelType);
+    }
+
+    @Test
+    public void toModelType_nullInteractionNote_throwsIllegalValueException() {
+        List<String> notesWithNull = new ArrayList<>();
+        notesWithNull.add("Met client");
+        notesWithNull.add(null);
+
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(
+                        VALID_NAME,
+                        VALID_PHONE,
+                        VALID_EMAIL,
+                        VALID_ADDRESS,
+                        null,
+                        VALID_TAGS,
+                        null,
+                        notesWithNull);
+
+        assertThrows(
+                IllegalValueException.class,
+                JsonAdaptedPerson.MESSAGE_NULL_INTERACTION_NOTE,
+                person::toModelType);
+    }
+
+    @Test
     public void toModelType_invalidName_throwsIllegalValueException() {
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(INVALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
@@ -184,5 +270,4 @@ public class JsonAdaptedPersonTest {
                 new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, tagsWithNull);
         assertThrows(IllegalValueException.class, JsonAdaptedPerson.MESSAGE_NULL_TAG, person::toModelType);
     }
-
 }
