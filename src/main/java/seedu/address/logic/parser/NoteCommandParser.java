@@ -14,40 +14,46 @@ import seedu.address.model.person.InteractionNote;
  */
 public class NoteCommandParser implements Parser<NoteCommand> {
 
-    /**
-     * Parses the given arguments and returns a {@code NoteCommand}.
-     *
-     * @param args Arguments containing a displayed index and interaction note.
-     * @return A command that adds an interaction note to a contact.
-     * @throws ParseException If the input does not conform to the expected format.
-     */
     @Override
     public NoteCommand parse(String args) throws ParseException {
         requireNonNull(args);
 
-        ArgumentMultimap argMultimap =
-                ArgumentTokenizer.tokenize(args, PREFIX_NOTE);
+        String trimmedArgs = args.trim();
+        String notePrefix = PREFIX_NOTE.getPrefix();
 
-        String preamble = argMultimap.getPreamble();
+        int prefixPosition = trimmedArgs.indexOf(notePrefix);
 
-        if (preamble.isEmpty()
-                || preamble.matches(".*\\s+.*")
-                || argMultimap.getValue(PREFIX_NOTE).isEmpty()) {
+        if (prefixPosition < 0) {
             throw new ParseException(
-                    String.format(MESSAGE_INVALID_COMMAND_FORMAT,
+                    String.format(
+                            MESSAGE_INVALID_COMMAND_FORMAT,
                             NoteCommand.MESSAGE_USAGE));
         }
 
-        argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_NOTE);
+        String preamble =
+                trimmedArgs.substring(0, prefixPosition).trim();
+
+        if (preamble.isEmpty()
+                || preamble.matches(".*\\s+.*")) {
+            throw new ParseException(
+                    String.format(
+                            MESSAGE_INVALID_COMMAND_FORMAT,
+                            NoteCommand.MESSAGE_USAGE));
+        }
 
         Index index = ParserUtil.parseIndex(preamble);
 
-        String noteText = argMultimap.getValue(PREFIX_NOTE).orElse("");
+        String noteText =
+                trimmedArgs.substring(
+                        prefixPosition + notePrefix.length());
 
         if (!InteractionNote.isValidNote(noteText)) {
-            throw new ParseException(InteractionNote.MESSAGE_CONSTRAINTS);
+            throw new ParseException(
+                    InteractionNote.MESSAGE_CONSTRAINTS);
         }
 
-        return new NoteCommand(index, new InteractionNote(noteText));
+        return new NoteCommand(
+                index,
+                new InteractionNote(noteText));
     }
 }
