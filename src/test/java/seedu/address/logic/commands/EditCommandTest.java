@@ -129,7 +129,7 @@ public class EditCommandTest {
                 expectedMessage,
                 expectedModel);
     }
-    
+
     @Test
     public void execute_editFollowUp_success() throws Exception {
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
@@ -310,5 +310,4 @@ public class EditCommandTest {
                 + editPersonDescriptor + "}";
         assertEquals(expected, editCommand.toString());
     }
-
 }
