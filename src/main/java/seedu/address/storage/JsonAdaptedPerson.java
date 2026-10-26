@@ -27,8 +27,10 @@ import seedu.address.model.tag.Tag;
  */
 class JsonAdaptedPerson {
 
-    public static final String MISSING_FIELD_MESSAGE_FORMAT = "Person's %s field is missing!";
-    public static final String MESSAGE_NULL_TAG = "Person's tags list contains a null entry.";
+    public static final String MISSING_FIELD_MESSAGE_FORMAT =
+            "Person's %s field is missing!";
+    public static final String MESSAGE_NULL_TAG =
+            "Person's tags list contains a null entry.";
     public static final String MESSAGE_NULL_INTERACTION_NOTE =
             "Person's interaction notes list contains a null entry.";
 
@@ -42,12 +44,11 @@ class JsonAdaptedPerson {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private final String followUp;
 
-    private final List<String> interactionNotes = new ArrayList<>();
+    private final List<JsonAdaptedInteractionNote> interactionNotes =
+            new ArrayList<>();
 
     /**
      * Constructs a {@code JsonAdaptedPerson} with the given person details.
-     * A missing {@code followUp} means the person has no follow-up date.
-     * A missing {@code interactionNotes} list means the person has no recorded interaction notes.
      */
     @JsonCreator
     public JsonAdaptedPerson(
@@ -58,7 +59,9 @@ class JsonAdaptedPerson {
             @JsonProperty("status") String status,
             @JsonProperty("tags") List<JsonAdaptedTag> tags,
             @JsonProperty("followUp") String followUp,
-            @JsonProperty("interactionNotes") List<String> interactionNotes) {
+            @JsonProperty("interactionNotes")
+                    List<JsonAdaptedInteractionNote> interactionNotes) {
+
         this.name = name;
         this.phone = phone;
         this.email = email;
@@ -76,32 +79,61 @@ class JsonAdaptedPerson {
         }
     }
 
-    /**
-     * Constructs a {@code JsonAdaptedPerson} with the given details, no status,
-     * no follow-up date and no interaction notes, as written by older versions
-     * of the app.
-     */
-    public JsonAdaptedPerson(String name, String phone, String email, String address,
+    public JsonAdaptedPerson(
+            String name,
+            String phone,
+            String email,
+            String address,
             List<JsonAdaptedTag> tags) {
-        this(name, phone, email, address, null, tags, null, null);
+
+        this(
+                name,
+                phone,
+                email,
+                address,
+                null,
+                tags,
+                null,
+                null);
     }
 
-    /**
-     * Constructs a {@code JsonAdaptedPerson} with the given details and status
-     * but no follow-up date or interaction notes.
-     */
-    public JsonAdaptedPerson(String name, String phone, String email, String address,
-            String status, List<JsonAdaptedTag> tags) {
-        this(name, phone, email, address, status, tags, null, null);
+    public JsonAdaptedPerson(
+            String name,
+            String phone,
+            String email,
+            String address,
+            String status,
+            List<JsonAdaptedTag> tags) {
+
+        this(
+                name,
+                phone,
+                email,
+                address,
+                status,
+                tags,
+                null,
+                null);
     }
 
-    /**
-     * Constructs a {@code JsonAdaptedPerson} with the given details, status
-     * and follow-up date, but no interaction notes.
-     */
-    public JsonAdaptedPerson(String name, String phone, String email, String address,
-            String status, List<JsonAdaptedTag> tags, String followUp) {
-        this(name, phone, email, address, status, tags, followUp, null);
+    public JsonAdaptedPerson(
+            String name,
+            String phone,
+            String email,
+            String address,
+            String status,
+            List<JsonAdaptedTag> tags,
+            String followUp) {
+
+        this(
+                name,
+                phone,
+                email,
+                address,
+                status,
+                tags,
+                followUp,
+                null);
     }
 
     /**
@@ -122,17 +154,18 @@ class JsonAdaptedPerson {
                 .map(FollowUp::toString)
                 .orElse(null);
 
-        interactionNotes.addAll(source.getInteractionNotes().stream()
-                .map(InteractionNote::toString)
-                .collect(Collectors.toList()));
+        interactionNotes.addAll(
+                source.getInteractionNotes().stream()
+                        .map(JsonAdaptedInteractionNote::new)
+                        .collect(Collectors.toList()));
     }
 
     /**
      * Converts this Jackson-friendly adapted person object into the model's
      * {@code Person} object.
      *
-     * @throws IllegalValueException if there were any data constraints violated
-     *                               in the adapted person.
+     * @throws IllegalValueException if there were any data constraints
+     *     violated in the adapted person.
      */
     public Person toModelType() throws IllegalValueException {
         final List<Tag> personTags = new ArrayList<>();
@@ -141,12 +174,15 @@ class JsonAdaptedPerson {
             if (tag == null) {
                 throw new IllegalValueException(MESSAGE_NULL_TAG);
             }
+
             personTags.add(tag.toModelType());
         }
 
         if (name == null) {
             throw new IllegalValueException(
-                    String.format(MISSING_FIELD_MESSAGE_FORMAT, Name.class.getSimpleName()));
+                    String.format(
+                            MISSING_FIELD_MESSAGE_FORMAT,
+                            Name.class.getSimpleName()));
         }
 
         if (!Name.isValidName(name)) {
@@ -157,7 +193,9 @@ class JsonAdaptedPerson {
 
         if (phone == null) {
             throw new IllegalValueException(
-                    String.format(MISSING_FIELD_MESSAGE_FORMAT, Phone.class.getSimpleName()));
+                    String.format(
+                            MISSING_FIELD_MESSAGE_FORMAT,
+                            Phone.class.getSimpleName()));
         }
 
         if (!Phone.isValidPhone(phone)) {
@@ -168,7 +206,9 @@ class JsonAdaptedPerson {
 
         if (email == null) {
             throw new IllegalValueException(
-                    String.format(MISSING_FIELD_MESSAGE_FORMAT, Email.class.getSimpleName()));
+                    String.format(
+                            MISSING_FIELD_MESSAGE_FORMAT,
+                            Email.class.getSimpleName()));
         }
 
         if (!Email.isValidEmail(email)) {
@@ -179,7 +219,9 @@ class JsonAdaptedPerson {
 
         if (address == null) {
             throw new IllegalValueException(
-                    String.format(MISSING_FIELD_MESSAGE_FORMAT, Address.class.getSimpleName()));
+                    String.format(
+                            MISSING_FIELD_MESSAGE_FORMAT,
+                            Address.class.getSimpleName()));
         }
 
         if (!Address.isValidAddress(address)) {
@@ -188,7 +230,9 @@ class JsonAdaptedPerson {
 
         final Address modelAddress = new Address(address);
 
-        if (status != null && !status.isBlank() && !Status.isValidStatus(status)) {
+        if (status != null
+                && !status.isBlank()
+                && !Status.isValidStatus(status)) {
             throw new IllegalValueException(Status.MESSAGE_CONSTRAINTS);
         }
 
@@ -199,7 +243,8 @@ class JsonAdaptedPerson {
 
         final Set<Tag> modelTags = new HashSet<>(personTags);
 
-        if (followUp != null && !followUp.isBlank()
+        if (followUp != null
+                && !followUp.isBlank()
                 && !FollowUp.isValidFollowUp(followUp)) {
             throw new IllegalValueException(FollowUp.MESSAGE_CONSTRAINTS);
         }
@@ -209,18 +254,17 @@ class JsonAdaptedPerson {
                         ? Optional.empty()
                         : Optional.of(new FollowUp(followUp));
 
-        final List<InteractionNote> modelInteractionNotes = new ArrayList<>();
+        final List<InteractionNote> modelInteractionNotes =
+                new ArrayList<>();
 
-        for (String interactionNote : interactionNotes) {
+        for (JsonAdaptedInteractionNote interactionNote : interactionNotes) {
             if (interactionNote == null) {
-                throw new IllegalValueException(MESSAGE_NULL_INTERACTION_NOTE);
+                throw new IllegalValueException(
+                        MESSAGE_NULL_INTERACTION_NOTE);
             }
 
-            if (!InteractionNote.isValidNote(interactionNote)) {
-                throw new IllegalValueException(InteractionNote.MESSAGE_CONSTRAINTS);
-            }
-
-            modelInteractionNotes.add(new InteractionNote(interactionNote));
+            modelInteractionNotes.add(
+                    interactionNote.toModelType());
         }
 
         return new Person(
