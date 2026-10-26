@@ -75,7 +75,38 @@ public class DoneCommandTest {
             assertNoContactDetails(logs);
         }
     }
+    
+    @Test
+    public void execute_completeFollowUp_preservesInteractionNotes() {
+        Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
 
+        Person personWithNotesAndFollowUp = new PersonBuilder(completedPerson)
+                .withInteractionNotes(
+                        "Called client",
+                        "Discussed renewal options")
+                .withFollowUp("25-12-2099")
+                .build();
+
+        Person expectedPerson = new PersonBuilder(completedPerson)
+                .withInteractionNotes(
+                        "Called client",
+                        "Discussed renewal options")
+                .build();
+
+        model.setPerson(originalPerson, personWithNotesAndFollowUp);
+
+        String expectedMessage = "Marked follow-up for John Tan as completed.";
+
+        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        expectedModel.setPerson(personWithNotesAndFollowUp, expectedPerson);
+
+        assertCommandSuccess(
+                new DoneCommand(INDEX_FIRST_PERSON),
+                model,
+                expectedMessage,
+                expectedModel);
+    }
+    
     @Test
     public void execute_noPendingFollowUp_throwsCommandException() {
         Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
