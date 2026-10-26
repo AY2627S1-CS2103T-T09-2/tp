@@ -13,9 +13,11 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
+import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.DeleteCommand;
+import seedu.address.logic.commands.DeleteNoteCommand;
 import seedu.address.logic.commands.DoneCommand;
 import seedu.address.logic.commands.DueCommand;
 import seedu.address.logic.commands.EditCommand;
@@ -23,8 +25,11 @@ import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
+import seedu.address.logic.commands.HistoryCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.NoteCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Status;
@@ -65,6 +70,19 @@ public class CommandInputParserTest {
         DeleteCommand command = (DeleteCommand) parser.parseCommand(
                 DeleteCommand.COMMAND_WORD + " " + INDEX_FIRST_PERSON.getOneBased());
         assertEquals(new DeleteCommand(INDEX_FIRST_PERSON), command);
+    }
+
+    @Test
+    public void parseCommand_deleteNote() throws ParseException {
+        DeleteNoteCommand expectedCommand =
+                new DeleteNoteCommand(
+                        INDEX_FIRST_PERSON,
+                        Index.fromOneBased(2));
+
+        assertEquals(
+                expectedCommand,
+                parser.parseCommand(
+                        DeleteNoteCommand.COMMAND_WORD + " 1 2"));
     }
 
     @Test
@@ -114,6 +132,7 @@ public class CommandInputParserTest {
         for (String commandText : invalidIndexCommands) {
             assertThrows(ParseException.class, invalidIndexMessage, () -> parser.parseCommand(commandText));
         }
+
         String usageMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, DoneCommand.MESSAGE_USAGE);
         assertThrows(ParseException.class, usageMessage, () -> parser.parseCommand("done"));
         assertThrows(ParseException.class, usageMessage, () -> parser.parseCommand("done 1 extra"));
@@ -169,6 +188,30 @@ public class CommandInputParserTest {
 
         assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand("list 3"));
         assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand("list extra"));
+    }
+
+    @Test
+    public void parseCommand_note() throws ParseException {
+        NoteCommand expectedCommand = new NoteCommand(
+                INDEX_FIRST_PERSON,
+                new InteractionNote("Discussed hospital coverage"));
+
+        assertEquals(
+                expectedCommand,
+                parser.parseCommand(
+                        NoteCommand.COMMAND_WORD
+                                + " 1 nt/Discussed hospital coverage"));
+    }
+
+    @Test
+    public void parseCommand_history() throws ParseException {
+        HistoryCommand expectedCommand =
+                new HistoryCommand(INDEX_FIRST_PERSON);
+
+        assertEquals(
+                expectedCommand,
+                parser.parseCommand(
+                        HistoryCommand.COMMAND_WORD + " 1"));
     }
 
     @Test

@@ -1,12 +1,15 @@
 package seedu.address.testutil;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.FollowUp;
+import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -31,6 +34,7 @@ public class PersonBuilder {
     private Status status;
     private Set<Tag> tags;
     private Optional<FollowUp> followUp;
+    private List<InteractionNote> interactionNotes;
 
     /**
      * Creates a {@code PersonBuilder} with the default details.
@@ -43,6 +47,7 @@ public class PersonBuilder {
         status = Status.PROSPECT;
         tags = new HashSet<>();
         followUp = Optional.empty();
+        interactionNotes = new ArrayList<>();
     }
 
     /**
@@ -56,6 +61,7 @@ public class PersonBuilder {
         status = personToCopy.getStatus();
         tags = new HashSet<>(personToCopy.getTags());
         followUp = personToCopy.getFollowUp();
+        interactionNotes = new ArrayList<>(personToCopy.getInteractionNotes());
     }
 
     /**
@@ -67,15 +73,15 @@ public class PersonBuilder {
     }
 
     /**
-     * Parses the {@code tags} into a {@code Set<Tag>} and sets it to the {@code Person} that we are building.
+     * Parses the {@code tags} into a {@code Set<Tag>}.
      */
-    public PersonBuilder withTags(String ... tags) {
+    public PersonBuilder withTags(String... tags) {
         this.tags = SampleDataUtil.getTagSet(tags);
         return this;
     }
 
     /**
-     * Sets the {@code Address} of the {@code Person} that we are building.
+     * Sets the {@code Address} of the {@code Person}.
      */
     public PersonBuilder withAddress(String address) {
         this.address = new Address(address);
@@ -83,7 +89,7 @@ public class PersonBuilder {
     }
 
     /**
-     * Sets the {@code Phone} of the {@code Person} that we are building.
+     * Sets the {@code Phone} of the {@code Person}.
      */
     public PersonBuilder withPhone(String phone) {
         this.phone = new Phone(phone);
@@ -91,7 +97,7 @@ public class PersonBuilder {
     }
 
     /**
-     * Sets the {@code Email} of the {@code Person} that we are building.
+     * Sets the {@code Email} of the {@code Person}.
      */
     public PersonBuilder withEmail(String email) {
         this.email = new Email(email);
@@ -107,15 +113,46 @@ public class PersonBuilder {
     }
 
     /**
-     * Sets the {@code FollowUp} of the {@code Person} that we are building.
+     * Sets the {@code FollowUp} of the {@code Person}.
      */
     public PersonBuilder withFollowUp(String followUp) {
         this.followUp = Optional.of(new FollowUp(followUp));
         return this;
     }
 
-    public Person build() {
-        return new Person(name, phone, email, address, status, tags, followUp);
+    /**
+     * Creates and sets interaction notes using the supplied note text.
+     */
+    public PersonBuilder withInteractionNotes(String... notes) {
+        interactionNotes = new ArrayList<>();
+
+        for (String note : notes) {
+            interactionNotes.add(new InteractionNote(note));
+        }
+
+        return this;
     }
 
+    /**
+     * Sets the interaction notes using existing note objects.
+     */
+    public PersonBuilder withInteractionNotes(InteractionNote... notes) {
+        interactionNotes = new ArrayList<>(List.of(notes));
+        return this;
+    }
+
+    /**
+     * Builds the {@code Person}.
+     */
+    public Person build() {
+        return new Person(
+                name,
+                phone,
+                email,
+                address,
+                status,
+                tags,
+                followUp,
+                interactionNotes);
+    }
 }
