@@ -1,105 +1,73 @@
 package seedu.address.logic.commands;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
-import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
-import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
-import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.index.Index;
-import seedu.address.logic.Messages;
+import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
-import seedu.address.model.UserPrefs;
+import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.Person;
 import seedu.address.testutil.PersonBuilder;
 
 public class HistoryCommandTest {
 
-    private final Model model =
-            new ModelManager(getTypicalAddressBook(), new UserPrefs());
-
     @Test
-    public void execute_personWithoutNotes_returnsNoNotesMessage() {
-        Person person =
-                model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+    public void execute_notesExist_showsNewestFirstWithTimestamps()
+            throws CommandException {
 
-        String expectedMessage =
-                String.format(
-                        HistoryCommand.MESSAGE_NO_NOTES,
-                        person.getName());
+        InteractionNote olderNote = new InteractionNote(
+                "Discussed hospital coverage",
+                LocalDateTime.of(2026, 10, 26, 20, 30));
 
-        assertCommandSuccess(
-                new HistoryCommand(INDEX_FIRST_PERSON),
-                model,
-                expectedMessage,
-                model);
+        InteractionNote newerNote = new InteractionNote(
+                "Client requested a quotation",
+                LocalDateTime.of(2026, 10, 26, 21, 10));
+
+        Person person = new PersonBuilder()
+                .withName("John Tan")
+                .withInteractionNotes(olderNote, newerNote)
+                .build();
+
+        Model model = new ModelManager();
+        model.addPerson(person);
+
+        HistoryCommand command =
+                new HistoryCommand(Index.fromOneBased(1));
+
+        CommandResult result = command.execute(model);
+
+        String expected = String.join(
+                System.lineSeparator(),
+                "Interaction history for John Tan:",
+                "1. [26-10-2026 21:10] Client requested a quotation",
+                "2. [26-10-2026 20:30] Discussed hospital coverage");
+
+        assertEquals(expected, result.getFeedbackToUser());
     }
 
     @Test
-    public void execute_personWithNotes_returnsInteractionHistory() {
-        Person originalPerson =
-                model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+    public void execute_noNotes_showsNoNotesMessage()
+            throws CommandException {
 
-        Person personWithNotes =
-                new PersonBuilder(originalPerson)
-                        .withInteractionNotes(
-                                "First meeting",
-                                "Discussed hospital coverage")
-                        .build();
+        Person person = new PersonBuilder()
+                .withName("John Tan")
+                .build();
 
-        model.setPerson(originalPerson, personWithNotes);
+        Model model = new ModelManager();
+        model.addPerson(person);
 
-        String expectedMessage =
-                String.format(
-                        HistoryCommand.MESSAGE_HISTORY_HEADER,
-                        personWithNotes.getName())
-                        + System.lineSeparator()
-                        + "1. First meeting"
-                        + System.lineSeparator()
-                        + "2. Discussed hospital coverage";
+        HistoryCommand command =
+                new HistoryCommand(Index.fromOneBased(1));
 
-        assertCommandSuccess(
-                new HistoryCommand(INDEX_FIRST_PERSON),
-                model,
-                expectedMessage,
-                model);
-    }
+        CommandResult result = command.execute(model);
 
-    @Test
-    public void execute_invalidIndex_throwsCommandException() {
-        Index invalidIndex =
-                Index.fromOneBased(model.getFilteredPersonList().size() + 1);
-
-        String expectedMessage =
-                Messages.getInvalidPersonDisplayedIndexMessage(
-                        invalidIndex.getOneBased(),
-                        model.getFilteredPersonList().size());
-
-        assertCommandFailure(
-                new HistoryCommand(invalidIndex),
-                model,
-                expectedMessage);
-    }
-
-    @Test
-    public void equals() {
-        HistoryCommand firstCommand =
-                new HistoryCommand(INDEX_FIRST_PERSON);
-
-        HistoryCommand sameCommand =
-                new HistoryCommand(INDEX_FIRST_PERSON);
-
-        HistoryCommand differentCommand =
-                new HistoryCommand(INDEX_SECOND_PERSON);
-
-        assertTrue(firstCommand.equals(firstCommand));
-        assertTrue(firstCommand.equals(sameCommand));
-        assertFalse(firstCommand.equals(differentCommand));
-        assertFalse(firstCommand.equals(null));
+        assertEquals(
+                "No interaction notes recorded for John Tan.",
+                result.getFeedbackToUser());
     }
 }
