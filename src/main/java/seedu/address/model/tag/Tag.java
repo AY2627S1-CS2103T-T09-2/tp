@@ -122,15 +122,6 @@ public class Tag {
         return Normalizer.normalize(lowerCase.toUpperCase(Locale.ROOT), Form.NFC);
     }
 
-    /**
-     * Returns true if this tag has the same name as {@code otherTagName}, ignoring letter case.
-     * Uses the same rule as {@link #equals(Object)}. A string that is not a valid tag name never matches.
-     */
-    public boolean hasSameNameIgnoringCase(String otherTagName) {
-        requireNonNull(otherTagName);
-        return isValidTagName(otherTagName) && comparisonKey.equals(toComparisonKey(otherTagName));
-    }
-
     @Override
     public boolean equals(Object other) {
         if (other == this) {

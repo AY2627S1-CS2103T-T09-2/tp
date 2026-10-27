@@ -2,6 +2,7 @@ package seedu.address.model.tag;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -9,7 +10,6 @@ import static seedu.address.testutil.Assert.assertThrows;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 
@@ -286,33 +286,18 @@ public class TagTest {
                 if (a.equals(b)) {
                     assertEquals(a.hashCode(), b.hashCode(), first + " vs " + second);
                 }
-                assertEquals(a.equals(b), a.hasSameNameIgnoringCase(second), first + " vs " + second);
-                assertTrue(a.hasSameNameIgnoringCase(first.toLowerCase(Locale.ROOT)), first);
-                assertTrue(a.hasSameNameIgnoringCase(first.toUpperCase(Locale.ROOT)), first);
             }
         }
     }
 
     @Test
-    public void hasSameNameIgnoringCase() {
-        Tag tag = new Tag("Café");
-        assertTrue(tag.hasSameNameIgnoringCase("café"));
-        assertTrue(tag.hasSameNameIgnoringCase("CAFE\u0301"));
-        assertFalse(tag.hasSameNameIgnoringCase("cafe"));
-        assertFalse(tag.hasSameNameIgnoringCase("caf"));
-
-        // The list filter passes an already lowercased name.
-        Tag greek = new Tag("\u03AA\u0301");
-        assertTrue(greek.hasSameNameIgnoringCase("\u03AA\u0301".toLowerCase(Locale.ROOT)));
-        assertTrue(greek.hasSameNameIgnoringCase("\u0390"));
-        assertThrows(NullPointerException.class, () -> tag.hasSameNameIgnoringCase(null));
-
-        // EP: a string that is not a valid tag name never matches, however long it is.
-        assertFalse(tag.hasSameNameIgnoringCase("caf\u00E9!"));
-        Tag sigmas = new Tag("\u03A3".repeat(50));
-        assertTrue(sigmas.hasSameNameIgnoringCase("\u03C3".repeat(50)));
-        String manySigmas = "\u03C3".repeat(100_000);
-        assertTimeoutPreemptively(FAST, () -> assertFalse(sigmas.hasSameNameIgnoringCase(manySigmas)));
+    public void equals_caseAndAccentVariants_sameTag() {
+        Tag tag = new Tag("Caf\u00E9");
+        assertEquals(tag, new Tag("caf\u00E9"));
+        assertEquals(tag, new Tag("CAFE\u0301"));
+        assertNotEquals(tag, new Tag("cafe"));
+        assertNotEquals(tag, new Tag("caf"));
+        assertEquals(new Tag("\u03A3".repeat(50)), new Tag("\u03C3".repeat(50)));
     }
 
     @Test
