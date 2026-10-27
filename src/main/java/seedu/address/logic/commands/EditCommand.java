@@ -121,8 +121,8 @@ public class EditCommand extends Command {
                 ? editPersonDescriptor.getFollowUp() : personToEdit.getFollowUp();
         Set<Tag> updatedTags = editPersonDescriptor.getTags().orElse(personToEdit.getTags());
 
-        return new Person(updatedName, updatedPhone, updatedEmail, updatedAddress,
-            updatedStatus, updatedTags, updatedFollowUp, personToEdit.getInteractionNotes());
+        return new Person(updatedName, updatedPhone, updatedEmail, updatedAddress, updatedStatus, updatedTags,
+                updatedFollowUp, personToEdit.getLastContact(), personToEdit.getInteractionNotes());
     }
 
     @Override
