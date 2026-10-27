@@ -39,40 +39,42 @@ public class NameContainsKeywordsPredicateTest {
 
     @Test
     public void test_nameContainsKeywords_returnsTrue() {
-        // One keyword
+        // EP: one keyword matching a complete name word.
         NameContainsKeywordsPredicate predicate = new NameContainsKeywordsPredicate(List.of("Alice"));
         assertTrue(predicate.test(new PersonBuilder().withName("Alice Bob").build()));
 
-        // Multiple keywords
+        // EP: multiple keywords that all match name words.
         predicate = new NameContainsKeywordsPredicate(List.of("Alice", "Bob"));
         assertTrue(predicate.test(new PersonBuilder().withName("Alice Bob").build()));
 
-        // Only one matching keyword
+        // EP: only some keywords match; one match is sufficient because the search uses OR.
         predicate = new NameContainsKeywordsPredicate(List.of("Bob", "Carol"));
         assertTrue(predicate.test(new PersonBuilder().withName("Alice Carol").build()));
 
-        // Mixed-case keywords
+        // EP: matching keywords with different letter case.
         predicate = new NameContainsKeywordsPredicate(List.of("aLIce", "bOB"));
         assertTrue(predicate.test(new PersonBuilder().withName("Alice Bob").build()));
 
+        // EP: a keyword matching only the start of a name word.
         predicate = new NameContainsKeywordsPredicate(List.of("ta"));
         assertTrue(predicate.test(new PersonBuilder().withName("Alice Tan").build()));
     }
 
     @Test
     public void test_nameDoesNotContainKeywords_returnsFalse() {
-        // Zero keywords
+        // EP: no keywords. Boundary value: empty keyword list cannot produce a match.
         NameContainsKeywordsPredicate predicate = new NameContainsKeywordsPredicate(List.of());
         assertFalse(predicate.test(new PersonBuilder().withName("Alice").build()));
 
-        // Non-matching keyword
+        // EP: a keyword absent from every name word.
         predicate = new NameContainsKeywordsPredicate(List.of("Carol"));
         assertFalse(predicate.test(new PersonBuilder().withName("Alice Bob").build()));
 
+        // EP: a substring inside a name word that does not start the word.
         predicate = new NameContainsKeywordsPredicate(List.of("lic"));
         assertFalse(predicate.test(new PersonBuilder().withName("Alice Tan").build()));
 
-        // Keywords match phone, email and address, but do not match name
+        // EP: keywords matching other contact fields but no name words.
         predicate = new NameContainsKeywordsPredicate(List.of("12345", "alice@email.com", "Main", "Street"));
         assertFalse(predicate.test(new PersonBuilder().withName("Alice").withPhone("12345")
                 .withEmail("alice@email.com").withAddress("Main Street").build()));

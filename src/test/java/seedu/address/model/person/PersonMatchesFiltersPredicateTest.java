@@ -27,14 +27,18 @@ public class PersonMatchesFiltersPredicateTest {
 
     @Test
     public void constructor_nullFilters_throwsNullPointerException() {
+        // EP: a null status optional, distinct from an empty optional meaning no filter.
         assertThrows(NullPointerException.class, () ->
                 new PersonMatchesFiltersPredicate(null, Optional.empty()));
+
+        // EP: a null tag optional.
         assertThrows(NullPointerException.class, () ->
                 new PersonMatchesFiltersPredicate(Optional.empty(), null));
     }
 
     @Test
     public void test_noFilters_returnsTrue() {
+        // EP: neither filter is supplied; status and presence of tags must not restrict the result.
         PersonMatchesFiltersPredicate predicate =
                 new PersonMatchesFiltersPredicate(Optional.empty(), Optional.empty());
 
@@ -48,8 +52,11 @@ public class PersonMatchesFiltersPredicateTest {
         PersonMatchesFiltersPredicate predicate =
                 new PersonMatchesFiltersPredicate(Optional.of(Status.CLIENT), Optional.empty());
 
+        // EP: the status matches; different tags are irrelevant when no tag filter is supplied.
         assertTrue(predicate.test(clientReferral));
         assertTrue(predicate.test(clientFamily));
+
+        // EP: the status differs; both other supported statuses are represented.
         assertFalse(predicate.test(prospectReferral));
         assertFalse(predicate.test(inactiveWithoutTags));
     }
@@ -59,14 +66,20 @@ public class PersonMatchesFiltersPredicateTest {
         PersonMatchesFiltersPredicate predicate =
                 new PersonMatchesFiltersPredicate(Optional.empty(), Optional.of(new Tag("REFERRAL")));
 
+        // EP: a complete tag matches ignoring case; the contact's status is irrelevant.
         assertTrue(predicate.test(clientReferral));
         assertTrue(predicate.test(prospectReferral));
+
+        // EP: tags are present, but none matches.
         assertFalse(predicate.test(clientFamily));
+
+        // EP: the contact has no tags.
         assertFalse(predicate.test(inactiveWithoutTags));
     }
 
     @Test
     public void test_partialTag_returnsFalse() {
+        // EP: only a tag prefix matches; filtering requires the entire tag.
         PersonMatchesFiltersPredicate predicate =
                 new PersonMatchesFiltersPredicate(Optional.empty(), Optional.of(new Tag("ref")));
 
@@ -79,14 +92,22 @@ public class PersonMatchesFiltersPredicateTest {
                 new PersonMatchesFiltersPredicate(Optional.of(Status.CLIENT),
                         Optional.of(new Tag("referral")));
 
+        // EP: both filters match.
         assertTrue(predicate.test(clientReferral));
+
+        // EP: only the status matches.
         assertFalse(predicate.test(clientFamily));
+
+        // EP: only the tag matches.
         assertFalse(predicate.test(prospectReferral));
+
+        // EP: neither filter matches.
         assertFalse(predicate.test(inactiveWithoutTags));
     }
 
     @Test
     public void test_nullPerson_throwsNullPointerException() {
+        // EP: null contact, even when there are no filters.
         PersonMatchesFiltersPredicate predicate =
                 new PersonMatchesFiltersPredicate(Optional.empty(), Optional.empty());
 

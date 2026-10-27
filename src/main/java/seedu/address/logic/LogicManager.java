@@ -54,6 +54,9 @@ public class LogicManager implements Logic {
         Predicate<? super Person> previousPredicate = model.getPersonListPredicate();
         Comparator<? super Person> previousComparator = model.getPersonListComparator();
         CommandResult commandResult = command.execute(model);
+        if (previousData.equals(model.getAddressBook())) {
+            return commandResult;
+        }
 
         try {
             storage.saveAddressBook(model.getAddressBook());

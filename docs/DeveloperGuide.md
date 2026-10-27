@@ -129,6 +129,8 @@ How the parsing works:
 `Status.DEFAULT` is `PROSPECT`. Each `Person` stores one status and optionally one follow-up date.
 `Name` accepts Unicode letters and common name punctuation after an initial letter; `Phone` accepts
 an optional leading plus sign and separators between at least three digits.
+`Phone` is capped at 30 characters and `Email` at 254. Both lengths are checked before the regex, so
+a very long value from a command or the data file is rejected instead of overflowing the stack.
 
 
 The `Model` component,
@@ -204,7 +206,10 @@ These validation failures leave the contact unchanged. Execution stops before `M
 If saving fails with an `IOException` (including `AccessDeniedException`), `LogicManager` restores the
 pre-command address book, filter and sort order, then throws a `CommandException` with a save-error message.
 The restored contact still has its pending follow-up, and the displayed indexes return to their previous order.
-No success result is returned. This rollback applies to all commands executed through `LogicManager`.
+No success result is returned. This rollback applies to commands that change contact data, including
+interaction notes. `LogicManager` compares the address book before and after execution and skips saving
+when the data is unchanged. Read-only commands such as `list`, `find`, `due`, `history`, `help` and `exit`
+therefore still work when the data file cannot be written, and their view changes are retained.
 
 `JsonAddressBookStorage` writes the complete replacement JSON to a temporary file in the destination's
 directory, then atomically replaces the destination. A failed write or replacement leaves the previous JSON
@@ -213,8 +218,9 @@ original failure for diagnosis. If the file system does not support atomic repla
 instead of falling back to an operation that could damage the existing file.
 
 Future undo integration must record a change only after saving succeeds. A failed undo save must restore the
-data and view from before that attempt and retain the undo entry for retry. Notes, last-contact dates and undo
-are not part of the current implementation; their preservation tests must be added when those features merge.
+data and view from before that attempt and retain the undo entry for retry. The current rollback tests verify
+that interaction note text, order and timestamps are preserved. Last-contact dates and undo are not part
+of the current implementation; their preservation tests must be added when those features merge.
 
 ### Viewing due follow-ups
 
@@ -224,7 +230,7 @@ are not part of the current implementation; their preservation tests must be add
 * `DueCommand` works out the cutoff from a `Clock`. The app passes the system clock, and tests pass a fixed one, so the tests do not depend on the real date.
 * `FollowUpDueByPredicate` keeps contacts that have a follow-up on or before the cutoff. Contacts without a follow-up are left out.
 * `Model#updateFilteredPersonList(Predicate, Comparator)` filters and sorts the displayed list in one step. `ModelManager` wraps its `FilteredList` in a `SortedList`, and `getFilteredPersonList()` returns the sorted view, so index-based commands such as `done 1` act on the order the user sees.
-* The one-argument `updateFilteredPersonList(Predicate)` clears the comparator, so `list`, `find` and every command that resets the list go back to the stored order.
+* The one-argument `updateFilteredPersonList(Predicate)` clears the comparator, so `list` and `find` replace the current view and return to stored order. Adding or editing a contact retains the active filter and sort order; the displayed list updates as contacts change.
 
 The sequence diagram below shows how `due 7` is executed.
 
@@ -548,6 +554,20 @@ testers are expected to do more *exploratory* testing.
       Expected: All four contacts are shown.
       The result is `Listed all contacts.`
 
+1. Adding and editing while a filter is active
+
+   1. Prerequisites: Run `list st/CLIENT` with the four test contacts above.<br>
+      Expected: Only the two clients are shown.
+
+   1. Test case: `add n/Hidden Prospect p/91110005 e/five@example.com a/5 Test Road st/PROSPECT`<br>
+      Expected: The contact is saved but remains hidden. The result explains that the current view hides it and suggests `list` to show all contacts.
+
+   1. Test case: `add n/Visible Client p/91110006 e/six@example.com a/6 Test Road st/CLIENT`<br>
+      Expected: The new client appears in the filtered list without a hidden-contact note.
+
+   1. Test case: `edit 1 st/PROSPECT`<br>
+      Expected: The edited contact leaves the filtered list. The other clients remain visible.
+
 1. Rejecting invalid filters
 
    1. Test cases: `list st/LEAD` and `list st/`<br>
@@ -698,6 +718,9 @@ testers are expected to do more *exploratory* testing.
 
    1. Relaunch the app.<br>
       Expected: The app starts with an empty contact list, because the file could not be read. A copy of the invalid file is saved as `data/addressbook.json.bak`. Restoring the original value and relaunching brings the contacts back.
+
+   1. Repeat with one contact's `"phone"` changed to 31 or more digits.<br>
+      Expected: The same as above. The app still opens.
 
 1. Dealing with an older data file
 
