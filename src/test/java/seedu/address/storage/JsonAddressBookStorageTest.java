@@ -137,6 +137,12 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
+    public void readAddressBookWithBackup_tooLongPhone_backupCreatedWithSameContent() throws Exception {
+        // EP: a phone far over the length limit is invalid data, so it is backed up like any other.
+        assertCorruptedFileBackedUp("tooLongPhoneAddressBook.json");
+    }
+
+    @Test
     public void readAddressBookWithBackup_existingBackup_backupReplaced() throws Exception {
         // EP: a backup already exists; the newest unreadable file replaces it.
         Path backupPath = testFolder.resolve("addressbook.json.bak");

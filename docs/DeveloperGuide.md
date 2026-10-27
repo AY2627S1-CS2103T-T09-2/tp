@@ -129,6 +129,8 @@ How the parsing works:
 `Status.DEFAULT` is `PROSPECT`. Each `Person` stores one status and optionally one follow-up date.
 `Name` accepts Unicode letters and common name punctuation after an initial letter; `Phone` accepts
 an optional leading plus sign and separators between at least three digits.
+`Phone` is capped at 30 characters and `Email` at 254. Both lengths are checked before the regex, so
+a very long value from a command or the data file is rejected instead of overflowing the stack.
 
 
 The `Model` component,
@@ -686,6 +688,9 @@ testers are expected to do more *exploratory* testing.
 
    1. Relaunch the app.<br>
       Expected: The app starts with an empty contact list, because the file could not be read. A copy of the invalid file is saved as `data/addressbook.json.bak`. Restoring the original value and relaunching brings the contacts back.
+
+   1. Repeat with one contact's `"phone"` changed to 31 or more digits.<br>
+      Expected: The same as above. The app still opens.
 
 1. Dealing with an older data file
 

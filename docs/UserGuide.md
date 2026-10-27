@@ -119,6 +119,7 @@ Names must start with a letter, including accented letters. They may then contai
 hyphens (`-`), apostrophes (`'`), periods (`.`), commas (`,`), and slashes (`/`), so names such as
 `Anne-Marie`, `O'Connor`, and `Raj s/o Kumar` are accepted. Phone numbers must contain at least three
 digits. They may start with `+` and include spaces or dashes between digits, for example `+65 9123-4567`.
+A phone number can be at most 30 characters long and an email at most 254 characters long.
 Phone numbers are saved exactly as entered. If a name is already in the contact list, Easy-Insurance
 shows that contact's name and phone number.
 
@@ -165,6 +166,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] 
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
 * `st/STATUS` changes the contact's status. Status is case-insensitive.
+* A new phone number (at most 30 characters) or email (at most 254 characters) follows the same rules as in `add`.
 * `f/FOLLOW_UP_DATE` changes the follow-up date. The date must be real and in `DD-MM-YYYY` format.
 * Past follow-up dates are accepted with a warning.
 * To clear an existing follow-up, enter `f/` without a date after it.

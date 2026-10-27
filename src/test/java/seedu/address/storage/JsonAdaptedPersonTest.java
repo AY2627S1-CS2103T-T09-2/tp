@@ -425,6 +425,22 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
+    public void toModelType_tooLongPhone_throwsIllegalValueException() {
+        // EP: a saved phone is far over the length limit; reject it instead of overflowing the stack.
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(
+                        VALID_NAME,
+                        "9".repeat(5000),
+                        VALID_EMAIL,
+                        VALID_ADDRESS,
+                        VALID_TAGS);
+        assertThrows(
+                IllegalValueException.class,
+                Phone.MESSAGE_CONSTRAINTS,
+                person::toModelType);
+    }
+
+    @Test
     public void toModelType_nullPhone_throwsIllegalValueException() {
         // EP: the required phone is absent.
         JsonAdaptedPerson person =
@@ -457,6 +473,22 @@ public class JsonAdaptedPersonTest {
         assertThrows(
                 IllegalValueException.class,
                 expectedMessage,
+                person::toModelType);
+    }
+
+    @Test
+    public void toModelType_tooLongEmail_throwsIllegalValueException() {
+        // EP: a saved email is far over the length limit; reject it instead of overflowing the stack.
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(
+                        VALID_NAME,
+                        VALID_PHONE,
+                        "a.".repeat(5000) + "a@b.com",
+                        VALID_ADDRESS,
+                        VALID_TAGS);
+        assertThrows(
+                IllegalValueException.class,
+                Email.MESSAGE_CONSTRAINTS,
                 person::toModelType);
     }
 

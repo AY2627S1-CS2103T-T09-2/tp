@@ -1,5 +1,6 @@
 package seedu.address.model.person;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -84,6 +85,29 @@ public class EmailTest {
         assertTrue(Email.isValidEmail("peter_jack@very-very-very-long-example.com")); // long domain name
         assertTrue(Email.isValidEmail("if.you.dream.it_you.can.do.it@example.com")); // long local part
         assertTrue(Email.isValidEmail("e1234567@u.nus.edu")); // more than one period in domain
+    }
+
+    @Test
+    public void isValidEmail_length() {
+        String domain = "@example.com";
+
+        // EP: email at the length limit.
+        String atLimit = "a".repeat(Email.MAX_LENGTH - domain.length()) + domain; // Boundary value: exactly the limit.
+        assertEquals(Email.MAX_LENGTH, atLimit.length());
+        assertTrue(Email.isValidEmail(atLimit));
+
+        // EP: email over the length limit.
+        assertFalse(Email.isValidEmail("a" + atLimit)); // Boundary value: one character over the limit.
+
+        // EP: very long emails with many local-part segments are rejected without overflowing the stack.
+        assertFalse(Email.isValidEmail("a.".repeat(2500) + "a" + domain)); // about 5000 characters
+        assertFalse(Email.isValidEmail("a.".repeat(50000) + "a" + domain)); // about 100000 characters
+    }
+
+    @Test
+    public void constructor_tooLongEmail_throwsIllegalArgumentException() {
+        String tooLongEmail = "a".repeat(Email.MAX_LENGTH) + "@example.com";
+        assertThrows(IllegalArgumentException.class, Email.MESSAGE_CONSTRAINTS, () -> new Email(tooLongEmail));
     }
 
     @Test

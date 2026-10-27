@@ -21,6 +21,12 @@ public class PhoneTest {
     }
 
     @Test
+    public void constructor_tooLongPhone_throwsIllegalArgumentException() {
+        String tooLongPhone = "9".repeat(Phone.MAX_LENGTH + 1);
+        assertThrows(IllegalArgumentException.class, Phone.MESSAGE_CONSTRAINTS, () -> new Phone(tooLongPhone));
+    }
+
+    @Test
     public void isValidPhone() {
         // EP: null input, which violates the method's non-null contract.
         assertThrows(NullPointerException.class, () -> Phone.isValidPhone(null));
@@ -56,6 +62,29 @@ public class PhoneTest {
         assertTrue(Phone.isValidPhone("9312 1534"));
         assertTrue(Phone.isValidPhone("9123-4567"));
         assertTrue(Phone.isValidPhone("+65 9123-4567"));
+    }
+
+    @Test
+    public void isValidPhone_length() {
+        // EP: formatted phone at the length limit.
+        String atLimit = "+65 " + "9".repeat(Phone.MAX_LENGTH - 4); // Boundary value: exactly the limit.
+        assertEquals(Phone.MAX_LENGTH, atLimit.length());
+        assertTrue(Phone.isValidPhone(atLimit));
+
+        // EP: phone over the length limit.
+        assertFalse(Phone.isValidPhone(atLimit + "9")); // Boundary value: one character over the limit.
+
+        // EP: very long phones are rejected without overflowing the stack.
+        assertFalse(Phone.isValidPhone("9".repeat(5000)));
+        assertFalse(Phone.isValidPhone("9".repeat(100000)));
+    }
+
+    @Test
+    public void validationRegex_veryLongPhone_doesNotOverflow() {
+        // EP: the regex alone handles input far over the length limit, as a safety net for the length check.
+        assertTrue("9".repeat(100000).matches(Phone.VALIDATION_REGEX));
+        assertTrue(("1 ".repeat(50000) + "1").matches(Phone.VALIDATION_REGEX));
+        assertFalse(("9".repeat(100000) + "-").matches(Phone.VALIDATION_REGEX));
     }
 
     @Test

@@ -9,11 +9,15 @@ import static seedu.address.commons.util.AppUtil.checkArgument;
  */
 public class Phone {
 
+    public static final int MAX_LENGTH = 30;
 
     public static final String MESSAGE_CONSTRAINTS =
             "Phone numbers must contain at least 3 digits, with an optional leading +, spaces or dashes "
-                    + "between digits.";
-    public static final String VALIDATION_REGEX = "\\+?(?:\\d[ -]*){2,}\\d";
+                    + "between digits, and be at most " + MAX_LENGTH + " characters long.";
+
+    // The lookahead checks for 3 digits; the rest uses a character class, which the regex engine
+    // matches in a loop rather than by recursion, so very long input cannot overflow the stack.
+    public static final String VALIDATION_REGEX = "\\+?(?=(?:[ -]*\\d){3})\\d[\\d -]*\\d";
     public final String value;
 
     /**
@@ -31,7 +35,7 @@ public class Phone {
      * Returns true if a given string is a valid phone number.
      */
     public static boolean isValidPhone(String test) {
-        return test.matches(VALIDATION_REGEX);
+        return test.length() <= MAX_LENGTH && test.matches(VALIDATION_REGEX);
     }
 
     @Override
