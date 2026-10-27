@@ -1,6 +1,7 @@
 package seedu.address.logic.parser;
 
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
+import static seedu.address.logic.Messages.MESSAGE_MISSING_REQUIRED_FIELDS;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
@@ -225,27 +226,91 @@ public class AddCommandParserTest {
 
     @Test
     public void parse_compulsoryFieldMissing_failure() {
+        // EP: one required prefix absent; each required field is named on its own.
+        assertParseFailure(parser, PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB,
+                missingFieldsMessage("n/NAME"));
+        assertParseFailure(parser, NAME_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB,
+                missingFieldsMessage("p/PHONE"));
+        assertParseFailure(parser, NAME_DESC_BOB + PHONE_DESC_BOB + ADDRESS_DESC_BOB,
+                missingFieldsMessage("e/EMAIL"));
+        assertParseFailure(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB,
+                missingFieldsMessage("a/ADDRESS"));
+
+        // EP: required prefix absent, with its bare value swallowed by the previous field.
+        assertParseFailure(parser, NAME_DESC_BOB + VALID_PHONE_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB,
+                missingFieldsMessage("p/PHONE"));
+        assertParseFailure(parser, NAME_DESC_BOB + PHONE_DESC_BOB + VALID_EMAIL_BOB + ADDRESS_DESC_BOB,
+                missingFieldsMessage("e/EMAIL"));
+        assertParseFailure(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + VALID_ADDRESS_BOB,
+                missingFieldsMessage("a/ADDRESS"));
+    }
+
+    @Test
+    public void parse_missingFieldMessage_namesFieldAndShowsUsage() {
+        // EP: the exact wording, so a change to the message is a deliberate one.
+        assertParseFailure(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB,
+                "Missing required field(s): a/ADDRESS\n" + AddCommand.MESSAGE_USAGE);
+    }
+
+    @Test
+    public void parse_severalCompulsoryFieldsMissing_failure() {
+        // EP: two or three required prefixes absent; all of them are listed in command format order.
+        assertParseFailure(parser, PHONE_DESC_BOB + EMAIL_DESC_BOB,
+                missingFieldsMessage("n/NAME, a/ADDRESS"));
+        assertParseFailure(parser, NAME_DESC_BOB + ADDRESS_DESC_BOB,
+                missingFieldsMessage("p/PHONE, e/EMAIL"));
+        assertParseFailure(parser, ADDRESS_DESC_BOB,
+                missingFieldsMessage("n/NAME, p/PHONE, e/EMAIL"));
+
+        // EP: input order does not change the order of the listed fields.
+        assertParseFailure(parser, ADDRESS_DESC_BOB + NAME_DESC_BOB,
+                missingFieldsMessage("p/PHONE, e/EMAIL"));
+        assertParseFailure(parser, EMAIL_DESC_BOB + TAG_DESC_FRIEND + PHONE_DESC_BOB,
+                missingFieldsMessage("n/NAME, a/ADDRESS"));
+    }
+
+    @Test
+    public void parse_allCompulsoryFieldsMissing_failure() {
+        String allMissing = missingFieldsMessage("n/NAME, p/PHONE, e/EMAIL, a/ADDRESS");
+
+        // EP: no arguments at all.
+        assertParseFailure(parser, "", allMissing);
+        assertParseFailure(parser, PREAMBLE_WHITESPACE, allMissing);
+
+        // EP: only optional fields given.
+        assertParseFailure(parser, STATUS_DESC_CLIENT + FOLLOW_UP_DESC_AMY + TAG_DESC_FRIEND, allMissing);
+    }
+
+    @Test
+    public void parse_compulsoryFieldMissingWithPreamble_showsUsage() {
         String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE);
 
-        // EP: required name prefix absent, even though an unprefixed value is supplied.
+        // EP: text before the first prefix means the format is wrong, so the usage is shown
+        // instead of guessing which field the text was meant for.
         assertParseFailure(parser, VALID_NAME_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB,
                 expectedMessage);
-
-        // EP: required phone prefix absent, even though an unprefixed value is supplied.
-        assertParseFailure(parser, NAME_DESC_BOB + VALID_PHONE_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB,
-                expectedMessage);
-
-        // EP: required email prefix absent, even though an unprefixed value is supplied.
-        assertParseFailure(parser, NAME_DESC_BOB + PHONE_DESC_BOB + VALID_EMAIL_BOB + ADDRESS_DESC_BOB,
-                expectedMessage);
-
-        // EP: required address prefix absent, even though an unprefixed value is supplied.
-        assertParseFailure(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + VALID_ADDRESS_BOB,
-                expectedMessage);
+        assertParseFailure(parser, PREAMBLE_NON_EMPTY + NAME_DESC_BOB + PHONE_DESC_BOB, expectedMessage);
 
         // EP: all required prefixes absent; bare values cannot identify the fields.
         assertParseFailure(parser, VALID_NAME_BOB + VALID_PHONE_BOB + VALID_EMAIL_BOB + VALID_ADDRESS_BOB,
                 expectedMessage);
+    }
+
+    @Test
+    public void parse_compulsoryFieldMissingAndRepeatedField_reportsMissingField() {
+        // EP: a missing required field is reported before a repeated one.
+        assertParseFailure(parser, NAME_DESC_AMY + NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB,
+                missingFieldsMessage("a/ADDRESS"));
+    }
+
+    @Test
+    public void parse_prefixLikeTextInsideValue_notTreatedAsPrefix() {
+        // EP: "a/" inside a word is not a prefix, because prefixes must follow whitespace.
+        assertParseFailure(parser, NAME_DESC_BOB + PHONE_DESC_BOB + " " + PREFIX_EMAIL + "data/bob@example.com",
+                missingFieldsMessage("a/ADDRESS"));
+        // EP: an uppercase prefix is not a prefix.
+        assertParseFailure(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + " A/1 Road",
+                missingFieldsMessage("a/ADDRESS"));
     }
 
     @Test
@@ -278,5 +343,9 @@ public class AddCommandParserTest {
         assertParseFailure(parser, PREAMBLE_NON_EMPTY + NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB
                 + ADDRESS_DESC_BOB + TAG_DESC_HUSBAND + TAG_DESC_FRIEND,
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
+    }
+
+    private static String missingFieldsMessage(String missingFields) {
+        return String.format(MESSAGE_MISSING_REQUIRED_FIELDS, missingFields, AddCommand.MESSAGE_USAGE);
     }
 }
