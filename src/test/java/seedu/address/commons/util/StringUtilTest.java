@@ -129,6 +129,8 @@ public class StringUtilTest {
     public void containsWordStartingWithIgnoreCase_validInputs_correctResult() {
         assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Alice Tan", "ta"));
         assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Alice Tan", "ALI"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Anne-Marie Tan", "mar"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Anne-Marie Tan", "ANNE"));
         assertFalse(StringUtil.containsWordStartingWithIgnoreCase("Alice Tan", "lic"));
         assertFalse(StringUtil.containsWordStartingWithIgnoreCase("Alice Tan", "tanley"));
     }
