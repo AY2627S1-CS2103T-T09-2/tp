@@ -27,6 +27,7 @@ public class FollowUpTest {
 
         // EP: correctly shaped text that does not represent a real date.
         assertThrows(IllegalArgumentException.class, () -> new FollowUp("31-02-2026"));
+        assertThrows(IllegalArgumentException.class, () -> new FollowUp("01-01-0000"));
     }
 
     @Test
@@ -70,11 +71,15 @@ public class FollowUpTest {
         // EP: month numbers above the calendar range.
         assertFalse(FollowUp.isValidFollowUp("20-13-2026")); // Boundary value: one above the maximum month.
 
+        // EP: year below the supported range. Boundary value: year zero.
+        assertFalse(FollowUp.isValidFollowUp("01-01-0000"));
+
         // EP: real calendar dates in DD-MM-YYYY form, including month/year ends and leap days.
         assertTrue(FollowUp.isValidFollowUp("20-09-2026"));
         assertTrue(FollowUp.isValidFollowUp("01-01-2027")); // Boundary values: minimum day and month.
         assertTrue(FollowUp.isValidFollowUp("29-02-2028")); // Boundary value: final day of a leap-year February.
         assertTrue(FollowUp.isValidFollowUp("31-12-2026")); // Boundary value: final day of the year.
+        assertTrue(FollowUp.isValidFollowUp("01-01-0001")); // Boundary value: minimum supported year.
     }
 
     @Test
@@ -178,9 +183,11 @@ public class FollowUpTest {
     public void isRealDate() {
         // EP: correctly shaped text with a nonexistent calendar date.
         assertFalse(FollowUp.isRealDate("31-02-2026"));
+        assertFalse(FollowUp.isRealDate("01-01-0000")); // Boundary value: year zero.
 
         // EP: real calendar dates. Boundary value: final day of a non-leap February.
         assertTrue(FollowUp.isRealDate("28-02-2026"));
+
     }
 
     @Test
