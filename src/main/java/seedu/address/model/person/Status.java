@@ -19,14 +19,20 @@ public enum Status {
             "Status must be one of: PROSPECT, CLIENT, INACTIVE.";
 
     /**
-     * Returns whether the given string represents a status, ignoring case and surrounding
+     * Returns whether the given string represents an ASCII status, ignoring case and surrounding
      * whitespace.
      */
     public static boolean isValidStatus(String input) {
         requireNonNull(input);
-        String normalizedInput = input.trim();
+        String trimmedInput = input.trim();
+        // Reject lookalikes before uppercasing: dotless i would otherwise become ASCII I.
+        if (!trimmedInput.matches("[a-zA-Z]+")) {
+            return false;
+        }
+
+        String normalizedInput = trimmedInput.toUpperCase(Locale.ROOT);
         for (Status status : values()) {
-            if (status.name().equalsIgnoreCase(normalizedInput)) {
+            if (status.name().equals(normalizedInput)) {
                 return true;
             }
         }
@@ -34,7 +40,7 @@ public enum Status {
     }
 
     /**
-     * Returns the status represented by the given string, ignoring case and surrounding whitespace.
+     * Returns the status represented by the given ASCII spelling, ignoring case and surrounding whitespace.
      */
     public static Status parse(String input) {
         requireNonNull(input);

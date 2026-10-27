@@ -103,6 +103,26 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
+    public void toModelType_mixedCaseAsciiStatus_returnsPerson() throws Exception {
+        // EP: an ASCII status with mixed case and surrounding whitespace remains valid in stored data.
+        JsonAdaptedPerson person = new JsonAdaptedPerson(
+                VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, " \tcLiEnT\n ", VALID_TAGS);
+
+        assertEquals(CLIENT_BENSON, person.toModelType());
+    }
+
+    @Test
+    public void toModelType_unicodeStatusLookalikes_throwsIllegalValueException() {
+        // EP: dotted and dotless Unicode I resemble CLIENT but are not ASCII status spellings.
+        for (String status : List.of("CL\u0130ENT", "cl\u0131ent")) {
+            JsonAdaptedPerson person = new JsonAdaptedPerson(
+                    VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, status, VALID_TAGS);
+
+            assertThrows(IllegalValueException.class, Status.MESSAGE_CONSTRAINTS, person::toModelType);
+        }
+    }
+
+    @Test
     public void toModelType_validFollowUp_returnsPersonWithFollowUp() throws Exception {
         // EP: an optional follow-up contains a valid calendar date.
         Person bensonWithFollowUp = new PersonBuilder(BENSON)

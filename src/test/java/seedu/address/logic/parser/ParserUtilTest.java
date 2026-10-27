@@ -38,14 +38,24 @@ public class ParserUtilTest {
 
     @Test
     public void parseStatus_validInput_returnsStatus() throws Exception {
-        // EP: a supported status with different case and surrounding whitespace.
+        // EP: all supported ASCII statuses accept different case and surrounding whitespace.
+        assertEquals(Status.PROSPECT, ParserUtil.parseStatus(" pRoSpEcT "));
         assertEquals(Status.CLIENT, ParserUtil.parseStatus(" client "));
+        assertEquals(Status.INACTIVE, ParserUtil.parseStatus("\tInAcTiVe\r\n"));
     }
 
     @Test
     public void parseStatus_invalidInput_throwsParseException() {
         // EP: a nonempty status name outside the supported set.
         assertThrows(ParseException.class, Status.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseStatus("lead"));
+    }
+
+    @Test
+    public void parseStatus_unicodeLookalikes_throwsParseException() {
+        // EP: dotted I, dotless i and long s resemble ASCII letters but are not valid status spellings.
+        for (String input : List.of("CL\u0130ENT", "cl\u0131ent", "PRO\u017fPECT")) {
+            assertThrows(ParseException.class, Status.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseStatus(input));
+        }
     }
 
     @Test
