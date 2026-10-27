@@ -7,6 +7,7 @@ import static seedu.address.testutil.Assert.assertThrows;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +44,7 @@ public class TagTest {
         assertFalse(Tag.isValidTagName("high value"));
         assertFalse(Tag.isValidTagName(" referral"));
         assertFalse(Tag.isValidTagName("referral "));
-        assertFalse(Tag.isValidTagName("high value")); // no-break space
+        assertFalse(Tag.isValidTagName("high\u00A0value")); // no-break space
 
         // EP: symbols and punctuation.
         assertFalse(Tag.isValidTagName("high-value"));
@@ -55,8 +56,8 @@ public class TagTest {
         assertFalse(Tag.isValidTagName("😀")); // emoji
 
         // EP: combining mark with no letter or digit before it.
-        assertFalse(Tag.isValidTagName("́"));
-        assertFalse(Tag.isValidTagName("́abc"));
+        assertFalse(Tag.isValidTagName("\u0301"));
+        assertFalse(Tag.isValidTagName("\u0301abc"));
     }
 
     @Test
@@ -87,12 +88,12 @@ public class TagTest {
         assertTrue(Tag.isValidTagName("हिंदी")); // contains combining vowel signs
 
         // EP: decomposed accent (e followed by a combining acute accent).
-        assertTrue(Tag.isValidTagName("café"));
+        assertTrue(Tag.isValidTagName("cafe\u0301"));
     }
 
     @Test
     public void constructor_decomposedAccent_storesComposedForm() {
-        Tag decomposed = new Tag("café");
+        Tag decomposed = new Tag("cafe\u0301");
         Tag composed = new Tag("café");
 
         assertEquals("café", decomposed.tagName);
@@ -116,28 +117,37 @@ public class TagTest {
         assertEqualTags("café", "CAFÉ");
         assertEqualTags("Éclair", "éCLAIR");
         assertEqualTags("ΑΣΦΑΛΕΙΑ", "ασφαλεια");
-        // Capital sharp s lowercases to the ordinary sharp s.
-        assertEqualTags("STRAẞE", "straße");
+        // Sharp s uppercases to "SS", so these spellings are the same tag.
+        assertEqualTags("STRA\u1E9EE", "stra\u00DFe");
+        assertEqualTags("stra\u00DFe", "STRASSE");
+        // Greek sigma has a final form, but both forms uppercase to the same letter.
+        assertEqualTags("\u03A3", "\u03C2");
+        assertEqualTags("\u03BF\u03C3", "\u039F\u03A3");
+        assertEqualTags("\u03BF\u03C3", "\u03BF\u03C2");
+        // Lowercasing this capital gives a string that must be composed again to match.
+        assertEqualTags("\u03AA\u0301", "\u0390");
+        // Dotless i uppercases to ASCII I, as in Java's equalsIgnoreCase.
+        assertEqualTags("\u0131", "I");
+        assertEqualTags("\u0131", "i");
     }
 
     @Test
     public void equals_differentLetters_notEqual() {
-        assertFalse(new Tag("cafe").equals(new Tag("café")));
-        // Sharp s is not the same tag as "ss".
-        assertFalse(new Tag("straße").equals(new Tag("STRASSE")));
-        // Turkish dotted and dotless i are different letters from ASCII i.
-        assertFalse(new Tag("ı").equals(new Tag("I")));
-        assertFalse(new Tag("ı").equals(new Tag("i")));
-        assertFalse(new Tag("İ").equals(new Tag("i")));
-        assertFalse(new Tag("İ").equals(new Tag("I")));
+        assertFalse(new Tag("cafe").equals(new Tag("caf\u00E9")));
+        assertFalse(new Tag("referral").equals(new Tag("referrals")));
+        // Dotted capital I keeps its dot when lowercased, so it differs from ASCII i.
+        assertFalse(new Tag("\u0130").equals(new Tag("i")));
+        assertFalse(new Tag("\u0130").equals(new Tag("I")));
         assertFalse(new Tag("referral").equals(null));
         assertFalse(new Tag("referral").equals("referral"));
     }
 
     @Test
     public void equalsAndHashCode_trickyCasePairs_areConsistent() {
-        List<String> names = List.of("i", "I", "İ", "ı", "ß", "SS", "ss", "ẞ",
-                "é", "É", "é", "É", "σ", "Σ", "ς", "ǅ", "ǆ", "Ǆ", "K", "k", "K");
+        List<String> names = List.of("i", "I", "\u0130", "\u0131", "\u00DF", "SS", "ss", "\u1E9E",
+                "\u00E9", "\u00C9", "e\u0301", "E\u0301", "\u03C3", "\u03A3", "\u03C2",
+                "\u01C5", "\u01C6", "\u01C4", "K", "k", "\u212A", "\u00B5", "\u039C", "\u017F",
+                "\u03AA\u0301", "\u0390", "\u03CA\u0301");
         for (String first : names) {
             for (String second : names) {
                 Tag a = new Tag(first);
@@ -147,6 +157,8 @@ public class TagTest {
                     assertEquals(a.hashCode(), b.hashCode(), first + " vs " + second);
                 }
                 assertEquals(a.equals(b), a.hasSameNameIgnoringCase(second), first + " vs " + second);
+                assertTrue(a.hasSameNameIgnoringCase(first.toLowerCase(Locale.ROOT)), first);
+                assertTrue(a.hasSameNameIgnoringCase(first.toUpperCase(Locale.ROOT)), first);
             }
         }
     }
@@ -155,9 +167,14 @@ public class TagTest {
     public void hasSameNameIgnoringCase() {
         Tag tag = new Tag("Café");
         assertTrue(tag.hasSameNameIgnoringCase("café"));
-        assertTrue(tag.hasSameNameIgnoringCase("CAFÉ"));
+        assertTrue(tag.hasSameNameIgnoringCase("CAFE\u0301"));
         assertFalse(tag.hasSameNameIgnoringCase("cafe"));
         assertFalse(tag.hasSameNameIgnoringCase("caf"));
+
+        // The list filter passes an already lowercased name.
+        Tag greek = new Tag("\u03AA\u0301");
+        assertTrue(greek.hasSameNameIgnoringCase("\u03AA\u0301".toLowerCase(Locale.ROOT)));
+        assertTrue(greek.hasSameNameIgnoringCase("\u0390"));
         assertThrows(NullPointerException.class, () -> tag.hasSameNameIgnoringCase(null));
     }
 

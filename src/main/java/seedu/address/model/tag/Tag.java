@@ -45,11 +45,16 @@ public class Tag {
     }
 
     /**
-     * Returns the key used to compare tags, so that tags differing only in letter case are equal.
-     * {@link Locale#ROOT} keeps the result the same whatever the user's default locale is.
+     * Returns the key used to compare tag names, so that names differing only in letter case are equal.
+     * The name is lowercased and then uppercased, so letters with more than one lowercase form, such as
+     * the Greek sigma, share one key. {@link Locale#ROOT} keeps the result the same whatever the user's
+     * default locale is. Each step is followed by NFC normalization because changing case can turn an
+     * NFC string into one that is not NFC.
      */
-    private String comparisonKey() {
-        return tagName.toLowerCase(Locale.ROOT);
+    private static String toComparisonKey(String name) {
+        String composed = Normalizer.normalize(name, Form.NFC);
+        String lowerCase = Normalizer.normalize(composed.toLowerCase(Locale.ROOT), Form.NFC);
+        return Normalizer.normalize(lowerCase.toUpperCase(Locale.ROOT), Form.NFC);
     }
 
     /**
@@ -58,7 +63,7 @@ public class Tag {
      */
     public boolean hasSameNameIgnoringCase(String otherTagName) {
         requireNonNull(otherTagName);
-        return comparisonKey().equals(Normalizer.normalize(otherTagName, Form.NFC).toLowerCase(Locale.ROOT));
+        return toComparisonKey(tagName).equals(toComparisonKey(otherTagName));
     }
 
     @Override
@@ -72,12 +77,12 @@ public class Tag {
             return false;
         }
 
-        return comparisonKey().equals(otherTag.comparisonKey());
+        return toComparisonKey(tagName).equals(toComparisonKey(otherTag.tagName));
     }
 
     @Override
     public int hashCode() {
-        return comparisonKey().hashCode();
+        return toComparisonKey(tagName).hashCode();
     }
 
     /**
