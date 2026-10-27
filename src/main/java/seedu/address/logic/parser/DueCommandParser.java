@@ -11,7 +11,7 @@ import seedu.address.logic.parser.exceptions.ParseException;
 public class DueCommandParser implements Parser<DueCommand> {
 
     public static final String MESSAGE_INVALID_DAYS =
-            "Number of days must be a whole number from 0 to " + DueCommand.MAX_DAYS + ", e.g. due 7";
+            "Number of days must be a whole number from 0 to " + DueCommand.MAX_DAYS + ", e.g. due 7.";
 
     private static final String DAYS_REGEX = "\\d+";
 
