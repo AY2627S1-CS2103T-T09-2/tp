@@ -131,6 +131,23 @@ public class DueCommandTest {
     }
 
     @Test
+    public void execute_equivalentUnicodeNames_keepsSameSortOrder() {
+        // EP: composed and decomposed names use the same canonical values when due dates tie.
+        Person zack = new PersonBuilder().withName("Zack Lim").withFollowUp("21-10-2026").build();
+        Person expectedEmile = new PersonBuilder().withName("\u00c9mile Tan").withFollowUp("21-10-2026").build();
+        for (String name : List.of("\u00c9mile Tan", "E\u0301mile Tan")) {
+            AddressBook addressBook = new AddressBook();
+            addressBook.addPerson(zack);
+            addressBook.addPerson(new PersonBuilder(expectedEmile).withName(name).build());
+            Model unicodeModel = new ModelManager(addressBook, new UserPrefs());
+
+            new DueCommand(0, TODAY).execute(unicodeModel);
+
+            assertEquals(List.of(expectedEmile, zack), unicodeModel.getFilteredPersonList());
+        }
+    }
+
+    @Test
     public void execute_thenList_restoresOriginalOrder() {
         // EP: list is run after due has applied a filter and sort; the stored order must be restored.
         new DueCommand(365, TODAY).execute(model);

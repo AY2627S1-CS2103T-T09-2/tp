@@ -250,6 +250,67 @@ public class LogicManagerIntegrationTest {
     }
 
     @Test
+    public void execute_unicodeNameThenReload_preservesCanonicalNameAndSearch() throws Exception {
+        // EP: composed and decomposed spellings enter through add and remain searchable after reload.
+        for (String name : List.of("Jos\u00e9 N\u00fa\u00f1ez", "Jose\u0301 Nu\u0301n\u0303ez")) {
+            initialize(List.of());
+            Person expectedPerson = new PersonBuilder(noFollowUp).withName("Jos\u00e9 N\u00fa\u00f1ez").build();
+            logic.execute("add n/  " + name + "  p/81000001 e/nora@example.com a/1 North Road t/family");
+            assertState(List.of(expectedPerson), List.of(expectedPerson));
+            reload();
+            assertState(List.of(expectedPerson), List.of(expectedPerson));
+
+            // EP: equivalent complete words, mixed-case prefixes, and multiple keywords retain OR matching.
+            for (String keywords : List.of("Jos\u00e9", "Jose\u0301", "jOsE\u0301", "NU\u0301N\u0303",
+                    "Nobody jOsE\u0301")) {
+                logic.execute("find " + keywords);
+                assertState(List.of(expectedPerson), List.of(expectedPerson));
+            }
+
+            // EP: removing an accent is not canonical equivalence and must not broaden the search.
+            logic.execute("find Jose");
+            assertState(List.of(expectedPerson), List.of());
+        }
+    }
+
+    @Test
+    public void execute_editUnicodeNameThenReload_preservesCanonicalNameAndSearch() throws Exception {
+        // EP: either encoding of a replacement name keeps other fields intact through edit and storage.
+        for (String name : List.of("\u00c9lodie N\u00fa\u00f1ez", "E\u0301lodie Nu\u0301n\u0303ez")) {
+            initialize(List.of(noFollowUp));
+            Person expectedPerson = new PersonBuilder(noFollowUp).withName("\u00c9lodie N\u00fa\u00f1ez").build();
+            logic.execute("edit 1 n/  " + name + "  ");
+            assertState(List.of(expectedPerson), List.of(expectedPerson));
+            reload();
+            assertState(List.of(expectedPerson), List.of(expectedPerson));
+
+            // Boundary: a prefix containing the first accented letter must match in either encoding.
+            for (String keyword : List.of("\u00e9L", "e\u0301L")) {
+                logic.execute("find " + keyword);
+                assertState(List.of(expectedPerson), List.of(expectedPerson));
+            }
+        }
+    }
+
+    @Test
+    public void execute_equivalentUnicodeDuplicate_preservesDataViewAndFile() throws Exception {
+        Person existingPerson = new PersonBuilder(nextMonth).withName("Jos\u00e9 N\u00fa\u00f1ez").build();
+        initialize(List.of(noFollowUp, existingPerson));
+        logic.execute("find Nora");
+
+        // EP: a hidden duplicate still matches after NFC, case and repeated-space normalization.
+        for (String name : List.of("JOS\u00c9  N\u00da\u00d1EZ", "JOSE\u0301  NU\u0301N\u0303EZ")) {
+            assertFailure("add n/" + name + " p/89999999 e/new@example.com a/7 Test Road", CommandException.class);
+            assertFailure("edit 1 n/" + name, CommandException.class);
+        }
+
+        // EP: changing only the encoding of the selected contact's own name is not a duplicate.
+        logic.execute("list");
+        logic.execute("edit 2 n/Jose\u0301 Nu\u0301n\u0303ez");
+        assertState(List.of(noFollowUp, existingPerson), List.of(noFollowUp, existingPerson));
+    }
+
+    @Test
     public void execute_deleteOnlyContact_savesAndReloadsEmptyAddressBook() throws Exception {
         // Boundary: deleting the sole contact persists an empty collection.
         initialize(List.of(nextWeek));
