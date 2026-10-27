@@ -38,6 +38,8 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
    * `note 2 nt/Discussed hospital coverage with client` : Adds an interaction note to the 2nd displayed contact.
 
    * `history 2` : Shows the interaction history of the 2nd displayed contact.
+  
+   * `contacted 2 d/27-10-2026` : Updates the last contact date of the 2nd displayed contact.
 
    * `clear confirm` : Deletes all contacts after confirmation.
 
@@ -234,6 +236,29 @@ Examples:
 * `list` followed by `done 2` completes the second displayed contact's follow-up, if it has one.
 * `find John` followed by `done 1` completes the first matching contact's follow-up, if it has one.
 
+### Updating the last contact date: `contacted`
+
+Updates the date on which an existing contact was last contacted.
+
+Format: `contacted INDEX d/DD-MM-YYYY`
+
+* The index refers to the number shown in the displayed contact list.
+* The index must be a positive integer and refer to a displayed contact.
+* `d/DD-MM-YYYY` is required.
+* The date must be a valid calendar date in `DD-MM-YYYY` format. For example, `31-02-2026` is rejected.
+* If the contact already has a last contact date, the existing date is replaced.
+* The contact's other details, follow-up and interaction notes remain unchanged.
+* The contact card displays `Last contacted: DD-MM-YYYY`. Contacts without a recorded last contact date display `Last contacted: Never`.
+
+On success, the result is:
+
+`Updated last contact date for <name> to <date>.`
+
+Examples:
+
+* `contacted 1 d/27-10-2026`
+* `find John` followed by `contacted 1 d/27-10-2026` updates the first displayed matching contact.
+
 ### Adding an interaction note: `note`
 
 Adds a note about an interaction with an existing contact.
@@ -329,7 +354,7 @@ Format: `exit`
 
 ### Saving the data
 
-Easy-Insurance automatically saves contact details, follow-up information and interaction notes after every successful command. You do not need to save manually.
+Easy-Insurance automatically saves contact details, follow-up information, last contact dates and interaction notes after every successful command. You do not need to save manually.
 
 ### Editing the data file
 
@@ -365,6 +390,7 @@ Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...` <br> e.g., `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT f/25-12-2026 t/referral`
 **Clear**  | `clear` to request confirmation<br>`clear confirm` to clear all contacts
+**Contacted** | `contacted INDEX d/DD-MM-YYYY`<br> e.g., `contacted 2 d/27-10-2026`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Due**    | `due [DAYS]`<br> e.g., `due 7`
