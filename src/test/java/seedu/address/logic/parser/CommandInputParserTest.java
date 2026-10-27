@@ -28,11 +28,13 @@ import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.HistoryCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.NoteCommand;
+import seedu.address.logic.commands.ContactedCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Status;
+import seedu.address.model.person.LastContact;
 import seedu.address.model.tag.Tag;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
 import seedu.address.testutil.PersonBuilder;
@@ -212,6 +214,19 @@ public class CommandInputParserTest {
                 expectedCommand,
                 parser.parseCommand(
                         HistoryCommand.COMMAND_WORD + " 1"));
+    }
+    
+    @Test
+    public void parseCommand_contacted() throws ParseException {
+        ContactedCommand expectedCommand =
+                new ContactedCommand(
+                        INDEX_FIRST_PERSON,
+                        new LastContact("27-10-2026"));
+        assertEquals(
+                expectedCommand,
+                parser.parseCommand(
+                        ContactedCommand.COMMAND_WORD
+                                + " 1 d/27-10-2026"));
     }
 
     @Test
