@@ -210,7 +210,8 @@ public class LogicManagerIntegrationTest {
         logic.execute("edit 2 e/cara.updated@example.com");
         Person editedPerson = new PersonBuilder(nextWeek).withEmail("cara.updated@example.com").build();
         expectedPersons = replace(expectedPersons, nextWeek, editedPerson);
-        assertState(expectedPersons, expectedPersons);
+        // EP: editing an unrelated field preserves the active status/tag filter.
+        assertState(expectedPersons, List.of(nextMonth, editedPerson));
 
         logic.execute("find p/0004");
         assertState(expectedPersons, List.of(zaraOverdue));
@@ -366,8 +367,8 @@ public class LogicManagerIntegrationTest {
 
             logic.execute("edit " + index + " p/89999999");
             List<Person> expectedPersons = replace(originalPersons, selectedPerson, editedPerson);
-            // Edit deliberately restores all contacts in insertion order.
-            assertState(expectedPersons, expectedPersons);
+            // Editing the phone preserves status/tag matches and their display order.
+            assertState(expectedPersons, replace(displayedPersons, selectedPerson, editedPerson));
         }
     }
 
