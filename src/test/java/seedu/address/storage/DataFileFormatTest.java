@@ -21,6 +21,7 @@ import seedu.address.model.AddressBook;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Status;
 import seedu.address.testutil.PersonBuilder;
 
 /**
@@ -89,13 +90,14 @@ public class DataFileFormatTest {
                 .getPersonList().get(1);
 
         assertEquals(DANIEL_OLDER_FORMAT, loaded);
-        assertEquals("PROSPECT", loaded.getStatus().name());
+        assertEquals(Status.DEFAULT, loaded.getStatus());
         assertTrue(loaded.getFollowUp().isEmpty());
         assertTrue(loaded.getInteractionNotes().isEmpty());
     }
 
     @Test
     public void saveAddressBook_contactWithEveryField_writesExpectedKeyNames() throws Exception {
+        // EP: saving a contact with every field filled in.
         Path filePath = testFolder.resolve("savedAddressBook.json");
         AddressBook addressBook = new AddressBook();
         addressBook.addPerson(CLARA);
@@ -135,6 +137,11 @@ public class DataFileFormatTest {
         assertHasKeys(firstNote, "text", "createdAt");
         assertEquals("Asked about a hospital plan", firstNote.get("text").asText());
         assertEquals("2026-10-20T14:30:15", firstNote.get("createdAt").asText());
+        JsonNode secondNote = notes.get(1);
+        assertHasKeys(secondNote, "text", "createdAt");
+        assertEquals("Sent the hospital plan brochure", secondNote.get("text").asText());
+        // The fraction of a second must survive saving, or notes saved in the same second lose their order.
+        assertEquals("2026-10-22T09:05:00.123456", secondNote.get("createdAt").asText());
     }
 
     private static void assertHasKeys(JsonNode node, String... keys) {
