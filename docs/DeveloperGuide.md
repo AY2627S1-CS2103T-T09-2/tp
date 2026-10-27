@@ -687,6 +687,9 @@ testers are expected to do more *exploratory* testing.
    1. Relaunch the app.<br>
       Expected: The app starts with an empty contact list, because the file could not be read. A copy of the invalid file is saved as `data/addressbook.json.bak`. Restoring the original value and relaunching brings the contacts back.
 
+   1. Close the app. Replace the whole content of `data/addressbook.json` with `null` and relaunch.<br>
+      Expected: Same as above. The app starts with an empty contact list, not the sample contacts, and `data/addressbook.json.bak` contains `null`.
+
 1. Dealing with an older data file
 
    1. Close the app. Remove the `"status"` and `"followUp"` fields from one contact in `data/addressbook.json`.

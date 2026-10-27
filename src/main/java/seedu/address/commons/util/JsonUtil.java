@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.exceptions.DataLoadingException;
+import seedu.address.commons.exceptions.IllegalValueException;
 
 /**
  * Converts a Java object instance to JSON and vice versa
@@ -43,6 +44,7 @@ public class JsonUtil {
     /**
      * Returns the JSON object from the given file or {@code Optional.empty()} object if the file is not found.
      * If any values are missing from the file, default values will be used, as long as the file is a valid JSON file.
+     * A file whose whole content is JSON {@code null} exists but holds no data, so it is treated as invalid.
      *
      * @param filePath cannot be null.
      * @param classOfObjectToDeserialize JSON file has to correspond to the structure in the class given here.
@@ -64,6 +66,12 @@ public class JsonUtil {
         } catch (IOException e) {
             logger.warning("Error reading from jsonFile file " + filePath + ": " + e);
             throw new DataLoadingException(e);
+        }
+
+        if (jsonFile == null) {
+            String message = "JSON file " + filePath + " contains null instead of the expected data.";
+            logger.warning(message);
+            throw new DataLoadingException(new IllegalValueException(message));
         }
 
         return Optional.of(jsonFile);

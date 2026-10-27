@@ -57,6 +57,12 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
+    public void readAddressBook_nullContent_throwDataLoadingException() {
+        // EP: the file exists but holds JSON null; it must not be mistaken for a missing file.
+        assertThrows(DataLoadingException.class, () -> readAddressBook("nullAddressBook.json"));
+    }
+
+    @Test
     public void readAddressBook_invalidPersonAddressBook_throwDataLoadingException() {
         // EP: valid JSON contains a contact with invalid field values.
         assertThrows(DataLoadingException.class, () -> readAddressBook("invalidPersonAddressBook.json"));
@@ -134,6 +140,12 @@ public class JsonAddressBookStorageTest {
     public void readAddressBookWithBackup_invalidPerson_backupCreatedWithSameContent() throws Exception {
         // EP: readable JSON with invalid contact data also requires a backup.
         assertCorruptedFileBackedUp("invalidPersonAddressBook.json");
+    }
+
+    @Test
+    public void readAddressBookWithBackup_nullContent_backupCreatedWithSameContent() throws Exception {
+        // EP: a file holding only JSON null is invalid data, so its bytes are backed up too.
+        assertCorruptedFileBackedUp("nullAddressBook.json");
     }
 
     @Test
