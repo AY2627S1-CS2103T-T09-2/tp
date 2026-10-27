@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static seedu.address.storage.JsonUserPrefsStorage.MAX_WINDOW_COORDINATE;
+import static seedu.address.storage.JsonUserPrefsStorage.MAX_WINDOW_LENGTH;
 import static seedu.address.storage.JsonUserPrefsStorage.MESSAGE_INVALID_WINDOW_COORDINATES;
 import static seedu.address.storage.JsonUserPrefsStorage.MESSAGE_INVALID_WINDOW_SIZE;
 import static seedu.address.storage.JsonUserPrefsStorage.MESSAGE_MISSING_GUI_SETTINGS;
@@ -120,17 +121,21 @@ public class JsonUserPrefsStorageTest {
         assertInvalidWindowSize("\"windowWidth\": \"NaN\", \"windowHeight\": 500");
         assertInvalidWindowSize("\"windowWidth\": 1000, \"windowHeight\": \"Infinity\"");
         assertInvalidWindowSize("\"windowWidth\": \"-Infinity\", \"windowHeight\": 500");
+        // Boundary: just above the largest accepted size, and huge sizes that abort the native window code.
+        assertInvalidWindowSize("\"windowWidth\": " + (MAX_WINDOW_LENGTH + 1) + ", \"windowHeight\": 500");
+        assertInvalidWindowSize("\"windowWidth\": 800, \"windowHeight\": 1e308");
+        assertInvalidWindowSize("\"windowWidth\": " + Integer.MAX_VALUE + ", \"windowHeight\": 500");
     }
 
     @Test
     public void readUserPrefs_validWindowSizeBoundaries_successfullyRead() throws Exception {
-        // Boundary: the smallest positive size and a huge finite size are passed on; the window clamps them.
-        assertWindowSizeRead(Double.MIN_VALUE, 1e308);
-        assertWindowSizeRead(1e308, Double.MIN_VALUE);
+        // Boundary: the smallest positive size and the largest accepted size; the window clamps them to the screen.
+        assertWindowSizeRead(Double.MIN_VALUE, MAX_WINDOW_LENGTH);
+        assertWindowSizeRead(MAX_WINDOW_LENGTH, Double.MIN_VALUE);
     }
 
     @Test
-    public void readUserPrefs_windowCoordinateBoundaries() throws Exception {
+    public void readUserPrefs_windowCoordinateBoundaries_outOfRangeRejected() throws Exception {
         // Boundary: the largest accepted coordinates on both sides.
         assertWindowCoordinatesRead(MAX_WINDOW_COORDINATE, -MAX_WINDOW_COORDINATE);
         assertWindowCoordinatesRead(-MAX_WINDOW_COORDINATE, MAX_WINDOW_COORDINATE);
@@ -171,21 +176,13 @@ public class JsonUserPrefsStorageTest {
     }
 
     private DataLoadingException readUserPrefsThrows(String userPrefsFileInTestDataFolder) {
-        try {
-            readUserPrefs(userPrefsFileInTestDataFolder);
-        } catch (DataLoadingException e) {
-            return e;
-        }
-        throw new AssertionError("Expected DataLoadingException for " + userPrefsFileInTestDataFolder);
+        return org.junit.jupiter.api.Assertions.assertThrows(DataLoadingException.class, () ->
+                readUserPrefs(userPrefsFileInTestDataFolder));
     }
 
-    private DataLoadingException readUserPrefsJsonThrows(String json) throws IOException {
-        try {
-            readUserPrefsJson(json);
-        } catch (DataLoadingException e) {
-            return e;
-        }
-        throw new AssertionError("Expected DataLoadingException for " + json);
+    private DataLoadingException readUserPrefsJsonThrows(String json) {
+        return org.junit.jupiter.api.Assertions.assertThrows(DataLoadingException.class, () ->
+                readUserPrefsJson(json));
     }
 
     private void assertInvalidGuiSettings(DataLoadingException e, String expectedMessage) {
@@ -194,12 +191,8 @@ public class JsonUserPrefsStorageTest {
     }
 
     private void assertInvalidWindowSize(String sizeFields) {
-        try {
-            assertInvalidGuiSettings(readUserPrefsJsonThrows("{\"guiSettings\": {" + sizeFields + "}}"),
-                    MESSAGE_INVALID_WINDOW_SIZE);
-        } catch (IOException e) {
-            throw new AssertionError(e);
-        }
+        assertInvalidGuiSettings(readUserPrefsJsonThrows("{\"guiSettings\": {" + sizeFields + "}}"),
+                MESSAGE_INVALID_WINDOW_SIZE);
     }
 
     private void assertWindowSizeRead(double width, double height) throws Exception {
@@ -220,7 +213,7 @@ public class JsonUserPrefsStorageTest {
         assertEquals(expected, readUserPrefsJson(coordinatesJson(x, y)).get());
     }
 
-    private void assertInvalidWindowCoordinates(int x, int y) throws IOException {
+    private void assertInvalidWindowCoordinates(int x, int y) {
         assertInvalidGuiSettings(readUserPrefsJsonThrows(coordinatesJson(x, y)), MESSAGE_INVALID_WINDOW_COORDINATES);
     }
 

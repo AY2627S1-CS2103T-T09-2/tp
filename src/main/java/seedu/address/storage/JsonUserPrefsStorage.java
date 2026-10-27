@@ -25,9 +25,15 @@ public class JsonUserPrefsStorage {
      */
     static final int MAX_WINDOW_COORDINATE = 1_000_000;
 
+    /**
+     * Largest window width or height accepted from the file. A larger size combined with an ordinary
+     * position also pushes the native window frame past the int range and aborts the app on launch.
+     */
+    static final int MAX_WINDOW_LENGTH = 1_000_000;
+
     static final String MESSAGE_MISSING_GUI_SETTINGS = "guiSettings is null";
     static final String MESSAGE_INVALID_WINDOW_SIZE =
-            "window width and height must be positive finite numbers";
+            "window width and height must be positive numbers no larger than " + MAX_WINDOW_LENGTH;
     static final String MESSAGE_INVALID_WINDOW_COORDINATES =
             "window coordinates must be between -" + MAX_WINDOW_COORDINATE + " and " + MAX_WINDOW_COORDINATE;
 
@@ -96,7 +102,7 @@ public class JsonUserPrefsStorage {
     }
 
     private static boolean isValidWindowLength(double length) {
-        return Double.isFinite(length) && length > 0;
+        return Double.isFinite(length) && length > 0 && length <= MAX_WINDOW_LENGTH;
     }
 
     private static boolean isValidWindowCoordinate(int coordinate) {
