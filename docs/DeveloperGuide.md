@@ -701,7 +701,7 @@ testers are expected to do more *exploratory* testing.
       Expected: The earliest follow-up in the sorted list is completed.
 
    1. Other incorrect commands to try: `due -1`, `due 366`, `due abc`, `due 7 days`<br>
-      Expected: No change to the list. Error: `Number of days must be a whole number from 0 to 365, e.g. due 7`
+      Expected: No change to the list. Error: `Number of days must be a whole number from 0 to 365, e.g. due 7.`
 
 ### Saving data
 
@@ -721,6 +721,23 @@ testers are expected to do more *exploratory* testing.
 
    1. Repeat with one contact's `"phone"` changed to 31 or more digits.<br>
       Expected: The same as above. The app still opens.
+
+1. Dealing with a data file containing JSON `null`
+
+   1. Close the app. Replace the entire contents of `data/addressbook.json` with `null`.
+
+   1. Relaunch the app.<br>
+      Expected: The app starts with an empty contact list. Both `data/addressbook.json` and its new `.bak` copy contain exactly `null`; sample contacts do not appear.
+
+1. Dealing with a failed backup
+
+   1. Close the app. Put invalid JSON in `data/addressbook.json`. If `data/addressbook.json.bak` exists, move it somewhere safe, then create a non-empty folder with that name.
+
+   1. Relaunch the app.<br>
+      Expected: Startup stops with an error naming the data and backup paths. The original `data/addressbook.json` remains unchanged.
+
+   1. Remove the blocking folder and relaunch.<br>
+      Expected: The invalid data is backed up and the app starts with an empty contact list.
 
 1. Dealing with an older data file
 

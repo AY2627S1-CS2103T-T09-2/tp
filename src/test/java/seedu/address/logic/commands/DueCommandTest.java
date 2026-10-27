@@ -6,9 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Locale;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -85,6 +87,20 @@ public class DueCommandTest {
     }
 
     @Test
+    public void execute_nonEnglishDefaultLocale_usesAsciiDigits() {
+        // EP: a default locale whose number format uses non-ASCII digits must not change the message.
+        Locale originalLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("ar-EG"));
+            CommandResult result = new DueCommand(0, TODAY).execute(model);
+
+            assertEquals("2 follow-ups due by 21-10-2026.", result.getFeedbackToUser());
+        } finally {
+            Locale.setDefault(originalLocale);
+        }
+    }
+
+    @Test
     public void execute_noneDue_showsEmptyList() {
         // EP: no due contacts remain, although future and undated contacts still exist.
         // Boundary value: zero results uses the no-follow-ups message.
@@ -95,6 +111,23 @@ public class DueCommandTest {
 
         assertEquals("No follow-ups due by 21-10-2026.", result.getFeedbackToUser());
         assertTrue(model.getFilteredPersonList().isEmpty());
+    }
+
+    @Test
+    public void execute_sameDate_sortsAccentedNamesAlphabetically() {
+        // EP: two follow-ups on the same date are ordered by name, including names with accented letters.
+        Person zack = new PersonBuilder().withName("Zack Lim").withPhone("91110001")
+                .withEmail("zack@example.com").withFollowUp("21-10-2026").build();
+        Person emile = new PersonBuilder().withName("Émile Tan").withPhone("91110002")
+                .withEmail("emile@example.com").withFollowUp("21-10-2026").build();
+        model.deletePerson(TODAY_FOLLOW_UP);
+        model.deletePerson(OVERDUE);
+        model.addPerson(zack);
+        model.addPerson(emile);
+
+        new DueCommand(0, TODAY).execute(model);
+
+        assertEquals(List.of(emile, zack), model.getFilteredPersonList());
     }
 
     @Test
@@ -110,11 +143,25 @@ public class DueCommandTest {
     @Test
     public void equals() {
         DueCommand dueToday = new DueCommand(0, TODAY);
+        Clock tomorrow = Clock.offset(TODAY, Duration.ofDays(1));
 
         assertTrue(dueToday.equals(dueToday));
         assertTrue(dueToday.equals(new DueCommand(0, TODAY)));
         assertFalse(dueToday.equals(new DueCommand(7, TODAY)));
+        // Same number of days, but "today" is a different day, so the cutoff differs.
+        assertFalse(dueToday.equals(new DueCommand(0, tomorrow)));
         assertFalse(dueToday.equals(null));
         assertFalse(dueToday.equals(new ListCommand()));
+    }
+
+    @Test
+    public void hashCodeMethod() {
+        assertEquals(new DueCommand(7, TODAY).hashCode(), new DueCommand(7, TODAY).hashCode());
+    }
+
+    @Test
+    public void toStringMethod() {
+        String expected = DueCommand.class.getCanonicalName() + "{days=7}";
+        assertEquals(expected, new DueCommand(7, TODAY).toString());
     }
 }

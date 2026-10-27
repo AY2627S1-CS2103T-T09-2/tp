@@ -22,6 +22,7 @@ public class Messages {
                 "Multiple values specified for the following single-valued field(s): ";
     public static final String MESSAGE_NO_PARAMETERS_EXPECTED =
             "The %1$s command does not accept additional parameters.";
+    public static final String MESSAGE_MISSING_REQUIRED_FIELDS = "Missing required field(s): %1$s\n%2$s";
 
     /**
      * Returns a grammatically correct result-count message.
