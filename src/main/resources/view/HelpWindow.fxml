@@ -111,6 +111,26 @@
 
                       <GridPane hgap="20.0" vgap="6.0" styleClass="command-guide-row">
                         <children>
+                          <Label text="contacted"
+                                 styleClass="command-guide-cell, command-guide-name"
+                                 maxWidth="Infinity" />
+                          <Label text="contacted INDEX d/DD-MM-YYYY"
+                                 styleClass="command-guide-cell, command-guide-code, command-guide-format"
+                                 maxWidth="Infinity" />
+                          <Label text="contacted 2 d/27-10-2026"
+                                 styleClass="command-guide-cell, command-guide-code, command-guide-example"
+                                 maxWidth="Infinity" />
+                          <Label text="Format"
+                                 styleClass="command-guide-cell, command-guide-caption, command-guide-format"
+                                 visible="false" managed="false" />
+                          <Label text="Example"
+                                 styleClass="command-guide-cell, command-guide-caption, command-guide-example"
+                                 visible="false" managed="false" />
+                        </children>
+                      </GridPane>
+
+                      <GridPane hgap="20.0" vgap="6.0" styleClass="command-guide-row">
+                        <children>
                           <Label text="delete"
                                  styleClass="command-guide-cell, command-guide-name"
                                  maxWidth="Infinity" />
