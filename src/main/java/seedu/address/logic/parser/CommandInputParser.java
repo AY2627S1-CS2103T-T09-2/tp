@@ -79,10 +79,10 @@ public class CommandInputParser {
 
             case DoneCommand.COMMAND_WORD ->
                 new DoneCommandParser().parse(arguments);
-                
+
             case ContactedCommand.COMMAND_WORD ->
                 new ContactedCommandParser().parse(arguments);
-                
+
             case DueCommand.COMMAND_WORD ->
                 new DueCommandParser().parse(arguments);
 
