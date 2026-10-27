@@ -16,7 +16,9 @@ import org.junit.jupiter.api.Test;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Status;
 import seedu.address.testutil.AddressBookBuilder;
+import seedu.address.testutil.PersonBuilder;
 
 public class ModelManagerTest {
 
@@ -92,6 +94,17 @@ public class ModelManagerTest {
     public void updateFilteredPersonList_nullComparator_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () ->
                 modelManager.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS, null));
+    }
+
+    @Test
+    public void addPerson_activeFilterOnlyShowsMatchingContacts() {
+        modelManager.updateFilteredPersonList(person -> person.getStatus() == Status.CLIENT);
+        modelManager.addPerson(ALICE);
+        assertTrue(modelManager.getFilteredPersonList().isEmpty());
+
+        Person client = new PersonBuilder(BENSON).withStatus("CLIENT").build();
+        modelManager.addPerson(client);
+        assertEquals(List.of(client), modelManager.getFilteredPersonList());
     }
 
     @Test
