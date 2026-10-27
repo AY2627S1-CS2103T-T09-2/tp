@@ -13,8 +13,11 @@ public class DueCommandParser implements Parser<DueCommand> {
     public static final String MESSAGE_INVALID_DAYS =
             "Number of days must be a whole number from 0 to " + DueCommand.MAX_DAYS + ", e.g. due 7";
 
-    // At most 9 digits, so Integer.parseInt cannot overflow before the range check.
-    private static final String DAYS_REGEX = "\\d{1,9}";
+    private static final String DAYS_REGEX = "\\d+";
+
+    // Without leading zeros, a number with more digits than MAX_DAYS is out of range, so it is
+    // rejected before Integer.parseInt could overflow.
+    private static final int MAX_SIGNIFICANT_DIGITS = String.valueOf(DueCommand.MAX_DAYS).length();
 
     /**
      * Parses the given arguments and returns a {@code DueCommand}.
@@ -33,7 +36,13 @@ public class DueCommandParser implements Parser<DueCommand> {
         if (!trimmedArgs.matches(DAYS_REGEX)) {
             throw new ParseException(MESSAGE_INVALID_DAYS);
         }
-        int days = Integer.parseInt(trimmedArgs);
+        // Leading zeros do not change the value, so drop them before the length check.
+        // "0" and "000" both become "0".
+        String significantDigits = trimmedArgs.replaceFirst("^0+(?=\\d)", "");
+        if (significantDigits.length() > MAX_SIGNIFICANT_DIGITS) {
+            throw new ParseException(MESSAGE_INVALID_DAYS);
+        }
+        int days = Integer.parseInt(significantDigits);
         if (days > DueCommand.MAX_DAYS) {
             throw new ParseException(MESSAGE_INVALID_DAYS);
         }

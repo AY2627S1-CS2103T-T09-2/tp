@@ -28,6 +28,16 @@ public class DueCommandParserTest {
     }
 
     @Test
+    public void parse_leadingZeros_ignored() {
+        // EP: leading zeros do not change the value, however many there are.
+        assertParseSuccess(parser, " 000", new DueCommand(0)); // Only zeros still means zero days.
+        assertParseSuccess(parser, " 007", new DueCommand(7));
+        assertParseSuccess(parser, " 0000000365", new DueCommand(365)); // More than nine characters.
+        assertParseSuccess(parser, " 00000000000000000000000007", new DueCommand(7));
+        assertParseFailure(parser, " 0000000366", MESSAGE_INVALID_DAYS); // Still above the maximum.
+    }
+
+    @Test
     public void parse_invalidDays_throwsParseException() {
         String[] invalidArgs = {
             " -1", // EP: negative durations; boundary value immediately below zero.
@@ -35,7 +45,8 @@ public class DueCommandParserTest {
             " 7 days", // EP: extra text after a duration.
             " 1.5", // EP: fractional durations.
             " 366", // EP: durations above 365; boundary value immediately above the maximum.
-            " 99999999999", // EP: digit strings exceeding the parser's nine-digit limit.
+            " 1000", // EP: more significant digits than the maximum has.
+            " 99999999999", // EP: values too large for an int, rejected without overflowing.
             " +7" // EP: explicit positive signs, which are not accepted by the digits-only syntax.
         };
         for (String args : invalidArgs) {
