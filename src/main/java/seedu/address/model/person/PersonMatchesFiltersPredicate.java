@@ -58,7 +58,8 @@ public class PersonMatchesFiltersPredicate implements Predicate<Person> {
     public boolean test(Person person) {
         requireNonNull(person);
         boolean isStatusMatch = status.isEmpty() || person.getStatus() == status.get();
-        boolean isTagMatch = tag.isEmpty() || person.getTags().stream().anyMatch(tag.get()::equals);
+        // Tag equality and hash codes both ignore case, so a set lookup finds the tag in any case.
+        boolean isTagMatch = tag.isEmpty() || person.getTags().contains(tag.get());
         return isStatusMatch && isTagMatch;
     }
 
