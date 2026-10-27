@@ -28,6 +28,7 @@ public class PersonTest {
 
     @Test
     public void getInteractionNotes_modifyList_throwsUnsupportedOperationException() {
+        // EP: modifying the exposed notes list must not mutate the contact's history.
         Person person = new Person(
                 ALICE.getName(),
                 ALICE.getPhone(),
@@ -46,13 +47,13 @@ public class PersonTest {
 
     @Test
     public void isSamePerson() {
-        // same object -> returns true
+        // EP: the same object is always the same contact.
         assertTrue(ALICE.isSamePerson(ALICE));
 
-        // null -> returns false
+        // EP: null cannot identify a contact.
         assertFalse(ALICE.isSamePerson(null));
 
-        // same name, all other attributes different -> returns true
+        // EP: the same name with different non-identity fields still identifies the same contact.
         Person editedAlice = new PersonBuilder(ALICE)
                 .withPhone(VALID_PHONE_BOB)
                 .withEmail(VALID_EMAIL_BOB)
@@ -61,19 +62,19 @@ public class PersonTest {
                 .build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
-        // different name, all other attributes same -> returns false
+        // EP: a different name identifies a different contact, even when other fields match.
         editedAlice = new PersonBuilder(ALICE)
                 .withName(VALID_NAME_BOB)
                 .build();
         assertFalse(ALICE.isSamePerson(editedAlice));
 
-        // name differs only in case -> returns true
+        // EP: names differing only in case identify the same contact.
         Person editedBob = new PersonBuilder(BOB)
                 .withName(VALID_NAME_BOB.toLowerCase())
                 .build();
         assertTrue(BOB.isSamePerson(editedBob));
 
-        // name has extra spaces -> returns true
+        // EP: names equivalent after whitespace normalization identify the same contact.
         String nameWithTrailingSpaces = VALID_NAME_BOB + " ";
         editedBob = new PersonBuilder(BOB)
                 .withName(nameWithTrailingSpaces)
@@ -147,7 +148,7 @@ public class PersonTest {
                 .build();
         assertFalse(ALICE.equals(editedAlice));
 
-        // different interaction notes -> returns false
+        // EP: contacts with identical other fields but different interaction notes are not equal.
         editedAlice = new Person(
                 ALICE.getName(),
                 ALICE.getPhone(),
@@ -163,8 +164,10 @@ public class PersonTest {
 
     @Test
     public void getFollowUp() {
+        // EP: a contact with no pending follow-up.
         assertTrue(ALICE.getFollowUp().isEmpty());
 
+        // EP: a contact with a pending follow-up.
         Person aliceWithFollowUp = new PersonBuilder(ALICE)
                 .withFollowUp("25-12-2099")
                 .build();
@@ -176,11 +179,13 @@ public class PersonTest {
 
     @Test
     public void getInteractionNotes_noNotes_returnsEmptyList() {
+        // EP: a contact with no interaction notes has an empty history.
         assertTrue(ALICE.getInteractionNotes().isEmpty());
     }
 
     @Test
     public void getInteractionNotes_withNotes_returnsNotes() {
+        // EP: a contact with recorded interaction notes returns those notes.
         InteractionNote note = new InteractionNote("Discussed hospital coverage");
 
         Person aliceWithNote = new Person(

@@ -26,16 +26,19 @@ public class HelpWindowTest {
 
     @Test
     public void copyUserGuideUrl_clipboardAcceptsContent_logsSuccess() {
+        // EP: the clipboard accepts the URL and reports success.
         assertClipboardOutcome(true, Level.FINE, "Copied User Guide URL");
     }
 
     @Test
     public void copyUserGuideUrl_clipboardRejectsContent_logsWarning() {
+        // EP: the clipboard returns false, representing an expected copy failure.
         assertClipboardOutcome(false, Level.WARNING, "Could not copy the User Guide URL");
     }
 
     @Test
     public void copyUserGuideUrl_clipboardThrows_doesNotHideProgrammingError() {
+        // EP: the clipboard throws an unexpected exception instead of returning an outcome.
         try (LogCapture logs = new LogCapture(HelpWindow.class)) {
             assertThrows(IllegalStateException.class, "Clipboard thread error", () -> {
                 HelpWindow.copyUserGuideUrl(content -> {

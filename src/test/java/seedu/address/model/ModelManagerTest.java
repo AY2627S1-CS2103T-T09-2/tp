@@ -61,11 +61,13 @@ public class ModelManagerTest {
 
     @Test
     public void hasPerson_personNotInAddressBook_returnsFalse() {
+        // EP: the queried contact is absent. The empty model is the zero-contact boundary.
         assertFalse(modelManager.hasPerson(ALICE));
     }
 
     @Test
     public void hasPerson_personInAddressBook_returnsTrue() {
+        // EP: the queried contact is present in the model.
         modelManager.addPerson(ALICE);
         assertTrue(modelManager.hasPerson(ALICE));
     }
@@ -80,16 +82,19 @@ public class ModelManagerTest {
         modelManager.addPerson(ALICE);
         modelManager.addPerson(BENSON);
 
+        // EP: a comparator is supplied; visible order differs from insertion order.
         modelManager.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS,
                 Comparator.comparing((Person person) -> person.getName().fullName).reversed());
         assertEquals(List.of(BENSON, ALICE), modelManager.getFilteredPersonList());
 
+        // EP: a subsequent filter has no comparator; restore insertion order.
         modelManager.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         assertEquals(List.of(ALICE, BENSON), modelManager.getFilteredPersonList());
     }
 
     @Test
     public void updateFilteredPersonList_nullComparator_throwsNullPointerException() {
+        // EP: a sorted-view request supplies a null comparator.
         assertThrows(NullPointerException.class, () ->
                 modelManager.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS, null));
     }

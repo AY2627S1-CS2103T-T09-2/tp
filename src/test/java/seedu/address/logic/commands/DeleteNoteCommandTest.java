@@ -21,6 +21,9 @@ public class DeleteNoteCommandTest {
     public void execute_deleteDisplayedNote_preservesContactAndOtherNotes()
             throws CommandException {
 
+        // EP: the selected contact has multiple notes, so deleting one must preserve the others.
+        // Boundary value: contact and note indexes are both 1, the first valid displayed indexes.
+        // The newest note is stored second, so deletion must use history order rather than storage order.
         InteractionNote olderNote = new InteractionNote(
                 "Discussed hospital coverage",
                 LocalDateTime.of(2026, 10, 26, 20, 30));
