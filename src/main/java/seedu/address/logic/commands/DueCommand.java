@@ -2,9 +2,11 @@ package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
+import java.text.Collator;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Comparator;
+import java.util.Locale;
 import java.util.Objects;
 
 import seedu.address.commons.util.ToStringBuilder;
@@ -32,7 +34,8 @@ public class DueCommand extends Command {
 
     private static final Comparator<Person> BY_FOLLOW_UP_DATE = Comparator
             .comparing((Person person) -> person.getFollowUp().map(followUp -> followUp.value).orElse(LocalDate.MAX))
-            .thenComparing(person -> person.getName().fullName, String.CASE_INSENSITIVE_ORDER);
+            // A collator puts accented names next to their base letter (Emile, Émile, Zack) instead of after Z.
+            .thenComparing(person -> person.getName().fullName, Collator.getInstance(Locale.ROOT));
 
     private final int days;
     private final Clock clock;

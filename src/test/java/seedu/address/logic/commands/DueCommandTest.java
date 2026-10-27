@@ -98,6 +98,23 @@ public class DueCommandTest {
     }
 
     @Test
+    public void execute_sameDate_sortsAccentedNamesAlphabetically() {
+        // EP: two follow-ups on the same date are ordered by name, including names with accented letters.
+        Person zack = new PersonBuilder().withName("Zack Lim").withPhone("91110001")
+                .withEmail("zack@example.com").withFollowUp("21-10-2026").build();
+        Person emile = new PersonBuilder().withName("Émile Tan").withPhone("91110002")
+                .withEmail("emile@example.com").withFollowUp("21-10-2026").build();
+        model.deletePerson(TODAY_FOLLOW_UP);
+        model.deletePerson(OVERDUE);
+        model.addPerson(zack);
+        model.addPerson(emile);
+
+        new DueCommand(0, TODAY).execute(model);
+
+        assertEquals(List.of(emile, zack), model.getFilteredPersonList());
+    }
+
+    @Test
     public void execute_thenList_restoresOriginalOrder() {
         // EP: list is run after due has applied a filter and sort; the stored order must be restored.
         new DueCommand(365, TODAY).execute(model);
