@@ -1,8 +1,10 @@
 package seedu.address.storage;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.HOON;
@@ -13,7 +15,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -137,6 +142,17 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
+    public void readAddressBookWithBackup_jsonNull_backupCreatedWithSameContent() throws Exception {
+        Path filePath = testFolder.resolve("addressbook.json");
+        Files.writeString(filePath, "null");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        assertThrows(DataLoadingException.class, storage::readAddressBookWithBackup);
+        assertEquals("null", Files.readString(filePath));
+        assertEquals("null", Files.readString(JsonAddressBookStorage.getBackupFilePath(filePath)));
+    }
+
+    @Test
     public void readAddressBookWithBackup_tooLongPhone_backupCreatedWithSameContent() throws Exception {
         // EP: a phone far over the length limit is invalid data, so it is backed up like any other.
         assertCorruptedFileBackedUp("tooLongPhoneAddressBook.json");
@@ -174,17 +190,41 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
-    public void readAddressBookWithBackup_backupFails_stillThrowsDataLoadingException() throws Exception {
-        // EP: reading fails and the backup destination is unusable; preserve the load failure.
+    public void readAddressBookWithBackup_backupFails_throwsDataBackupException() throws Exception {
+        // EP: reading fails and the backup destination is unusable; preserve the original data.
         Path filePath = testFolder.resolve("addressbook.json");
         Files.copy(TEST_DATA_FOLDER.resolve("notJsonFormatAddressBook.json"), filePath);
+        byte[] original = Files.readAllBytes(filePath);
         // A non-empty folder at the backup path cannot be replaced, so the copy fails
         Path backupPath = JsonAddressBookStorage.getBackupFilePath(filePath);
         Files.createDirectories(backupPath.resolve("blocker"));
 
-        assertThrows(DataLoadingException.class, () -> new JsonAddressBookStorage(filePath)
+        assertThrows(DataBackupException.class, () -> new JsonAddressBookStorage(filePath)
                 .readAddressBookWithBackup());
         assertTrue(Files.isDirectory(backupPath));
+        assertArrayEquals(original, Files.readAllBytes(filePath));
+    }
+
+    @Test
+    public void readAddressBookWithBackup_parentNotWritable_preservesOriginal() throws Exception {
+        assumeTrue(Files.getFileStore(testFolder).supportsFileAttributeView("posix"));
+        assumeTrue(!"root".equals(System.getProperty("user.name")));
+
+        Path filePath = testFolder.resolve("addressbook.json");
+        Files.copy(TEST_DATA_FOLDER.resolve("notJsonFormatAddressBook.json"), filePath);
+        byte[] original = Files.readAllBytes(filePath);
+        Set<PosixFilePermission> originalPermissions = Files.getPosixFilePermissions(testFolder);
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        try {
+            Files.setPosixFilePermissions(testFolder,
+                    EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_EXECUTE));
+            assertThrows(DataBackupException.class, storage::readAddressBookWithBackup);
+            assertArrayEquals(original, Files.readAllBytes(filePath));
+            assertFalse(Files.exists(JsonAddressBookStorage.getBackupFilePath(filePath)));
+        } finally {
+            Files.setPosixFilePermissions(testFolder, originalPermissions);
+        }
     }
 
     @Test
