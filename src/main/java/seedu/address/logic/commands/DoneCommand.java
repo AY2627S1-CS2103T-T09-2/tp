@@ -70,7 +70,7 @@ public class DoneCommand extends Command {
                 personToComplete.getEmail(), personToComplete.getAddress(), personToComplete.getStatus(),
                 personToComplete.getTags(), Optional.empty(), personToComplete.getLastContact(),
                 personToComplete.getInteractionNotes());
-        
+
         model.setPerson(personToComplete, completedPerson);
         logger.info(() -> "Cleared pending follow-up in model; displayedIndex=" + targetIndex.getOneBased());
 
