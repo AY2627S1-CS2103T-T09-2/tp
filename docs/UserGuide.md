@@ -82,6 +82,23 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </box>
 
+### Recalling previous commands
+
+While the command box is focused, press the arrow keys without modifier keys:
+
+* **Up** recalls the previous submitted command. Press it again to move to older commands.
+* **Down** moves to newer commands. Moving past the newest command restores the unfinished input you had before browsing.
+* At either end, further presses stay there without wrapping around.
+
+Recalling a command only fills the command box. You can edit it, then press **Enter** to submit it.
+Each submission resets browsing to the newest end of the history.
+
+The app remembers the **100 most recent non-blank submitted commands**, including commands that produced errors.
+This history is kept only for the current session and is cleared when you restart the app.
+
+Other text-editing keys and modified arrow keys keep their normal behavior. When the contact list is focused,
+Up and Down navigate the list instead.
+
 ### Viewing help: `help`
 
 Opens the Easy-Insurance Command Guide, which shows the available commands together with their formats and examples.
