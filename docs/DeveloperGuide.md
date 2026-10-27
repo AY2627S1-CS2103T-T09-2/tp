@@ -685,7 +685,7 @@ testers are expected to do more *exploratory* testing.
       Expected: The earliest follow-up in the sorted list is completed.
 
    1. Other incorrect commands to try: `due -1`, `due 366`, `due abc`, `due 7 days`<br>
-      Expected: No change to the list. Error: `Number of days must be a whole number from 0 to 365, e.g. due 7`
+      Expected: No change to the list. Error: `Number of days must be a whole number from 0 to 365, e.g. due 7.`
 
 ### Saving data
 
