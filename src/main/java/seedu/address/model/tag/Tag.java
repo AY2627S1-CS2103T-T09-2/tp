@@ -3,6 +3,8 @@ package seedu.address.model.tag;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.Locale;
 
 /**
@@ -11,8 +13,16 @@ import java.util.Locale;
  */
 public class Tag {
 
-    public static final String MESSAGE_CONSTRAINTS = "Tag names should be alphanumeric";
-    public static final String VALIDATION_REGEX = "\\p{Alnum}+";
+    public static final String MESSAGE_CONSTRAINTS =
+            "Tags must be a single word of letters and digits, with no spaces or symbols, "
+                    + "e.g. referral or lifePolicy2.";
+
+    /*
+     * A tag is one word of Unicode letters and digits, such as "referral" or "café".
+     * Combining marks are allowed after the first character, as in names, so that
+     * accented letters in scripts without precomposed forms are still accepted.
+     */
+    public static final String VALIDATION_REGEX = "[\\p{L}\\p{N}][\\p{L}\\p{M}\\p{N}]*";
 
     public final String tagName;
 
@@ -24,14 +34,31 @@ public class Tag {
     public Tag(String tagName) {
         requireNonNull(tagName);
         checkArgument(isValidTagName(tagName), MESSAGE_CONSTRAINTS);
-        this.tagName = tagName;
+        this.tagName = Normalizer.normalize(tagName, Form.NFC);
     }
 
     /**
-     * Returns true if a given string is a valid tag name.
+     * Returns true if a given string is a valid tag name after Unicode NFC normalization.
      */
     public static boolean isValidTagName(String test) {
-        return test.matches(VALIDATION_REGEX);
+        return Normalizer.normalize(test, Form.NFC).matches(VALIDATION_REGEX);
+    }
+
+    /**
+     * Returns the key used to compare tags, so that tags differing only in letter case are equal.
+     * {@link Locale#ROOT} keeps the result the same whatever the user's default locale is.
+     */
+    private String comparisonKey() {
+        return tagName.toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * Returns true if this tag has the same name as {@code otherTagName}, ignoring letter case.
+     * Uses the same rule as {@link #equals(Object)}.
+     */
+    public boolean hasSameNameIgnoringCase(String otherTagName) {
+        requireNonNull(otherTagName);
+        return comparisonKey().equals(Normalizer.normalize(otherTagName, Form.NFC).toLowerCase(Locale.ROOT));
     }
 
     @Override
@@ -45,12 +72,12 @@ public class Tag {
             return false;
         }
 
-        return tagName.equalsIgnoreCase(otherTag.tagName);
+        return comparisonKey().equals(otherTag.comparisonKey());
     }
 
     @Override
     public int hashCode() {
-        return tagName.toLowerCase(Locale.ROOT).hashCode();
+        return comparisonKey().hashCode();
     }
 
     /**

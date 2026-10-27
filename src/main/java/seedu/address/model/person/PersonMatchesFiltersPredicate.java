@@ -57,7 +57,7 @@ public class PersonMatchesFiltersPredicate implements Predicate<Person> {
         requireNonNull(person);
         boolean isStatusMatch = status.isEmpty() || person.getStatus() == status.get();
         boolean isTagMatch = tagName.isEmpty()
-                || person.getTags().stream().anyMatch(tag -> tag.tagName.equalsIgnoreCase(tagName.get()));
+                || person.getTags().stream().anyMatch(tag -> tag.hasSameNameIgnoringCase(tagName.get()));
         return isStatusMatch && isTagMatch;
     }
 

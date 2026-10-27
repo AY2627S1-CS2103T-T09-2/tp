@@ -111,7 +111,10 @@ The contact list shows blue, green, and grey badges respectively for these statu
 
 <box type="tip" seamless>
 
-**Tags:** A contact can have any number of tags, including zero.
+**Tags:** A contact can have any number of tags, including zero. Each tag is a single word of letters and digits,
+such as `t/referral` or `t/lifePolicy2`. Accented and non-English letters are accepted (`t/café`), but spaces and
+symbols are not, so `t/high value` and `t/high-value` are rejected; write `t/highValue` instead. Tags ignore case,
+so `t/VIP` and `t/vip` are the same tag and a contact keeps only one of them.
 </box>
 
 Names with extra spaces are saved with single spaces. A contact cannot be added if its name matches an existing contact's name after ignoring case and extra spaces.
