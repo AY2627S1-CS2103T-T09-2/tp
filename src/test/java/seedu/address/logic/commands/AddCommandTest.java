@@ -14,14 +14,18 @@ import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
 
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
+import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.ReadOnlyUserPrefs;
+import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Status;
 import seedu.address.testutil.PersonBuilder;
 
 public class AddCommandTest {
@@ -70,6 +74,22 @@ public class AddCommandTest {
         assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, personWithFutureFollowUp.getName(),
                 personWithFutureFollowUp.getStatus()),
                 commandResult.getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_addedContactHiddenByActiveFilter_informsUser() throws Exception {
+        Model model = new ModelManager(new AddressBook(), new UserPrefs());
+        Person client = new PersonBuilder().withName("Client Tan").withStatus("CLIENT").build();
+        Person prospect = new PersonBuilder().withName("Prospect Lee").build();
+        model.addPerson(client);
+        model.updateFilteredPersonList(person -> person.getStatus() == Status.CLIENT);
+
+        CommandResult result = new AddCommand(prospect).execute(model);
+
+        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, prospect.getName(), prospect.getStatus())
+                + AddCommand.MESSAGE_HIDDEN_CONTACT, result.getFeedbackToUser());
+        assertEquals(List.of(client), model.getFilteredPersonList());
+        assertEquals(List.of(client, prospect), model.getAddressBook().getPersonList());
     }
 
     @Test
@@ -237,6 +257,11 @@ public class AddCommandTest {
         @Override
         public ReadOnlyAddressBook getAddressBook() {
             return new AddressBook();
+        }
+
+        @Override
+        public ObservableList<Person> getFilteredPersonList() {
+            return FXCollections.observableArrayList(personsAdded);
         }
     }
 
