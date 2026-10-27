@@ -24,6 +24,7 @@ import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
 import seedu.address.model.person.Status;
+import seedu.address.model.person.LastContact;
 import seedu.address.testutil.PersonBuilder;
 
 public class JsonAdaptedPersonTest {
@@ -148,6 +149,85 @@ public class JsonAdaptedPersonTest {
         assertThrows(
                 IllegalValueException.class,
                 FollowUp.MESSAGE_CONSTRAINTS,
+                person::toModelType);
+    }
+
+    @Test
+    public void toModelType_validLastContact_returnsPersonWithLastContact()
+            throws Exception {
+            
+        Person bensonWithLastContact = new PersonBuilder(BENSON)
+                .withLastContact("27-10-2026")
+                .build();
+    
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(bensonWithLastContact);
+    
+        assertEquals(
+                bensonWithLastContact,
+                person.toModelType());
+    }
+
+    @Test
+    public void jsonSerialization_lastContactRoundTrip_returnsPerson()
+            throws Exception {
+    
+        Person bensonWithLastContact = new PersonBuilder(BENSON)
+                .withLastContact("27-10-2026")
+                .build();
+    
+        String json = JsonUtil.toJsonString(
+                new JsonAdaptedPerson(bensonWithLastContact));
+    
+        JsonAdaptedPerson restored =
+                JsonUtil.fromJsonString(
+                        json,
+                        JsonAdaptedPerson.class);
+    
+        assertEquals(
+                bensonWithLastContact,
+                restored.toModelType());
+    }
+
+    @Test
+    public void toModelType_nullLastContact_returnsEmptyLastContact()
+            throws Exception {
+    
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(
+                        VALID_NAME,
+                        VALID_PHONE,
+                        VALID_EMAIL,
+                        VALID_ADDRESS,
+                        null,
+                        VALID_TAGS,
+                        null,
+                        null,
+                        null);
+    
+        assertTrue(
+                person.toModelType()
+                        .getLastContact()
+                        .isEmpty());
+    }
+
+    @Test
+    public void toModelType_invalidLastContact_throwsIllegalValueException() {
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(
+                        VALID_NAME,
+                        VALID_PHONE,
+                        VALID_EMAIL,
+                        VALID_ADDRESS,
+                        null,
+                        VALID_TAGS,
+                        null,
+                        "31-02-2026",
+                        null);
+    
+        assertThrows(
+                IllegalValueException.class,
+                LastContact.MESSAGE_CONSTRAINTS,
                 person::toModelType);
     }
 
