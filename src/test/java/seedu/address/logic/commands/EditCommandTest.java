@@ -97,6 +97,46 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_editPersonWithInteractionNotes_notesKept() {
+        // EP: a contact has existing notes; editing its phone must retain every note.
+        Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+
+        Person firstPersonWithNotes = new PersonBuilder(firstPerson)
+                .withInteractionNotes(
+                        "Met client",
+                        "Discussed hospital coverage")
+                .build();
+
+        model.setPerson(firstPerson, firstPersonWithNotes);
+
+        Person editedPerson = new PersonBuilder(firstPersonWithNotes)
+                .withPhone(VALID_PHONE_BOB)
+                .build();
+
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withPhone(VALID_PHONE_BOB)
+                .build();
+
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
+
+        String expectedMessage = String.format(
+                EditCommand.MESSAGE_EDIT_PERSON_SUCCESS,
+                Messages.format(editedPerson));
+
+        Model expectedModel = new ModelManager(
+                new AddressBook(model.getAddressBook()),
+                new UserPrefs());
+
+        expectedModel.setPerson(firstPersonWithNotes, editedPerson);
+
+        assertCommandSuccess(
+                editCommand,
+                model,
+                expectedMessage,
+                expectedModel);
+    }
+
+    @Test
     public void execute_editFollowUp_success() throws Exception {
         // EP: a future follow-up date is explicitly supplied to a contact with no existing date.
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
@@ -290,5 +330,4 @@ public class EditCommandTest {
                 + editPersonDescriptor + "}";
         assertEquals(expected, editCommand.toString());
     }
-
 }

@@ -211,6 +211,26 @@
 
                       <GridPane hgap="20.0" vgap="6.0" styleClass="command-guide-row">
                         <children>
+                          <Label text="history"
+                                 styleClass="command-guide-cell, command-guide-name"
+                                 maxWidth="Infinity" />
+                          <Label text="history INDEX"
+                                 styleClass="command-guide-cell, command-guide-code, command-guide-format"
+                                 maxWidth="Infinity" />
+                          <Label text="history 2"
+                                 styleClass="command-guide-cell, command-guide-code, command-guide-example"
+                                 maxWidth="Infinity" />
+                          <Label text="Format"
+                                 styleClass="command-guide-cell, command-guide-caption, command-guide-format"
+                                 visible="false" managed="false" />
+                          <Label text="Example"
+                                 styleClass="command-guide-cell, command-guide-caption, command-guide-example"
+                                 visible="false" managed="false" />
+                        </children>
+                      </GridPane>
+
+                      <GridPane hgap="20.0" vgap="6.0" styleClass="command-guide-row">
+                        <children>
                           <Label text="list"
                                  styleClass="command-guide-cell, command-guide-name"
                                  maxWidth="Infinity" />
@@ -218,6 +238,26 @@
                                  styleClass="command-guide-cell, command-guide-code, command-guide-format"
                                  maxWidth="Infinity" />
                           <Label text="list st/CLIENT t/referral"
+                                 styleClass="command-guide-cell, command-guide-code, command-guide-example"
+                                 maxWidth="Infinity" />
+                          <Label text="Format"
+                                 styleClass="command-guide-cell, command-guide-caption, command-guide-format"
+                                 visible="false" managed="false" />
+                          <Label text="Example"
+                                 styleClass="command-guide-cell, command-guide-caption, command-guide-example"
+                                 visible="false" managed="false" />
+                        </children>
+                      </GridPane>
+
+                      <GridPane hgap="20.0" vgap="6.0" styleClass="command-guide-row">
+                        <children>
+                          <Label text="note"
+                                 styleClass="command-guide-cell, command-guide-name"
+                                 maxWidth="Infinity" />
+                          <Label text="note INDEX nt/NOTE"
+                                 styleClass="command-guide-cell, command-guide-code, command-guide-format"
+                                 maxWidth="Infinity" />
+                          <Label text="note 2 nt/Discussed hospital coverage"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-example"
                                  maxWidth="Infinity" />
                           <Label text="Format"
