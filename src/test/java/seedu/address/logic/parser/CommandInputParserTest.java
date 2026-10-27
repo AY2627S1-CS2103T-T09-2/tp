@@ -215,7 +215,7 @@ public class CommandInputParserTest {
                 parser.parseCommand(
                         HistoryCommand.COMMAND_WORD + " 1"));
     }
-    
+
     @Test
     public void parseCommand_contacted() throws ParseException {
         ContactedCommand expectedCommand =
