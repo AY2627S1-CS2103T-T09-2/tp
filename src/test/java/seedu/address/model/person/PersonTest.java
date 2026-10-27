@@ -208,6 +208,7 @@ public class PersonTest {
                 + ", status=" + ALICE.getStatus()
                 + ", tags=" + ALICE.getTags()
                 + ", followUp=none"
+                + ", lastContact=none"
                 + ", interactionNotes=[]}";
 
         assertEquals(expected, ALICE.toString());
