@@ -1,5 +1,6 @@
 package seedu.address.model.person;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -21,49 +22,92 @@ public class EmailTest {
 
     @Test
     public void isValidEmail() {
-        // null email
+        // EP: null input, which violates the method's non-null contract.
         assertThrows(NullPointerException.class, () -> Email.isValidEmail(null));
 
-        // blank email
-        assertFalse(Email.isValidEmail("")); // empty string
+        // EP: blank input rather than an email address.
+        assertFalse(Email.isValidEmail("")); // Boundary value: zero characters.
         assertFalse(Email.isValidEmail(" ")); // spaces only
 
-        // missing parts
+        // EP: missing local part.
         assertFalse(Email.isValidEmail("@example.com")); // missing local part
+
+        // EP: missing separator between local part and domain.
         assertFalse(Email.isValidEmail("peterjackexample.com")); // missing '@' symbol
+
+        // EP: missing domain.
         assertFalse(Email.isValidEmail("peterjack@")); // missing domain name
 
-        // invalid parts
+        // EP: domain labels that lack alphanumeric content or contain unsupported punctuation.
         assertFalse(Email.isValidEmail("peterjack@-")); // invalid domain name
         assertFalse(Email.isValidEmail("peterjack@exam_ple.com")); // underscore in domain name
+
+        // EP: whitespace inside or surrounding the email.
         assertFalse(Email.isValidEmail("peter jack@example.com")); // spaces in local part
         assertFalse(Email.isValidEmail("peterjack@exam ple.com")); // spaces in domain name
         assertFalse(Email.isValidEmail(" peterjack@example.com")); // leading space
         assertFalse(Email.isValidEmail("peterjack@example.com ")); // trailing space
+
+        // EP: more than one separator between local part and domain.
         assertFalse(Email.isValidEmail("peterjack@@example.com")); // double '@' symbol
         assertFalse(Email.isValidEmail("peter@jack@example.com")); // '@' symbol in local part
+
+        // EP: local-part punctuation outside the allowed gaps between alphanumeric groups.
         assertFalse(Email.isValidEmail("-peterjack@example.com")); // local part starts with a hyphen
         assertFalse(Email.isValidEmail("peterjack-@example.com")); // local part ends with a hyphen
         assertFalse(Email.isValidEmail("peter..jack@example.com")); // local part has two consecutive periods
+
+        // Same multiple-separator EP: an extra separator embedded in the domain.
         assertFalse(Email.isValidEmail("peterjack@example@com")); // '@' symbol in domain name
+
+        // EP: empty domain labels or punctuation at a domain label's ends.
         assertFalse(Email.isValidEmail("peterjack@.example.com")); // domain name starts with a period
         assertFalse(Email.isValidEmail("peterjack@example.com.")); // domain name ends with a period
         assertFalse(Email.isValidEmail("peterjack@-example.com")); // domain name starts with a hyphen
         assertFalse(Email.isValidEmail("peterjack@example.com-")); // domain name ends with a hyphen
-        assertFalse(Email.isValidEmail("peterjack@example.c")); // top level domain has less than two chars
 
-        // valid email
+        // EP: final domain label shorter than two characters.
+        assertFalse(Email.isValidEmail("peterjack@example.c")); // Boundary value: one character below the minimum.
+
+        // EP: supported punctuation separating alphanumeric groups in the local part.
         assertTrue(Email.isValidEmail("PeterJack_1190@example.com")); // underscore in local part
         assertTrue(Email.isValidEmail("PeterJack.1190@example.com")); // period in local part
         assertTrue(Email.isValidEmail("PeterJack+1190@example.com")); // '+' symbol in local part
         assertTrue(Email.isValidEmail("PeterJack-1190@example.com")); // hyphen in local part
-        assertTrue(Email.isValidEmail("a@bc")); // minimal
+
+        // EP: valid alphanumeric local part and domain, including the shortest accepted form.
+        assertTrue(Email.isValidEmail("a@bc")); // Boundary values: one-character local part, two-character domain.
         assertTrue(Email.isValidEmail("test@localhost")); // alphabets only
         assertTrue(Email.isValidEmail("123@145")); // numeric local part and domain name
+
+        // EP: valid combinations of punctuation, long components and multiple domain labels.
         assertTrue(Email.isValidEmail("a1+be.d@example1.com")); // mixture of alphanumeric and special characters
         assertTrue(Email.isValidEmail("peter_jack@very-very-very-long-example.com")); // long domain name
         assertTrue(Email.isValidEmail("if.you.dream.it_you.can.do.it@example.com")); // long local part
         assertTrue(Email.isValidEmail("e1234567@u.nus.edu")); // more than one period in domain
+    }
+
+    @Test
+    public void isValidEmail_length() {
+        String domain = "@example.com";
+
+        // EP: email at the length limit.
+        String atLimit = "a".repeat(Email.MAX_LENGTH - domain.length()) + domain; // Boundary value: exactly the limit.
+        assertEquals(Email.MAX_LENGTH, atLimit.length());
+        assertTrue(Email.isValidEmail(atLimit));
+
+        // EP: email over the length limit.
+        assertFalse(Email.isValidEmail("a" + atLimit)); // Boundary value: one character over the limit.
+
+        // EP: very long emails with many local-part segments are rejected without overflowing the stack.
+        assertFalse(Email.isValidEmail("a.".repeat(2500) + "a" + domain)); // about 5000 characters
+        assertFalse(Email.isValidEmail("a.".repeat(50000) + "a" + domain)); // about 100000 characters
+    }
+
+    @Test
+    public void constructor_tooLongEmail_throwsIllegalArgumentException() {
+        String tooLongEmail = "a".repeat(Email.MAX_LENGTH) + "@example.com";
+        assertThrows(IllegalArgumentException.class, Email.MESSAGE_CONSTRAINTS, () -> new Email(tooLongEmail));
     }
 
     @Test

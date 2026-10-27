@@ -2,9 +2,11 @@ package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
+import java.text.Collator;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Comparator;
+import java.util.Locale;
 import java.util.Objects;
 
 import seedu.address.commons.util.ToStringBuilder;
@@ -32,7 +34,8 @@ public class DueCommand extends Command {
 
     private static final Comparator<Person> BY_FOLLOW_UP_DATE = Comparator
             .comparing((Person person) -> person.getFollowUp().map(followUp -> followUp.value).orElse(LocalDate.MAX))
-            .thenComparing(person -> person.getName().fullName, String.CASE_INSENSITIVE_ORDER);
+            // A collator puts accented names next to their base letter (Emile, Émile, Zack) instead of after Z.
+            .thenComparing(person -> person.getName().fullName, Collator.getInstance(Locale.ROOT));
 
     private final int days;
     private final Clock clock;
@@ -63,10 +66,10 @@ public class DueCommand extends Command {
         int count = model.getFilteredPersonList().size();
         String cutoffText = FollowUp.format(cutoff);
         if (count == 0) {
-            return new CommandResult(String.format(MESSAGE_NONE_DUE, cutoffText));
+            return new CommandResult(String.format(Locale.ROOT, MESSAGE_NONE_DUE, cutoffText));
         }
         String followUpWord = count == 1 ? "follow-up" : "follow-ups";
-        return new CommandResult(String.format(MESSAGE_SUCCESS, count, followUpWord, cutoffText));
+        return new CommandResult(String.format(Locale.ROOT, MESSAGE_SUCCESS, count, followUpWord, cutoffText));
     }
 
     @Override

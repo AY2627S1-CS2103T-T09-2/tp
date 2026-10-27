@@ -129,6 +129,8 @@ How the parsing works:
 `Status.DEFAULT` is `PROSPECT`. Each `Person` stores one status and optionally one follow-up date.
 `Name` accepts Unicode letters and common name punctuation after an initial letter; `Phone` accepts
 an optional leading plus sign and separators between at least three digits.
+`Phone` is capped at 30 characters and `Email` at 254. Both lengths are checked before the regex, so
+a very long value from a command or the data file is rejected instead of overflowing the stack.
 
 
 The `Model` component,
@@ -212,7 +214,7 @@ The change may not have been saved to disk.
 * `DueCommand` works out the cutoff from a `Clock`. The app passes the system clock, and tests pass a fixed one, so the tests do not depend on the real date.
 * `FollowUpDueByPredicate` keeps contacts that have a follow-up on or before the cutoff. Contacts without a follow-up are left out.
 * `Model#updateFilteredPersonList(Predicate, Comparator)` filters and sorts the displayed list in one step. `ModelManager` wraps its `FilteredList` in a `SortedList`, and `getFilteredPersonList()` returns the sorted view, so index-based commands such as `done 1` act on the order the user sees.
-* The one-argument `updateFilteredPersonList(Predicate)` clears the comparator, so `list`, `find` and every command that resets the list go back to the stored order.
+* The one-argument `updateFilteredPersonList(Predicate)` clears the comparator, so `list` and `find` replace the current view and return to stored order. Adding or editing a contact retains the active filter and sort order; the displayed list updates as contacts change.
 
 The sequence diagram below shows how `due 7` is executed.
 
@@ -536,6 +538,20 @@ testers are expected to do more *exploratory* testing.
       Expected: All four contacts are shown.
       The result is `Listed all contacts.`
 
+1. Adding and editing while a filter is active
+
+   1. Prerequisites: Run `list st/CLIENT` with the four test contacts above.<br>
+      Expected: Only the two clients are shown.
+
+   1. Test case: `add n/Hidden Prospect p/91110005 e/five@example.com a/5 Test Road st/PROSPECT`<br>
+      Expected: The contact is saved but remains hidden. The result explains that the current view hides it and suggests `list` to show all contacts.
+
+   1. Test case: `add n/Visible Client p/91110006 e/six@example.com a/6 Test Road st/CLIENT`<br>
+      Expected: The new client appears in the filtered list without a hidden-contact note.
+
+   1. Test case: `edit 1 st/PROSPECT`<br>
+      Expected: The edited contact leaves the filtered list. The other clients remain visible.
+
 1. Rejecting invalid filters
 
    1. Test cases: `list st/LEAD` and `list st/`<br>
@@ -669,7 +685,7 @@ testers are expected to do more *exploratory* testing.
       Expected: The earliest follow-up in the sorted list is completed.
 
    1. Other incorrect commands to try: `due -1`, `due 366`, `due abc`, `due 7 days`<br>
-      Expected: No change to the list. Error: `Number of days must be a whole number from 0 to 365, e.g. due 7`
+      Expected: No change to the list. Error: `Number of days must be a whole number from 0 to 365, e.g. due 7.`
 
 ### Saving data
 
@@ -687,6 +703,9 @@ testers are expected to do more *exploratory* testing.
    1. Relaunch the app.<br>
       Expected: The app starts with an empty contact list, because the file could not be read. A copy of the invalid file is saved as `data/addressbook.json.bak`. Restoring the original value and relaunching brings the contacts back.
 
+   1. Repeat with one contact's `"phone"` changed to 31 or more digits.<br>
+      Expected: The same as above. The app still opens.
+
 1. Dealing with a data file containing JSON `null`
 
    1. Close the app. Replace the entire contents of `data/addressbook.json` with `null`.
@@ -696,7 +715,7 @@ testers are expected to do more *exploratory* testing.
 
 1. Dealing with a failed backup
 
-   1. Close the app. Put invalid JSON in `data/addressbook.json`, then create a non-empty folder named `data/addressbook.json.bak`.
+   1. Close the app. Put invalid JSON in `data/addressbook.json`. If `data/addressbook.json.bak` exists, move it somewhere safe, then create a non-empty folder with that name.
 
    1. Relaunch the app.<br>
       Expected: Startup stops with an error naming the data and backup paths. The original `data/addressbook.json` remains unchanged.
