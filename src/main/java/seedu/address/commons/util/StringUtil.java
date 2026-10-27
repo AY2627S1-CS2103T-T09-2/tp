@@ -45,7 +45,8 @@ public class StringUtil {
         String preppedWord = word.trim();
         checkArgument(!preppedWord.isEmpty(), "Word parameter cannot be empty");
         checkArgument(preppedWord.split("\\s+").length == 1, "Word parameter should be a single word");
-        return Arrays.stream(sentence.split("[\\s-]+"))
+        // Keep the original hyphenated word searchable while also matching each part.
+        return Arrays.stream((sentence + " " + sentence.replace('-', ' ')).split("\\s+"))
                 .anyMatch(sentenceWord -> sentenceWord.regionMatches(true, 0, preppedWord, 0,
                         preppedWord.length()));
     }

@@ -14,7 +14,7 @@ public class ClearCommand extends Command {
     public static final String CONFIRM_KEYWORD = "confirm";
 
     public static final String MESSAGE_CONFIRM_CLEAR =
-            "This deletes all %d contacts. Type 'clear confirm' to proceed.";
+            "This deletes all %d %s. Type 'clear confirm' to proceed.";
     public static final String MESSAGE_SUCCESS =
             "All contacts have been cleared from Easy-Insurance.";
 
@@ -35,7 +35,8 @@ public class ClearCommand extends Command {
 
         if (!isConfirmed) {
             int contactCount = model.getAddressBook().getPersonList().size();
-            return new CommandResult(String.format(MESSAGE_CONFIRM_CLEAR, contactCount));
+            String contactNoun = contactCount == 1 ? "contact" : "contacts";
+            return new CommandResult(String.format(MESSAGE_CONFIRM_CLEAR, contactCount, contactNoun));
         }
 
         model.setAddressBook(new AddressBook());

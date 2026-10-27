@@ -63,55 +63,65 @@ public class EditCommandParserTest {
 
     @Test
     public void parse_missingParts_failure() {
-        // no index specified
+        // EP: missing index, even when other text is supplied.
         assertParseFailure(parser, VALID_NAME_AMY, MESSAGE_INVALID_FORMAT);
 
-        // no field specified
+        // EP: a valid index with no field updates; zero updates is below the required minimum of one.
         assertParseFailure(parser, "1", EditCommand.MESSAGE_NOT_EDITED);
 
-        // no index and no field specified
+        // EP: no index and no field updates.
         assertParseFailure(parser, "", MESSAGE_INVALID_FORMAT);
     }
 
     @Test
     public void parse_invalidPreamble_failure() {
-        // negative index
+        // EP: negative indexes.
         assertParseFailure(parser, "-5" + NAME_DESC_AMY, MESSAGE_INVALID_INDEX);
 
-        // zero index
+        // EP: zero index; boundary value immediately below the smallest valid index.
         assertParseFailure(parser, "0" + NAME_DESC_AMY, MESSAGE_INVALID_INDEX);
 
-        // invalid arguments being parsed as preamble
+        // EP: extra bare arguments following the index.
         assertParseFailure(parser, "1 some random string", MESSAGE_INVALID_FORMAT);
 
-        // invalid prefix being parsed as preamble
+        // EP: an unknown prefix is treated as an unsupported preamble argument.
         assertParseFailure(parser, "1 i/ string", MESSAGE_INVALID_FORMAT);
     }
 
     @Test
     public void parse_invalidValue_failure() {
-        assertParseFailure(parser, "1" + INVALID_NAME_DESC, Name.MESSAGE_CONSTRAINTS); // invalid name
-        assertParseFailure(parser, "1" + INVALID_PHONE_DESC, Phone.MESSAGE_CONSTRAINTS); // invalid phone
-        assertParseFailure(parser, "1" + INVALID_EMAIL_DESC, Email.MESSAGE_CONSTRAINTS); // invalid email
-        assertParseFailure(parser, "1" + INVALID_ADDRESS_DESC, Address.MESSAGE_CONSTRAINTS); // invalid address
-        assertParseFailure(parser, "1" + INVALID_TAG_DESC, Tag.MESSAGE_CONSTRAINTS); // invalid tag
+        // EP: name contains unsupported punctuation.
+        assertParseFailure(parser, "1" + INVALID_NAME_DESC, Name.MESSAGE_CONSTRAINTS);
 
-        // invalid phone followed by valid email
+        // EP: phone number contains a letter.
+        assertParseFailure(parser, "1" + INVALID_PHONE_DESC, Phone.MESSAGE_CONSTRAINTS);
+
+        // EP: email address lacks the @ separator.
+        assertParseFailure(parser, "1" + INVALID_EMAIL_DESC, Email.MESSAGE_CONSTRAINTS);
+
+        // EP: empty address; unlike tags and follow-up, this field cannot be cleared.
+        assertParseFailure(parser, "1" + INVALID_ADDRESS_DESC, Address.MESSAGE_CONSTRAINTS);
+
+        // EP: tag contains unsupported punctuation.
+        assertParseFailure(parser, "1" + INVALID_TAG_DESC, Tag.MESSAGE_CONSTRAINTS);
+
+        // EP: an invalid field alongside a valid field; a valid field cannot hide the invalid one.
         assertParseFailure(parser, "1" + INVALID_PHONE_DESC + EMAIL_DESC_AMY, Phone.MESSAGE_CONSTRAINTS);
 
-        // while parsing {@code PREFIX_TAG} alone will reset the tags of the {@code Person} being edited,
-        // parsing it together with a valid tag results in error
+        // EP: an empty tag mixed with nonempty tags is invalid, regardless of its position.
+        // A lone empty tag has a different meaning and is tested by parse_resetTags_success().
         assertParseFailure(parser, "1" + TAG_DESC_FRIEND + TAG_DESC_HUSBAND + TAG_EMPTY, Tag.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, "1" + TAG_DESC_FRIEND + TAG_EMPTY + TAG_DESC_HUSBAND, Tag.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, "1" + TAG_EMPTY + TAG_DESC_FRIEND + TAG_DESC_HUSBAND, Tag.MESSAGE_CONSTRAINTS);
 
-        // multiple invalid values, but only the first invalid value is captured
+        // EP: multiple invalid field values; only the first validation error is reported.
         assertParseFailure(parser, "1" + INVALID_NAME_DESC + INVALID_EMAIL_DESC + VALID_ADDRESS_AMY + VALID_PHONE_AMY,
                 Name.MESSAGE_CONSTRAINTS);
     }
 
     @Test
     public void parse_allFieldsSpecified_success() {
+        // EP: multiple core fields supplied together, including repeated tags.
         Index targetIndex = INDEX_SECOND_PERSON;
         String userInput = targetIndex.getOneBased() + PHONE_DESC_BOB + TAG_DESC_HUSBAND
                 + EMAIL_DESC_AMY + ADDRESS_DESC_AMY + NAME_DESC_AMY + TAG_DESC_FRIEND;
@@ -126,6 +136,7 @@ public class EditCommandParserTest {
 
     @Test
     public void parse_someFieldsSpecified_success() {
+        // EP: a subset of fields supplied; omitted fields must stay absent from the edit descriptor.
         Index targetIndex = INDEX_FIRST_PERSON;
         String userInput = targetIndex.getOneBased() + PHONE_DESC_BOB + EMAIL_DESC_AMY;
 
@@ -138,6 +149,7 @@ public class EditCommandParserTest {
 
     @Test
     public void parse_oneFieldSpecified_success() {
+        // EP: exactly one field supplied; one is the minimum accepted number of updates.
         // name
         Index targetIndex = INDEX_THIRD_PERSON;
         String userInput = targetIndex.getOneBased() + NAME_DESC_AMY;
@@ -187,18 +199,18 @@ public class EditCommandParserTest {
         // More extensive testing of duplicate parameter detections is done in
         // AddCommandParserTest#parse_repeatedNonTagValue_failure()
 
-        // valid followed by invalid
+        // EP: an invalid phone occurrence followed by a valid one still duplicates the prefix.
         Index targetIndex = INDEX_FIRST_PERSON;
         String userInput = targetIndex.getOneBased() + INVALID_PHONE_DESC + PHONE_DESC_BOB;
 
         assertParseFailure(parser, userInput, Messages.getErrorMessageForDuplicatePrefixes(PREFIX_PHONE));
 
-        // invalid followed by valid
+        // EP: a valid phone occurrence followed by an invalid one still duplicates the prefix.
         userInput = targetIndex.getOneBased() + PHONE_DESC_BOB + INVALID_PHONE_DESC;
 
         assertParseFailure(parser, userInput, Messages.getErrorMessageForDuplicatePrefixes(PREFIX_PHONE));
 
-        // multiple valid fields repeated
+        // EP: several single-valued fields repeated with valid values.
         userInput = targetIndex.getOneBased() + PHONE_DESC_AMY + ADDRESS_DESC_AMY + EMAIL_DESC_AMY
                 + TAG_DESC_FRIEND + PHONE_DESC_AMY + ADDRESS_DESC_AMY + EMAIL_DESC_AMY + TAG_DESC_FRIEND
                 + PHONE_DESC_BOB + ADDRESS_DESC_BOB + EMAIL_DESC_BOB + TAG_DESC_HUSBAND;
@@ -206,7 +218,7 @@ public class EditCommandParserTest {
         assertParseFailure(parser, userInput,
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS));
 
-        // multiple invalid values
+        // EP: several single-valued fields repeated with invalid values.
         userInput = targetIndex.getOneBased() + INVALID_PHONE_DESC + INVALID_ADDRESS_DESC + INVALID_EMAIL_DESC
                 + INVALID_PHONE_DESC + INVALID_ADDRESS_DESC + INVALID_EMAIL_DESC;
 
@@ -216,6 +228,7 @@ public class EditCommandParserTest {
 
     @Test
     public void parse_resetTags_success() {
+        // EP: a lone empty tag prefix explicitly clears all tags.
         Index targetIndex = INDEX_THIRD_PERSON;
         String userInput = targetIndex.getOneBased() + TAG_EMPTY;
 
@@ -227,6 +240,7 @@ public class EditCommandParserTest {
 
     @Test
     public void parse_duplicateStatus_failure() {
+        // EP: repeated single-valued status prefixes are rejected even when both values are valid.
         String userInput = INDEX_FIRST_PERSON.getOneBased() + " st/CLIENT st/PROSPECT";
 
         assertParseFailure(parser, userInput,
@@ -235,12 +249,14 @@ public class EditCommandParserTest {
 
     @Test
     public void parse_invalidStatus_failure() {
+        // EP: a supplied status outside the supported set.
         assertParseFailure(parser, INDEX_FIRST_PERSON.getOneBased() + " st/LEAD",
                 Status.MESSAGE_CONSTRAINTS);
     }
 
     @Test
     public void parse_emptyFollowUp_success() {
+        // EP: an empty follow-up prefix explicitly clears the current follow-up.
         EditCommand expectedCommand = new EditCommand(INDEX_FIRST_PERSON,
                 new EditPersonDescriptorBuilder().withFollowUp().build());
 
@@ -249,12 +265,14 @@ public class EditCommandParserTest {
 
     @Test
     public void parse_invalidFollowUp_failure() {
+        // EP: a correctly formatted date that does not exist in the calendar.
         assertParseFailure(parser, INDEX_FIRST_PERSON.getOneBased() + INVALID_FOLLOW_UP_DESC,
                 String.format(FollowUp.MESSAGE_NOT_A_REAL_DATE, "31-02-2099"));
     }
 
     @Test
     public void parse_duplicateFollowUp_failure() {
+        // EP: repeated follow-up prefixes are rejected even when their values are identical.
         String userInput = INDEX_FIRST_PERSON.getOneBased() + " f/25-12-2099 f/25-12-2099";
 
         assertParseFailure(parser, userInput,

@@ -23,7 +23,10 @@ public class FollowUpDueByPredicateTest {
     public void test_followUpOnOrBeforeCutoff_returnsTrue() {
         FollowUpDueByPredicate predicate = new FollowUpDueByPredicate(CUTOFF);
 
+        // EP: a pending follow-up before the cutoff, including dates from earlier years.
         assertTrue(predicate.test(new PersonBuilder().withFollowUp("01-01-2020").build()));
+
+        // EP: a pending follow-up exactly on the cutoff. Boundary value: last included day.
         assertTrue(predicate.test(new PersonBuilder().withFollowUp("28-10-2026").build()));
     }
 
@@ -31,7 +34,10 @@ public class FollowUpDueByPredicateTest {
     public void test_followUpAfterCutoffOrMissing_returnsFalse() {
         FollowUpDueByPredicate predicate = new FollowUpDueByPredicate(CUTOFF);
 
+        // EP: a pending follow-up after the cutoff. Boundary value: first excluded day.
         assertFalse(predicate.test(new PersonBuilder().withFollowUp("29-10-2026").build()));
+
+        // EP: no pending follow-up, regardless of the cutoff date.
         assertFalse(predicate.test(new PersonBuilder().build()));
     }
 

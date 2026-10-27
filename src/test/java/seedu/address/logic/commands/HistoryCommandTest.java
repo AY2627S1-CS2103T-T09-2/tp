@@ -20,6 +20,8 @@ public class HistoryCommandTest {
     public void execute_notesExist_showsNewestFirstWithTimestamps()
             throws CommandException {
 
+        // EP: the contact has multiple notes with distinct timestamps.
+        // Store the older note first to check that display order follows timestamps, not storage order.
         InteractionNote olderNote = new InteractionNote(
                 "Discussed hospital coverage",
                 LocalDateTime.of(2026, 10, 26, 20, 30));
@@ -54,6 +56,8 @@ public class HistoryCommandTest {
     public void execute_noNotes_showsNoNotesMessage()
             throws CommandException {
 
+        // EP: the contact has no notes, so show the empty-history message.
+        // Boundary value: zero notes is the smallest possible history size.
         Person person = new PersonBuilder()
                 .withName("John Tan")
                 .build();

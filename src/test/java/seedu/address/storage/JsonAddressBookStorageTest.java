@@ -30,6 +30,7 @@ public class JsonAddressBookStorageTest {
 
     @Test
     public void readAddressBook_nullFilePath_throwsNullPointerException() {
+        // EP: no path is supplied, unlike a supplied path whose file does not exist.
         assertThrows(NullPointerException.class, () -> readAddressBook(null));
     }
 
@@ -45,21 +46,25 @@ public class JsonAddressBookStorageTest {
 
     @Test
     public void read_missingFile_emptyResult() throws Exception {
+        // EP: the data file is absent, as on first launch.
         assertFalse(readAddressBook("NonExistentFile.json").isPresent());
     }
 
     @Test
     public void read_notJsonFormat_exceptionThrown() {
+        // EP: the file exists but its syntax is not valid JSON.
         assertThrows(DataLoadingException.class, () -> readAddressBook("notJsonFormatAddressBook.json"));
     }
 
     @Test
     public void readAddressBook_invalidPersonAddressBook_throwDataLoadingException() {
+        // EP: valid JSON contains a contact with invalid field values.
         assertThrows(DataLoadingException.class, () -> readAddressBook("invalidPersonAddressBook.json"));
     }
 
     @Test
     public void readAddressBook_invalidAndValidPersonAddressBook_throwDataLoadingException() {
+        // EP: valid and invalid contacts are mixed; loading must reject the whole file.
         assertThrows(DataLoadingException.class, () -> readAddressBook("invalidAndValidPersonAddressBook.json"));
     }
 
@@ -69,12 +74,12 @@ public class JsonAddressBookStorageTest {
         AddressBook original = getTypicalAddressBook();
         JsonAddressBookStorage jsonAddressBookStorage = new JsonAddressBookStorage(filePath);
 
-        // Save in new file and read back
+        // EP: the destination does not exist; saving creates a readable file.
         jsonAddressBookStorage.saveAddressBook(original, filePath);
         ReadOnlyAddressBook readBack = jsonAddressBookStorage.readAddressBook(filePath).get();
         assertEquals(original, new AddressBook(readBack));
 
-        // Modify data, overwrite existing file, and read back
+        // EP: the destination already exists; saving replaces its previous contents.
         original.addPerson(HOON);
         original.removePerson(ALICE);
         jsonAddressBookStorage.saveAddressBook(original, filePath);
@@ -91,6 +96,7 @@ public class JsonAddressBookStorageTest {
 
     @Test
     public void saveAddressBook_nullAddressBook_throwsNullPointerException() {
+        // EP: the address book is null while the save path is supplied.
         assertThrows(NullPointerException.class, () -> saveAddressBook(null, "SomeFile.json"));
     }
 
@@ -108,6 +114,7 @@ public class JsonAddressBookStorageTest {
 
     @Test
     public void saveAddressBook_nullFilePath_throwsNullPointerException() {
+        // EP: the save path is null while the address book is supplied.
         assertThrows(NullPointerException.class, () -> saveAddressBook(new AddressBook(), null));
     }
 
@@ -119,16 +126,19 @@ public class JsonAddressBookStorageTest {
 
     @Test
     public void readAddressBookWithBackup_notJsonFormat_backupCreatedWithSameContent() throws Exception {
+        // EP: unreadable JSON syntax triggers a backup of the original bytes.
         assertCorruptedFileBackedUp("notJsonFormatAddressBook.json");
     }
 
     @Test
     public void readAddressBookWithBackup_invalidPerson_backupCreatedWithSameContent() throws Exception {
+        // EP: readable JSON with invalid contact data also requires a backup.
         assertCorruptedFileBackedUp("invalidPersonAddressBook.json");
     }
 
     @Test
     public void readAddressBookWithBackup_existingBackup_backupReplaced() throws Exception {
+        // EP: a backup already exists; the newest unreadable file replaces it.
         Path backupPath = testFolder.resolve("addressbook.json.bak");
         Files.writeString(backupPath, "old backup");
         assertCorruptedFileBackedUp("notJsonFormatAddressBook.json");
@@ -136,6 +146,7 @@ public class JsonAddressBookStorageTest {
 
     @Test
     public void readAddressBookWithBackup_missingFile_noBackup() throws Exception {
+        // EP: the source file is absent, so there is nothing to back up.
         Path filePath = testFolder.resolve("addressbook.json");
         JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
 
@@ -145,6 +156,7 @@ public class JsonAddressBookStorageTest {
 
     @Test
     public void readAddressBookWithBackup_validFile_noBackup() throws Exception {
+        // EP: the source loads successfully, so no recovery backup is needed.
         Path filePath = testFolder.resolve("addressbook.json");
         JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
         storage.saveAddressBook(getTypicalAddressBook());
@@ -157,6 +169,7 @@ public class JsonAddressBookStorageTest {
 
     @Test
     public void readAddressBookWithBackup_backupFails_stillThrowsDataLoadingException() throws Exception {
+        // EP: reading fails and the backup destination is unusable; preserve the load failure.
         Path filePath = testFolder.resolve("addressbook.json");
         Files.copy(TEST_DATA_FOLDER.resolve("notJsonFormatAddressBook.json"), filePath);
         // A non-empty folder at the backup path cannot be replaced, so the copy fails
@@ -170,6 +183,7 @@ public class JsonAddressBookStorageTest {
 
     @Test
     public void backUpFile_notRegularFile_noBackup() throws Exception {
+        // EP: the source path names a directory instead of a regular file.
         Path folder = testFolder.resolve("addressbook.json");
         Files.createDirectories(folder);
 

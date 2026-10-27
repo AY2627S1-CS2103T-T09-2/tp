@@ -43,12 +43,14 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_validPersonDetails_returnsPerson() throws Exception {
+        // EP: required fields and tags are valid, providing the baseline for single-field failures.
         JsonAdaptedPerson person = new JsonAdaptedPerson(BENSON);
         assertEquals(BENSON, person.toModelType());
     }
 
     @Test
     public void toModelType_statusRoundTrip_returnsPerson() throws Exception {
+        // EP: an explicitly supplied valid status survives conversion.
         assertEquals(CLIENT_BENSON, new JsonAdaptedPerson(CLIENT_BENSON).toModelType());
     }
 
@@ -61,6 +63,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_missingStatus_defaultsToProspect() throws Exception {
+        // EP: status is absent, as in an older data file; apply the default.
         JsonAdaptedPerson person = new JsonAdaptedPerson(
                 VALID_NAME,
                 VALID_PHONE,
@@ -72,6 +75,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_blankStatus_defaultsToProspect() throws Exception {
+        // EP: status is present but blank; it has the same default as an absent status.
         JsonAdaptedPerson person = new JsonAdaptedPerson(
                 VALID_NAME,
                 VALID_PHONE,
@@ -84,6 +88,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_invalidStatus_throwsIllegalValueException() {
+        // EP: a non-blank status is unrecognized; reject it rather than applying the default.
         JsonAdaptedPerson person = new JsonAdaptedPerson(
                 VALID_NAME,
                 VALID_PHONE,
@@ -99,6 +104,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_validFollowUp_returnsPersonWithFollowUp() throws Exception {
+        // EP: an optional follow-up contains a valid calendar date.
         Person bensonWithFollowUp = new PersonBuilder(BENSON)
                 .withFollowUp("25-12-2099")
                 .build();
@@ -108,6 +114,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_nullFollowUp_returnsPersonWithoutFollowUp() throws Exception {
+        // EP: the optional follow-up is absent; conversion must still succeed.
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(
                         VALID_NAME,
@@ -122,6 +129,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_blankFollowUp_returnsPersonWithoutFollowUp() throws Exception {
+        // EP: the optional follow-up is blank; treat it as absent.
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(
                         VALID_NAME,
@@ -136,6 +144,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_invalidFollowUp_throwsIllegalValueException() {
+        // EP: the follow-up has the correct shape but names an impossible calendar date.
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(
                         VALID_NAME,
@@ -155,6 +164,7 @@ public class JsonAdaptedPersonTest {
     public void toModelType_validInteractionNotes_returnsPersonWithNotes()
             throws Exception {
 
+        // EP: valid notes with distinct timestamps survive conversion to the model.
         InteractionNote firstNote = new InteractionNote(
                 "Met client",
                 LocalDateTime.of(2026, 10, 26, 20, 30));
@@ -176,6 +186,7 @@ public class JsonAdaptedPersonTest {
     public void jsonSerialization_interactionNotesRoundTrip_returnsPerson()
             throws Exception {
 
+        // EP: a nonempty notes list survives JSON serialization and deserialization.
         InteractionNote firstNote = new InteractionNote(
                 "Met client",
                 LocalDateTime.of(2026, 10, 26, 20, 30));
@@ -203,6 +214,7 @@ public class JsonAdaptedPersonTest {
     public void jsonSerialization_interactionNoteTimestampPreserved()
             throws Exception {
 
+        // EP: a stored note's explicit timestamp is preserved when the note is reloaded.
         LocalDateTime timestamp =
                 LocalDateTime.of(2026, 10, 26, 21, 45);
 
@@ -236,6 +248,7 @@ public class JsonAdaptedPersonTest {
     public void toModelType_nullInteractionNotes_returnsEmptyHistory()
             throws Exception {
 
+        // EP: an absent notes field, as in older data files, becomes an empty history.
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(
                         VALID_NAME,
@@ -255,6 +268,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_invalidInteractionNote_throwsIllegalValueException() {
+        // EP: a note is present but its text is blank; reject the contact's invalid history.
         JsonAdaptedInteractionNote invalidNote =
                 new JsonAdaptedInteractionNote(
                         "   ",
@@ -279,6 +293,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_nullInteractionNote_throwsIllegalValueException() {
+        // EP: a null entry invalidates the notes list even when the other entries are valid.
         List<JsonAdaptedInteractionNote> notesWithNull =
                 new ArrayList<>();
 
@@ -308,6 +323,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_missingInteractionNoteTimestamp_throwsIllegalValueException() {
+        // EP: otherwise valid note text has no timestamp; report the missing field.
         JsonAdaptedInteractionNote noteWithoutTimestamp =
                 new JsonAdaptedInteractionNote(
                         "Met client",
@@ -332,6 +348,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_invalidInteractionNoteTimestamp_throwsIllegalValueException() {
+        // EP: the timestamp is present but cannot be parsed; report invalid content.
         JsonAdaptedInteractionNote noteWithInvalidTimestamp =
                 new JsonAdaptedInteractionNote(
                         "Met client",
@@ -356,6 +373,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_invalidName_throwsIllegalValueException() {
+        // EP: a required name is present but malformed; keep the other fields valid.
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(
                         INVALID_NAME,
@@ -372,6 +390,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_nullName_throwsIllegalValueException() {
+        // EP: the required name is absent, so report a missing field rather than invalid content.
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(
                         null,
@@ -390,6 +409,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_invalidPhone_throwsIllegalValueException() {
+        // EP: a phone is present but has a misplaced plus sign; keep the other fields valid.
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(
                         VALID_NAME,
@@ -406,6 +426,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_nullPhone_throwsIllegalValueException() {
+        // EP: the required phone is absent.
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(
                         VALID_NAME,
@@ -424,6 +445,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_invalidEmail_throwsIllegalValueException() {
+        // EP: an email is present but lacks the required separator.
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(
                         VALID_NAME,
@@ -440,6 +462,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_nullEmail_throwsIllegalValueException() {
+        // EP: the required email is absent.
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(
                         VALID_NAME,
@@ -458,6 +481,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_invalidAddress_throwsIllegalValueException() {
+        // EP: the required address is present but blank.
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(
                         VALID_NAME,
@@ -474,6 +498,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_nullAddress_throwsIllegalValueException() {
+        // EP: the required address is absent.
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(
                         VALID_NAME,
@@ -492,6 +517,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_invalidTags_throwsIllegalValueException() {
+        // EP: at least one tag is malformed; valid tags do not make the whole list acceptable.
         List<JsonAdaptedTag> invalidTags =
                 new ArrayList<>(VALID_TAGS);
         invalidTags.add(new JsonAdaptedTag(INVALID_TAG));
@@ -511,6 +537,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_nullTagEntry_throwsIllegalValueException() {
+        // EP: a tag entry is null, rather than a non-null tag with invalid content.
         List<JsonAdaptedTag> tagsWithNull =
                 new ArrayList<>(VALID_TAGS);
         tagsWithNull.add(null);

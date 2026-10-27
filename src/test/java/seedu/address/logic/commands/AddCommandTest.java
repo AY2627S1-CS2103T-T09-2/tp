@@ -28,11 +28,13 @@ public class AddCommandTest {
 
     @Test
     public void constructor_nullPerson_throwsNullPointerException() {
+        // EP: null contact violates the constructor precondition.
         assertThrows(NullPointerException.class, () -> new AddCommand(null));
     }
 
     @Test
     public void execute_personAcceptedByModel_addSuccessful() throws Exception {
+        // EP: a new contact has no follow-up date, so it is added without a past-date warning.
         ModelStubAcceptingPersonAdded modelStub = new ModelStubAcceptingPersonAdded();
         Person validPerson = new PersonBuilder().build();
 
@@ -45,6 +47,7 @@ public class AddCommandTest {
 
     @Test
     public void execute_pastFollowUp_addSuccessfulWithWarning() throws Exception {
+        // EP: a new contact has a past follow-up date; the date is accepted with a warning.
         ModelStubAcceptingPersonAdded modelStub = new ModelStubAcceptingPersonAdded();
         Person personWithPastFollowUp = new PersonBuilder().withFollowUp("01-01-2020").build();
 
@@ -58,6 +61,7 @@ public class AddCommandTest {
 
     @Test
     public void execute_futureFollowUp_addSuccessfulWithoutWarning() throws Exception {
+        // EP: a new contact has a future follow-up date; no past-date warning is needed.
         ModelStubAcceptingPersonAdded modelStub = new ModelStubAcceptingPersonAdded();
         Person personWithFutureFollowUp = new PersonBuilder().withFollowUp("25-12-2099").build();
 
@@ -70,6 +74,7 @@ public class AddCommandTest {
 
     @Test
     public void execute_duplicatePerson_throwsCommandException() {
+        // EP: the contact already exists with identical details.
         Person validPerson = new PersonBuilder().build();
         AddCommand addCommand = new AddCommand(validPerson);
         ModelStub modelStub = new ModelStubWithPerson(validPerson);
@@ -80,6 +85,7 @@ public class AddCommandTest {
 
     @Test
     public void execute_nameDiffersOnlyInCase_throwsDuplicateCommandException() {
+        // EP: the contact name is equivalent after ignoring case and repeated spaces.
         Person existingPerson = new PersonBuilder().withName("Alice Tan").build();
         Person duplicatePerson = new PersonBuilder().withName("alice  tan").build();
         AddCommand addCommand = new AddCommand(duplicatePerson);
