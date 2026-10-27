@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
@@ -142,11 +143,25 @@ public class DueCommandTest {
     @Test
     public void equals() {
         DueCommand dueToday = new DueCommand(0, TODAY);
+        Clock tomorrow = Clock.offset(TODAY, Duration.ofDays(1));
 
         assertTrue(dueToday.equals(dueToday));
         assertTrue(dueToday.equals(new DueCommand(0, TODAY)));
         assertFalse(dueToday.equals(new DueCommand(7, TODAY)));
+        // Same number of days, but "today" is a different day, so the cutoff differs.
+        assertFalse(dueToday.equals(new DueCommand(0, tomorrow)));
         assertFalse(dueToday.equals(null));
         assertFalse(dueToday.equals(new ListCommand()));
+    }
+
+    @Test
+    public void hashCodeMethod() {
+        assertEquals(new DueCommand(7, TODAY).hashCode(), new DueCommand(7, TODAY).hashCode());
+    }
+
+    @Test
+    public void toStringMethod() {
+        String expected = DueCommand.class.getCanonicalName() + "{days=7}";
+        assertEquals(expected, new DueCommand(7, TODAY).toString());
     }
 }
