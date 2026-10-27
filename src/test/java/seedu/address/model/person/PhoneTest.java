@@ -22,25 +22,37 @@ public class PhoneTest {
 
     @Test
     public void isValidPhone() {
-        // null phone number
+        // EP: null input, which violates the method's non-null contract.
         assertThrows(NullPointerException.class, () -> Phone.isValidPhone(null));
 
-        // invalid phone numbers
-        assertFalse(Phone.isValidPhone("")); // empty string
+        // EP: blank input with no digits.
+        assertFalse(Phone.isValidPhone("")); // Boundary value: zero characters.
         assertFalse(Phone.isValidPhone(" ")); // spaces only
-        assertFalse(Phone.isValidPhone("91")); // less than 3 numbers
+
+        // EP: fewer than the required three digits.
+        assertFalse(Phone.isValidPhone("91")); // Boundary value: one digit below the minimum.
+
+        // EP: alphabetic characters, whether alone or mixed with digits.
         assertFalse(Phone.isValidPhone("phone")); // non-numeric
         assertFalse(Phone.isValidPhone("9011p041")); // alphabets within digits
+
+        // EP: a leading plus does not make a number with fewer than three digits valid.
         assertFalse(Phone.isValidPhone("+12"));
+
+        // EP: plus signs outside the single optional leading position.
         assertFalse(Phone.isValidPhone("++6591234567"));
         assertFalse(Phone.isValidPhone("912+34567"));
+
+        // EP: separators outside the gaps between digits.
         assertFalse(Phone.isValidPhone("9123-"));
         assertFalse(Phone.isValidPhone(" 9123"));
 
-        // valid phone numbers
-        assertTrue(Phone.isValidPhone("911")); // exactly 3 numbers
+        // EP: digit-only numbers with at least three digits; longer values are also supported.
+        assertTrue(Phone.isValidPhone("911")); // Boundary value: minimum of three digits.
         assertTrue(Phone.isValidPhone("93121534"));
         assertTrue(Phone.isValidPhone("124293842033123")); // long phone numbers
+
+        // EP: valid formatting with internal spaces or dashes and an optional leading plus.
         assertTrue(Phone.isValidPhone("9312 1534"));
         assertTrue(Phone.isValidPhone("9123-4567"));
         assertTrue(Phone.isValidPhone("+65 9123-4567"));

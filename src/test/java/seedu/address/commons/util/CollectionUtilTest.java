@@ -15,69 +15,76 @@ import org.junit.jupiter.api.Test;
 public class CollectionUtilTest {
     @Test
     public void requireAllNonNullVarargs() {
-        // no arguments
+        // EP: an empty argument array. Boundary: zero elements, so there is no null element.
         assertNullPointerExceptionNotThrown();
 
-        // any non-empty argument list
+        // EP: non-empty arguments with no null elements, including an empty but non-null string.
         assertNullPointerExceptionNotThrown(new Object(), new Object());
         assertNullPointerExceptionNotThrown("test");
         assertNullPointerExceptionNotThrown("");
 
-        // argument lists with just one null at the beginning
+        // EP: arguments containing null; exercise the first position, including a one-element array.
         assertNullPointerExceptionThrown((Object) null);
         assertNullPointerExceptionThrown(null, "", new Object());
         assertNullPointerExceptionThrown(null, new Object(), new Object());
 
-        // argument lists with nulls in the middle
+        // Same EP: null elements in the middle, including multiple nulls.
         assertNullPointerExceptionThrown(new Object(), null, null, "test");
         assertNullPointerExceptionThrown("", null, new Object());
 
-        // argument lists with one null as the last argument
+        // Same EP: a null in the last position checks that every argument is visited.
         assertNullPointerExceptionThrown("", new Object(), null);
         assertNullPointerExceptionThrown(new Object(), new Object(), null);
 
-        // null reference
+        // EP: the array itself is null, rather than an array containing a null element.
         assertNullPointerExceptionThrown((Object[]) null);
 
-        // confirms nulls inside lists in the argument list are not considered
+        // EP: non-null nested collections; validation checks immediate arguments, not their contents.
         List<Object> containingNull = Arrays.asList((Object) null);
         assertNullPointerExceptionNotThrown(containingNull, new Object());
     }
 
     @Test
     public void requireAllNonNullCollection() {
-        // lists containing nulls in the front
+        // EP: a collection containing null; exercise the first position and a one-element collection.
         assertNullPointerExceptionThrown(Arrays.asList((Object) null));
         assertNullPointerExceptionThrown(Arrays.asList(null, new Object(), ""));
 
-        // lists containing nulls in the middle
+        // Same EP: null elements in the middle, including multiple nulls.
         assertNullPointerExceptionThrown(Arrays.asList("spam", null, new Object()));
         assertNullPointerExceptionThrown(Arrays.asList("spam", null, "eggs", null, new Object()));
 
-        // lists containing nulls at the end
+        // Same EP: a null in the last position checks that every element is visited.
         assertNullPointerExceptionThrown(Arrays.asList("spam", new Object(), null));
         assertNullPointerExceptionThrown(Arrays.asList(new Object(), null));
 
-        // null reference
+        // EP: the collection itself is null.
         assertNullPointerExceptionThrown((Collection<Object>) null);
 
-        // empty list
+        // EP: an empty collection. Boundary: zero elements.
         assertNullPointerExceptionNotThrown(Collections.emptyList());
 
-        // list with all non-null elements
+        // EP: a non-empty collection containing only non-null elements.
         assertNullPointerExceptionNotThrown(Arrays.asList(new Object(), "ham", Integer.valueOf(1)));
         assertNullPointerExceptionNotThrown(Arrays.asList(new Object()));
 
-        // confirms nulls inside nested lists are not considered
+        // EP: non-null nested collections; nulls inside them are outside this shallow check.
         List<Object> containingNull = Arrays.asList((Object) null);
         assertNullPointerExceptionNotThrown(Arrays.asList(containingNull, new Object()));
     }
 
     @Test
     public void isAnyNonNull() {
+        // EP: no elements. Boundary: an empty array contains no non-null element.
         assertFalse(CollectionUtil.isAnyNonNull());
+
+        // EP: all supplied elements are null. One element is the smallest non-empty representative.
         assertFalse(CollectionUtil.isAnyNonNull((Object) null));
+
+        // EP: the array itself is null.
         assertFalse(CollectionUtil.isAnyNonNull((Object[]) null));
+
+        // EP: at least one non-null element, with and without accompanying nulls.
         assertTrue(CollectionUtil.isAnyNonNull(new Object()));
         assertTrue(CollectionUtil.isAnyNonNull(new Object(), null));
     }

@@ -16,6 +16,7 @@ public class ArgumentTokenizerTest {
 
     @Test
     public void tokenize_emptyArgsString_noValues() {
+        // EP: whitespace-only input contains neither a preamble value nor any prefixed arguments.
         String argsString = "  ";
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString, pSlash);
 
@@ -55,6 +56,7 @@ public class ArgumentTokenizerTest {
 
     @Test
     public void tokenize_noPrefixes_allTakenAsPreamble() {
+        // EP: no prefixes are registered, so all input belongs to the preamble.
         String argsString = "  some random string /t tag with leading and trailing spaces ";
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString);
 
@@ -65,13 +67,13 @@ public class ArgumentTokenizerTest {
 
     @Test
     public void tokenize_oneArgument() {
-        // Preamble present
+        // EP: a recognized prefix after a nonempty preamble.
         String argsString = "  Some preamble string p/ Argument value ";
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString, pSlash);
         assertPreamblePresent(argMultimap, "Some preamble string");
         assertArgumentPresent(argMultimap, pSlash, "Argument value");
 
-        // No preamble
+        // EP: a recognized prefix with an empty preamble.
         argsString = " p/   Argument value ";
         argMultimap = ArgumentTokenizer.tokenize(argsString, pSlash);
         assertPreambleEmpty(argMultimap);
@@ -81,7 +83,7 @@ public class ArgumentTokenizerTest {
 
     @Test
     public void tokenize_multipleArguments() {
-        // Only two arguments are present
+        // EP: some recognized prefixes occur while another is absent.
         String argsString = "SomePreambleString -t dashT-Value p/pSlash value";
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString, pSlash, dashT, hatQ);
         assertPreamblePresent(argMultimap, "SomePreambleString");
@@ -89,7 +91,7 @@ public class ArgumentTokenizerTest {
         assertArgumentPresent(argMultimap, dashT, "dashT-Value");
         assertArgumentAbsent(argMultimap, hatQ);
 
-        // All three arguments are present
+        // EP: every recognized prefix occurs once.
         argsString = "Different Preamble String ^Q111 -t dashT-Value p/pSlash value";
         argMultimap = ArgumentTokenizer.tokenize(argsString, pSlash, dashT, hatQ);
         assertPreamblePresent(argMultimap, "Different Preamble String");
@@ -99,8 +101,7 @@ public class ArgumentTokenizerTest {
 
         /* Also covers: Reusing of the tokenizer multiple times */
 
-        // Reuse tokenizer on an empty string to ensure ArgumentMultimap is correctly reset
-        // (i.e. no stale values from the previous tokenizing remain)
+        // EP: empty input after a previous call; the zero-length boundary must not retain earlier values.
         argsString = "";
         argMultimap = ArgumentTokenizer.tokenize(argsString, pSlash, dashT, hatQ);
         assertPreambleEmpty(argMultimap);
@@ -108,7 +109,7 @@ public class ArgumentTokenizerTest {
 
         /* Also covers: testing for prefixes not specified as a prefix */
 
-        // Prefixes not previously given to the tokenizer should not return any values
+        // EP: an unrecognized prefix is ordinary preamble text, not a mapped argument.
         argsString = unknownPrefix + "some value";
         argMultimap = ArgumentTokenizer.tokenize(argsString, pSlash, dashT, hatQ);
         assertArgumentAbsent(argMultimap, unknownPrefix);
@@ -117,7 +118,8 @@ public class ArgumentTokenizerTest {
 
     @Test
     public void tokenize_multipleArgumentsWithRepeats() {
-        // Two arguments repeated, some have empty values
+        // EP: repeated prefixes accumulate their values, including empty ones.
+        // Empty values exercise the zero-length boundary both between prefixes and at the end.
         String argsString = "SomePreambleString -t dashT-Value ^Q ^Q -t another dashT value p/ pSlash value -t";
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString, pSlash, dashT, hatQ);
         assertPreamblePresent(argMultimap, "SomePreambleString");
@@ -128,6 +130,7 @@ public class ArgumentTokenizerTest {
 
     @Test
     public void tokenize_multipleArgumentsJoined() {
+        // EP: prefix-like text without a preceding space is part of a value or preamble, not a prefix.
         String argsString = "SomePreambleStringp/ pSlash joined-tjoined -t not joined^Qjoined";
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString, pSlash, dashT, hatQ);
         assertPreamblePresent(argMultimap, "SomePreambleStringp/ pSlash joined-tjoined");

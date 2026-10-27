@@ -56,6 +56,8 @@ public class FindCommandTest {
 
     @Test
     public void execute_zeroKeywords_noPersonFound() {
+        // EP: an empty keyword collection produces no matches when the command is called directly.
+        // The parser rejects blank user input; this test isolates command behavior.
         String expectedMessage = "0 contacts listed.";
         NameContainsKeywordsPredicate predicate = preparePredicate(" ");
         FindCommand command = new FindCommand(predicate);
@@ -66,6 +68,7 @@ public class FindCommandTest {
 
     @Test
     public void execute_multipleKeywords_multiplePersonsFound() {
+        // EP: several name keywords match different contacts; matches are combined using OR.
         String expectedMessage = "3 contacts listed.";
         NameContainsKeywordsPredicate predicate = preparePredicate("Kurz Elle Kunz");
         FindCommand command = new FindCommand(predicate);
@@ -76,6 +79,7 @@ public class FindCommandTest {
 
     @Test
     public void execute_oneKeyword_onePersonFound() {
+        // EP: one name keyword matches one contact, selecting singular feedback.
         NameContainsKeywordsPredicate predicate = preparePredicate("Elle");
         FindCommand command = new FindCommand(predicate);
         expectedModel.updateFilteredPersonList(predicate);
@@ -86,6 +90,7 @@ public class FindCommandTest {
 
     @Test
     public void execute_namePrefix_matchesWordStart() {
+        // EP: a keyword matches only the start of a name word, ignoring case.
         NameContainsKeywordsPredicate predicate = new NameContainsKeywordsPredicate(List.of("kur"));
         FindCommand command = new FindCommand(predicate);
         expectedModel.updateFilteredPersonList(predicate);
@@ -96,6 +101,7 @@ public class FindCommandTest {
 
     @Test
     public void execute_phoneKeyword_matchesPhoneDigits() {
+        // EP: the phone predicate matches digits rather than contact names.
         PhoneContainsKeywordPredicate predicate = new PhoneContainsKeywordPredicate("948");
         FindCommand command = new FindCommand(predicate);
         expectedModel.updateFilteredPersonList(predicate);
