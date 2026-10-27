@@ -145,6 +145,28 @@ class JsonAdaptedPerson {
                 null);
     }
 
+    public JsonAdaptedPerson(
+            String name,
+            String phone,
+            String email,
+            String address,
+            String status,
+            List<JsonAdaptedTag> tags,
+            String followUp,
+            List<JsonAdaptedInteractionNote> interactionNotes) {
+        
+        this(
+                name,
+                phone,
+                email,
+                address,
+                status,
+                tags,
+                followUp,
+                null,
+                interactionNotes);
+    }
+
     /**
      * Converts a given {@code Person} into this class for Jackson use.
      */
