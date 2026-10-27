@@ -9,6 +9,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Locale;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -82,6 +83,20 @@ public class DueCommandTest {
 
         assertEquals("1 follow-up due by 21-10-2026.", result.getFeedbackToUser());
         assertEquals(List.of(OVERDUE), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_nonEnglishDefaultLocale_usesAsciiDigits() {
+        // EP: a default locale whose number format uses non-ASCII digits must not change the message.
+        Locale originalLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("ar-EG"));
+            CommandResult result = new DueCommand(0, TODAY).execute(model);
+
+            assertEquals("2 follow-ups due by 21-10-2026.", result.getFeedbackToUser());
+        } finally {
+            Locale.setDefault(originalLocale);
+        }
     }
 
     @Test

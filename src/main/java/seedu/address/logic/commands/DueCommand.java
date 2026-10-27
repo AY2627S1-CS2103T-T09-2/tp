@@ -66,10 +66,10 @@ public class DueCommand extends Command {
         int count = model.getFilteredPersonList().size();
         String cutoffText = FollowUp.format(cutoff);
         if (count == 0) {
-            return new CommandResult(String.format(MESSAGE_NONE_DUE, cutoffText));
+            return new CommandResult(String.format(Locale.ROOT, MESSAGE_NONE_DUE, cutoffText));
         }
         String followUpWord = count == 1 ? "follow-up" : "follow-ups";
-        return new CommandResult(String.format(MESSAGE_SUCCESS, count, followUpWord, cutoffText));
+        return new CommandResult(String.format(Locale.ROOT, MESSAGE_SUCCESS, count, followUpWord, cutoffText));
     }
 
     @Override
