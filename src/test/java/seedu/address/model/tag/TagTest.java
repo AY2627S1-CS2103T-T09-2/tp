@@ -55,6 +55,19 @@ public class TagTest {
         assertFalse(Tag.isValidTagName("john@example.com"));
         assertFalse(Tag.isValidTagName("😀")); // emoji
 
+        // EP: zero-width and other invisible format characters.
+        assertFalse(Tag.isValidTagName("a\u200Bb")); // zero-width space
+        assertFalse(Tag.isValidTagName("a\u200Cb")); // zero-width non-joiner
+        assertFalse(Tag.isValidTagName("a\u200Db")); // zero-width joiner
+        assertFalse(Tag.isValidTagName("\uFEFFvip")); // byte order mark
+        assertFalse(Tag.isValidTagName("a\u00ADb")); // soft hyphen
+
+        // EP: emoji, including ones built from a digit or letter plus marks.
+        assertFalse(Tag.isValidTagName("vip\uD83D\uDE00"));
+        assertFalse(Tag.isValidTagName("1\uFE0F\u20E3")); // keycap 1
+        assertFalse(Tag.isValidTagName("vip\uFE0F")); // variation selector
+        assertFalse(Tag.isValidTagName("a\u20DD")); // enclosing circle
+
         // EP: combining mark with no letter or digit before it.
         assertFalse(Tag.isValidTagName("\u0301"));
         assertFalse(Tag.isValidTagName("\u0301abc"));
@@ -76,7 +89,10 @@ public class TagTest {
         assertTrue(Tag.isValidTagName("7"));
 
         // EP: a long single word.
-        assertTrue(Tag.isValidTagName("a".repeat(200)));
+        assertTrue(Tag.isValidTagName("a".repeat(1000)));
+
+        // EP: a tag that looks like a command prefix.
+        assertTrue(Tag.isValidTagName("st"));
 
         // EP: non-ASCII letters, matching what names accept.
         assertTrue(Tag.isValidTagName("café"));
@@ -86,6 +102,11 @@ public class TagTest {
         assertTrue(Tag.isValidTagName("保险"));
         assertTrue(Tag.isValidTagName("عميل"));
         assertTrue(Tag.isValidTagName("हिंदी")); // contains combining vowel signs
+        assertTrue(Tag.isValidTagName("காப்பீடு")); // Tamil, with vowel signs and virama
+
+        // EP: digits from other scripts.
+        assertTrue(Tag.isValidTagName("\u0661\u0662\u0663")); // Arabic-Indic
+        assertTrue(Tag.isValidTagName("\u0967\u0968")); // Devanagari
 
         // EP: decomposed accent (e followed by a combining acute accent).
         assertTrue(Tag.isValidTagName("cafe\u0301"));

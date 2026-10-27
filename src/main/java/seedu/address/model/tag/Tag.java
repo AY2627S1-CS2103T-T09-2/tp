@@ -20,9 +20,12 @@ public class Tag {
     /*
      * A tag is one word of Unicode letters and digits, such as "referral" or "café".
      * Combining marks are allowed after the first character, as in names, so that
-     * accented letters in scripts without precomposed forms are still accepted.
+     * accented letters and vowel signs in scripts such as Hindi and Tamil are accepted.
+     * Enclosing marks and variation selectors are left out because they only change how
+     * the previous character is drawn, for example turning "1" into a keycap emoji.
      */
-    public static final String VALIDATION_REGEX = "[\\p{L}\\p{N}][\\p{L}\\p{M}\\p{N}]*";
+    public static final String VALIDATION_REGEX =
+            "[\\p{L}\\p{N}][\\p{L}\\p{N}\\p{Mn}\\p{Mc}&&[^\\uFE00-\\uFE0F\\x{E0100}-\\x{E01EF}]]*";
 
     public final String tagName;
 
