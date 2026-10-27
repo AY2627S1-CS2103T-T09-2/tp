@@ -23,6 +23,7 @@ import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.HistoryCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.NoteCommand;
+import seedu.address.logic.commands.ContactedCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 
 /**
@@ -78,7 +79,10 @@ public class CommandInputParser {
 
             case DoneCommand.COMMAND_WORD ->
                 new DoneCommandParser().parse(arguments);
-
+                
+            case ContactedCommand.COMMAND_WORD ->
+                new ContactedCommandParser().parse(arguments);
+                
             case DueCommand.COMMAND_WORD ->
                 new DueCommandParser().parse(arguments);
 
