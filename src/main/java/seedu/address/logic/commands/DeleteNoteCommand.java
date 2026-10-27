@@ -91,8 +91,9 @@ public class DeleteNoteCommand extends Command {
                 personToUpdate.getStatus(),
                 personToUpdate.getTags(),
                 personToUpdate.getFollowUp(),
+                personToUpdate.getLastContact(),
                 updatedNotes);
-
+        
         model.setPerson(personToUpdate, updatedPerson);
 
         return new CommandResult(
