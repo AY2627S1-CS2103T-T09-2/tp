@@ -42,6 +42,8 @@ public class AddCommand extends Command {
             + PREFIX_TAG + "owesMoney";
 
     public static final String MESSAGE_SUCCESS = "New contact added: %1$s (%2$s)";
+    public static final String MESSAGE_HIDDEN_CONTACT =
+            "\nThis contact is hidden by the current view. Type 'list' to show all contacts.";
     public static final String MESSAGE_DUPLICATE_PERSON = "This contact already exists: %1$s (%2$s).";
 
     private final Person toAdd;
@@ -69,6 +71,9 @@ public class AddCommand extends Command {
 
         model.addPerson(toAdd);
         String feedback = String.format(MESSAGE_SUCCESS, toAdd.getName(), toAdd.getStatus());
+        if (!model.getFilteredPersonList().contains(toAdd)) {
+            feedback += MESSAGE_HIDDEN_CONTACT;
+        }
         feedback += toAdd.getFollowUp().filter(FollowUp::isPast).map(FollowUp::getPastDateWarning).orElse("");
         return new CommandResult(feedback);
     }

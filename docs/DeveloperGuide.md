@@ -212,7 +212,7 @@ The change may not have been saved to disk.
 * `DueCommand` works out the cutoff from a `Clock`. The app passes the system clock, and tests pass a fixed one, so the tests do not depend on the real date.
 * `FollowUpDueByPredicate` keeps contacts that have a follow-up on or before the cutoff. Contacts without a follow-up are left out.
 * `Model#updateFilteredPersonList(Predicate, Comparator)` filters and sorts the displayed list in one step. `ModelManager` wraps its `FilteredList` in a `SortedList`, and `getFilteredPersonList()` returns the sorted view, so index-based commands such as `done 1` act on the order the user sees.
-* The one-argument `updateFilteredPersonList(Predicate)` clears the comparator, so `list`, `find` and every command that resets the list go back to the stored order.
+* The one-argument `updateFilteredPersonList(Predicate)` clears the comparator, so `list` and `find` replace the current view and return to stored order. Adding or editing a contact retains the active filter and sort order; the displayed list updates as contacts change.
 
 The sequence diagram below shows how `due 7` is executed.
 
@@ -535,6 +535,20 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `list`<br>
       Expected: All four contacts are shown.
       The result is `Listed all contacts.`
+
+1. Adding and editing while a filter is active
+
+   1. Prerequisites: Run `list st/CLIENT` with the four test contacts above.<br>
+      Expected: Only the two clients are shown.
+
+   1. Test case: `add n/Hidden Prospect p/91110005 e/five@example.com a/5 Test Road st/PROSPECT`<br>
+      Expected: The contact is saved but remains hidden. The result explains that the current view hides it and suggests `list` to show all contacts.
+
+   1. Test case: `add n/Visible Client p/91110006 e/six@example.com a/6 Test Road st/CLIENT`<br>
+      Expected: The new client appears in the filtered list without a hidden-contact note.
+
+   1. Test case: `edit 1 st/PROSPECT`<br>
+      Expected: The edited contact leaves the filtered list. The other clients remain visible.
 
 1. Rejecting invalid filters
 

@@ -127,6 +127,8 @@ Examples:
 * `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT t/referral`
 * `add n/Ravi Kumar p/92345678 e/ravi@example.com a/10 Tampines Street 1 st/CLIENT f/25-12-2026`
 
+If the current view filters out a new contact, it is still saved. The result tells you it is hidden; enter `list` to show all contacts.
+
 ### Listing contacts: `list`
 
 Shows all contacts, or filters contacts by status, tag, or both.
@@ -146,6 +148,7 @@ Known issue: names containing `a/l` are interpreted as an address prefix by the 
 * A filtered result reports the number of matching contacts.
   If no contacts match, the displayed list is empty.
 * Each new `list` command replaces the previous filter.
+* Adding or editing contacts keeps the current filter. A contact appears or disappears from the displayed list as its details change.
 
 Examples:
 
