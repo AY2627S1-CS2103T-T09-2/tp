@@ -19,7 +19,7 @@ public class ClearCommandTest {
         Model model = new ModelManager();
         Model expectedModel = new ModelManager();
 
-        String expectedMessage = String.format(ClearCommand.MESSAGE_CONFIRM_CLEAR, 0);
+        String expectedMessage = String.format(ClearCommand.MESSAGE_CONFIRM_CLEAR, 0, "contacts");
 
         assertCommandSuccess(
                 new ClearCommand(false),
@@ -36,13 +36,23 @@ public class ClearCommandTest {
 
         int contactCount = model.getAddressBook().getPersonList().size();
         String expectedMessage =
-                String.format(ClearCommand.MESSAGE_CONFIRM_CLEAR, contactCount);
+                String.format(ClearCommand.MESSAGE_CONFIRM_CLEAR, contactCount, "contacts");
 
         assertCommandSuccess(
                 new ClearCommand(false),
                 model,
                 expectedMessage,
                 expectedModel);
+    }
+
+    @Test
+    public void execute_unconfirmedOneContact_usesSingularNoun() {
+        Model model = new ModelManager();
+        model.addPerson(getTypicalAddressBook().getPersonList().get(0));
+        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+
+        String expectedMessage = String.format(ClearCommand.MESSAGE_CONFIRM_CLEAR, 1, "contact");
+        assertCommandSuccess(new ClearCommand(false), model, expectedMessage, expectedModel);
     }
 
     @Test
