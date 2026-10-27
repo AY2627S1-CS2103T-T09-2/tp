@@ -49,11 +49,14 @@ public class DueCommandTest {
 
     @Test
     public void execute_nullModel_throwsNullPointerException() {
+        // EP: null model violates the command precondition.
         assertThrows(NullPointerException.class, () -> new DueCommand(0, TODAY).execute(null));
     }
 
     @Test
     public void execute_today_showsOverdueAndTodayEarliestFirst() {
+        // EP: follow-ups are before, on or after the cutoff, or absent; only the first two are included.
+        // Boundary values: a zero-day window and a follow-up exactly on today's cutoff.
         CommandResult result = new DueCommand(0, TODAY).execute(model);
 
         assertEquals("2 follow-ups due by 21-10-2026.", result.getFeedbackToUser());
@@ -62,6 +65,8 @@ public class DueCommandTest {
 
     @Test
     public void execute_sevenDays_includesLastDay() {
+        // EP: a positive window includes overdue and upcoming follow-ups through the cutoff.
+        // Boundary value: NEXT_WEEK is exactly on the inclusive seven-day cutoff.
         CommandResult result = new DueCommand(7, TODAY).execute(model);
 
         assertEquals("3 follow-ups due by 28-10-2026.", result.getFeedbackToUser());
@@ -70,6 +75,7 @@ public class DueCommandTest {
 
     @Test
     public void execute_oneMatch_usesSingular() {
+        // EP: exactly one due contact requires singular feedback.
         model.deletePerson(TODAY_FOLLOW_UP);
 
         CommandResult result = new DueCommand(0, TODAY).execute(model);
@@ -80,6 +86,8 @@ public class DueCommandTest {
 
     @Test
     public void execute_noneDue_showsEmptyList() {
+        // EP: no due contacts remain, although future and undated contacts still exist.
+        // Boundary value: zero results uses the no-follow-ups message.
         model.deletePerson(TODAY_FOLLOW_UP);
         model.deletePerson(OVERDUE);
 
@@ -91,6 +99,7 @@ public class DueCommandTest {
 
     @Test
     public void execute_thenList_restoresOriginalOrder() {
+        // EP: list is run after due has applied a filter and sort; the stored order must be restored.
         new DueCommand(365, TODAY).execute(model);
         new ListCommand().execute(model);
 

@@ -28,6 +28,7 @@ public class LogsCenterTest {
 
     @Test
     public void initialization_writableLogFile_logsToConsoleAndFile() throws Exception {
+        // EP: a writable log destination allows both file and console logging.
         String output = runStartupProbe(true);
 
         assertTrue(output.contains(PROBE_MESSAGE), output);
@@ -36,6 +37,7 @@ public class LogsCenterTest {
 
     @Test
     public void initialization_blockedLogFile_continuesWithConsoleLogging() throws Exception {
+        // EP: an unusable log destination; a directory represents a file-creation failure.
         Files.createDirectory(testFolder.resolve("easyinsurance.log.0"));
 
         String output = runStartupProbe(false);

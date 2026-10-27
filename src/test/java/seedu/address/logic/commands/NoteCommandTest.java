@@ -28,6 +28,8 @@ public class NoteCommandTest {
 
     @Test
     public void execute_validIndex_addsInteractionNote() {
+        // EP: a displayed contact has no notes; adding a note creates its history.
+        // Boundary value: index 1 is the first valid displayed contact index.
         Person personToUpdate =
                 model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
 
@@ -61,6 +63,7 @@ public class NoteCommandTest {
 
     @Test
     public void execute_existingNotes_appendsInteractionNote() {
+        // EP: the contact already has a note; adding another must preserve the existing history.
         Person originalPerson =
                 model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
 
@@ -108,6 +111,8 @@ public class NoteCommandTest {
 
     @Test
     public void execute_validIndexFilteredList_addsInteractionNote() {
+        // EP: the target is selected from a filtered list.
+        // Displayed index 1 refers to the second stored contact, so stored indexes must not be used.
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
 
         Person personToUpdate =
@@ -146,6 +151,8 @@ public class NoteCommandTest {
 
     @Test
     public void execute_invalidIndex_throwsCommandException() {
+        // EP: the contact index exceeds the displayed list size.
+        // Boundary value: size + 1 is the first invalid index above the displayed list.
         Index invalidIndex =
                 Index.fromOneBased(model.getFilteredPersonList().size() + 1);
 
@@ -187,10 +194,19 @@ public class NoteCommandTest {
                         INDEX_FIRST_PERSON,
                         new InteractionNote("Phone call"));
 
+        // EP: the same command instance is equal to itself.
         assertTrue(firstCommand.equals(firstCommand));
+
+        // EP: separate commands with the same contact index and note text are equal.
         assertTrue(firstCommand.equals(sameCommand));
+
+        // EP: changing only the contact index makes the commands different.
         assertFalse(firstCommand.equals(differentIndex));
+
+        // EP: changing only the note text makes the commands different.
         assertFalse(firstCommand.equals(differentNote));
+
+        // EP: null is not a command and cannot be equal.
         assertFalse(firstCommand.equals(null));
     }
 }

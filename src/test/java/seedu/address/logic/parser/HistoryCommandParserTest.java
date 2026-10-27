@@ -18,6 +18,7 @@ public class HistoryCommandParserTest {
     @Test
     public void parse_validIndex_returnsHistoryCommand()
             throws ParseException {
+        // EP: a positive index, with or without surrounding whitespace, is accepted.
         HistoryCommand expectedCommand =
                 new HistoryCommand(Index.fromOneBased(2));
 
@@ -32,6 +33,7 @@ public class HistoryCommandParserTest {
 
     @Test
     public void parse_missingIndex_throwsParseException() {
+        // EP: no argument is supplied, so the required contact index is missing.
         String expectedMessage =
                 String.format(
                         MESSAGE_INVALID_COMMAND_FORMAT,
@@ -45,6 +47,7 @@ public class HistoryCommandParserTest {
 
     @Test
     public void parse_extraArguments_throwsParseException() {
+        // EP: additional tokens follow the index; only one argument is accepted.
         String expectedMessage =
                 String.format(
                         MESSAGE_INVALID_COMMAND_FORMAT,
@@ -58,6 +61,8 @@ public class HistoryCommandParserTest {
 
     @Test
     public void parse_invalidIndex_throwsParseException() {
+        // EP: non-positive integers cannot identify a displayed contact.
+        // Boundary value: 0 is immediately below the minimum index of 1.
         assertParseFailure(
                 parser,
                 "0",
@@ -68,6 +73,7 @@ public class HistoryCommandParserTest {
                 "-1",
                 ParserUtil.MESSAGE_INVALID_INDEX);
 
+        // EP: non-numeric text cannot be parsed as an index.
         assertParseFailure(
                 parser,
                 "abc",

@@ -15,6 +15,7 @@ public class NoteCommandParserTest {
 
     @Test
     public void parse_noteContainsNotePrefix_success() throws ParseException {
+        // EP: valid note text contains another nt/; only the first prefix separates the index and note.
         String noteText = "Client asked what nt/ means";
 
         NoteCommand expectedCommand = new NoteCommand(

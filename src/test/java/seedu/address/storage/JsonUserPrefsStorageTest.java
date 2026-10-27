@@ -25,6 +25,7 @@ public class JsonUserPrefsStorageTest {
 
     @Test
     public void readUserPrefs_nullFilePath_throwsNullPointerException() {
+        // EP: no path is supplied, which is a caller error.
         assertThrows(NullPointerException.class, () -> readUserPrefs(null));
     }
 
@@ -35,11 +36,13 @@ public class JsonUserPrefsStorageTest {
 
     @Test
     public void readUserPrefs_missingFile_emptyResult() throws DataLoadingException {
+        // EP: a valid path points to no file, as on first launch.
         assertFalse(readUserPrefs("NonExistentFile.json").isPresent());
     }
 
     @Test
     public void readUserPrefs_notJsonFormat_exceptionThrown() {
+        // EP: the file exists but its contents are not valid JSON.
         assertThrows(DataLoadingException.class, () -> readUserPrefs("NotJsonFormatUserPrefs.json"));
     }
 
@@ -51,6 +54,7 @@ public class JsonUserPrefsStorageTest {
 
     @Test
     public void readUserPrefs_fileInOrder_successfullyRead() throws DataLoadingException {
+        // EP: valid JSON supplies the recognized preference fields.
         UserPrefs expected = getTypicalUserPrefs();
         UserPrefs actual = readUserPrefs("TypicalUserPref.json").get();
         assertEquals(expected, actual);
@@ -58,12 +62,14 @@ public class JsonUserPrefsStorageTest {
 
     @Test
     public void readUserPrefs_valuesMissingFromFile_defaultValuesUsed() throws DataLoadingException {
+        // EP: valid JSON omits recognized fields; defaults fill the missing values.
         UserPrefs actual = readUserPrefs("EmptyUserPrefs.json").get();
         assertEquals(new UserPrefs(), actual);
     }
 
     @Test
     public void readUserPrefs_extraValuesInFile_extraValuesIgnored() throws DataLoadingException {
+        // EP: valid JSON contains unknown fields alongside recognized fields.
         UserPrefs expected = getTypicalUserPrefs();
         UserPrefs actual = readUserPrefs("ExtraValuesUserPref.json").get();
 
@@ -78,11 +84,13 @@ public class JsonUserPrefsStorageTest {
 
     @Test
     public void savePrefs_nullPrefs_throwsNullPointerException() {
+        // EP: the preferences object is null while the path is supplied.
         assertThrows(NullPointerException.class, () -> saveUserPrefs(null, "SomeFile.json"));
     }
 
     @Test
     public void saveUserPrefs_nullFilePath_throwsNullPointerException() {
+        // EP: the save path is null while the preferences object is supplied.
         assertThrows(NullPointerException.class, () -> saveUserPrefs(new UserPrefs(), null));
     }
 
@@ -107,12 +115,12 @@ public class JsonUserPrefsStorageTest {
         Path pefsFilePath = testFolder.resolve("TempPrefs.json");
         JsonUserPrefsStorage jsonUserPrefsStorage = new JsonUserPrefsStorage(pefsFilePath);
 
-        //Try writing when the file doesn't exist
+        // EP: the destination is absent; saving creates it.
         jsonUserPrefsStorage.saveUserPrefs(original);
         UserPrefs readBack = jsonUserPrefsStorage.readUserPrefs().get();
         assertEquals(original, readBack);
 
-        //Try saving when the file exists
+        // EP: the destination already exists; saving replaces the previous preferences.
         original.setGuiSettings(new GuiSettings(5, 5, 5, 5));
         jsonUserPrefsStorage.saveUserPrefs(original);
         readBack = jsonUserPrefsStorage.readUserPrefs().get();

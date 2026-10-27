@@ -31,11 +31,13 @@ public class AddressBookTest {
 
     @Test
     public void resetData_null_throwsNullPointerException() {
+        // EP: the replacement address book is null.
         assertThrows(NullPointerException.class, () -> addressBook.resetData(null));
     }
 
     @Test
     public void resetData_withValidReadOnlyAddressBook_replacesData() {
+        // EP: replacement data contains distinct contact identities.
         AddressBook newData = getTypicalAddressBook();
         addressBook.resetData(newData);
         assertEquals(newData, addressBook);
@@ -43,7 +45,7 @@ public class AddressBookTest {
 
     @Test
     public void resetData_withDuplicatePersons_throwsDuplicatePersonException() {
-        // Two persons with the same identity fields
+        // EP: duplicate identities, even when addresses and tags differ.
         Person editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND)
                 .build();
         List<Person> newPersons = List.of(ALICE, editedAlice);
@@ -59,17 +61,20 @@ public class AddressBookTest {
 
     @Test
     public void hasPerson_personNotInAddressBook_returnsFalse() {
+        // EP: no stored contact shares the queried identity. An empty book is the zero-contact boundary.
         assertFalse(addressBook.hasPerson(ALICE));
     }
 
     @Test
     public void hasPerson_personInAddressBook_returnsTrue() {
+        // EP: the exact contact is present.
         addressBook.addPerson(ALICE);
         assertTrue(addressBook.hasPerson(ALICE));
     }
 
     @Test
     public void hasPerson_personWithSameIdentityFieldsInAddressBook_returnsTrue() {
+        // EP: the identity matches but other details differ; membership uses identity rather than equality.
         addressBook.addPerson(ALICE);
         Person editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND)
                 .build();
