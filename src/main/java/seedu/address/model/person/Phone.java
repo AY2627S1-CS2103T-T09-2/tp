@@ -13,7 +13,7 @@ public class Phone {
     public static final String MESSAGE_CONSTRAINTS =
             "Phone numbers must contain at least 3 digits, with an optional leading +, spaces or dashes "
                     + "between digits.";
-    public static final String VALIDATION_REGEX = "\\+?(?:\\d[ -]*){2,}\\d";
+    public static final String VALIDATION_REGEX = "\\+?\\d(?:[ -]?\\d){2,}";
     public final String value;
 
     /**

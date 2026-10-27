@@ -37,6 +37,10 @@ public class PhoneTest {
         assertFalse(Phone.isValidPhone("9123-"));
         assertFalse(Phone.isValidPhone(" 9123"));
 
+        // repeated separators between digits
+        assertFalse(Phone.isValidPhone("9123--4567"));
+        assertFalse(Phone.isValidPhone("9123  4567"));
+
         // valid phone numbers
         assertTrue(Phone.isValidPhone("911")); // exactly 3 numbers
         assertTrue(Phone.isValidPhone("93121534"));
