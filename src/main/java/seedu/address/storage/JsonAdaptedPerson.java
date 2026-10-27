@@ -154,7 +154,7 @@ class JsonAdaptedPerson {
             List<JsonAdaptedTag> tags,
             String followUp,
             List<JsonAdaptedInteractionNote> interactionNotes) {
-        
+
         this(
                 name,
                 phone,
