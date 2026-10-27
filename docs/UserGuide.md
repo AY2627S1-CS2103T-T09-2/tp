@@ -334,7 +334,12 @@ Format: `exit`
 
 ### Saving the data
 
-Easy-Insurance automatically saves contact details, follow-up information and interaction notes after every successful command. You do not need to save manually.
+Easy-Insurance automatically saves after a command changes contact details, follow-up information or
+interaction notes. You do not need to save manually. Commands that leave contact data unchanged, such as
+`list`, `find`, `due`, `history`, `help` and `exit`, do not write to the data file.
+
+If saving fails, the app shows an error and restores your previous contacts and displayed list. Resolve the
+reported file or folder problem, then enter the command again. The previous saved data remains unchanged.
 
 ### Editing the data file
 
@@ -343,7 +348,7 @@ Easy-Insurance data is saved automatically as a JSON file `data/addressbook.json
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, Easy-Insurance copies it to `addressbook.json.bak` in the same `data` folder and then starts with an empty contact list. The invalid `addressbook.json` is overwritten after your next successful command, but the `.bak` copy is kept. To recover, close the app, fix the `.bak` file and rename it back to `addressbook.json`. A later backup replaces the previous `.bak` file, so we still recommend keeping your own copy before editing.<br>
+If your changes make the data file invalid, Easy-Insurance copies it to `addressbook.json.bak` in the same `data` folder and then starts with an empty contact list. The invalid `addressbook.json` is overwritten after your next successful command that changes contact data, but the `.bak` copy is kept. To recover, close the app, fix the `.bak` file and rename it back to `addressbook.json`. A later backup replaces the previous `.bak` file, so we still recommend keeping your own copy before editing.<br>
 If Easy-Insurance cannot make the backup, it stops starting and leaves `addressbook.json` unchanged. Check that the `data` folder is writable and that `addressbook.json.bak` is not a folder, then try again.<br>
 Two contacts whose names differ only in case or extra spaces also make the data file invalid and cause it to load as an empty contact list.<br>
 Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.

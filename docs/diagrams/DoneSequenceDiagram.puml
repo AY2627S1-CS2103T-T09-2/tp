@@ -51,6 +51,12 @@ destroy DoneCommandParser
 CommandInputParser --> LogicManager : d
 deactivate CommandInputParser
 
+note over LogicManager, Model
+Before execution, copy the address book and remember the list filter and sort order.
+Snapshot calls are omitted. On a save failure, restore this state and report the error.
+This diagram shows a successful save.
+end note
+
 LogicManager -> DoneCommand : execute(m)
 activate DoneCommand
 

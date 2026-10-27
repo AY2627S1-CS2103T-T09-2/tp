@@ -64,11 +64,17 @@ public interface Model {
     /** Returns an unmodifiable view of the filtered person list */
     ObservableList<Person> getFilteredPersonList();
 
+    /** Returns the current filter, or {@code PREDICATE_SHOW_ALL_PERSONS} when no filter is set. */
+    Predicate<? super Person> getPersonListPredicate();
+
+    /** Returns the current ordering, or null when contacts are in their stored order. */
+    Comparator<? super Person> getPersonListComparator();
+
     /**
      * Updates the filter of the filtered person list to filter by the given {@code predicate}.
      * @throws NullPointerException if {@code predicate} is null.
      */
-    void updateFilteredPersonList(Predicate<Person> predicate);
+    void updateFilteredPersonList(Predicate<? super Person> predicate);
 
     /**
      * Updates the filtered person list to show only persons matching {@code predicate},
@@ -76,5 +82,5 @@ public interface Model {
      * {@link #updateFilteredPersonList(Predicate)}.
      * @throws NullPointerException if {@code predicate} or {@code comparator} is null.
      */
-    void updateFilteredPersonList(Predicate<Person> predicate, Comparator<Person> comparator);
+    void updateFilteredPersonList(Predicate<? super Person> predicate, Comparator<? super Person> comparator);
 }

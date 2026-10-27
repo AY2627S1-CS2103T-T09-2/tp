@@ -3,16 +3,17 @@ package seedu.address.storage;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFileAttributeView;
 import java.util.Optional;
 import java.util.logging.Logger;
 
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.commons.exceptions.IllegalValueException;
-import seedu.address.commons.util.FileUtil;
 import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.ReadOnlyAddressBook;
 
@@ -134,6 +135,8 @@ public class JsonAddressBookStorage {
 
     /**
      * Similar to {@link #saveAddressBook(ReadOnlyAddressBook)}.
+     * Writes a temporary sibling file before atomically replacing the data file. If atomic replacement
+     * is unavailable or writing fails, the existing file is left unchanged.
      *
      * @param filePath location of the data. Cannot be null.
      */
@@ -141,8 +144,66 @@ public class JsonAddressBookStorage {
         requireNonNull(addressBook);
         requireNonNull(filePath);
 
-        FileUtil.createIfMissing(filePath);
+        Path target = filePath.toAbsolutePath();
+        if (Files.isSymbolicLink(target)) {
+            // Follow an existing link instead of replacing the link itself. A dangling link fails safely.
+            target = target.toRealPath();
+        }
+        if (Files.exists(target)) {
+            if (!Files.isRegularFile(target)) {
+                throw new IOException("Data file is not a regular file: " + filePath);
+            }
+            if (!Files.isWritable(target)) {
+                throw new AccessDeniedException(filePath.toString());
+            }
+        }
+
+        Files.createDirectories(target.getParent());
+        Path temporaryFile = Files.createTempFile(target.getParent(), ".addressbook-", ".tmp");
+        try {
+            writeAddressBook(addressBook, temporaryFile);
+            copyPermissionsIfSupported(target, temporaryFile);
+            replaceFile(temporaryFile, target);
+        } catch (IOException | RuntimeException e) {
+            try {
+                deleteTemporaryFile(temporaryFile);
+            } catch (IOException | SecurityException cleanupError) {
+                e.addSuppressed(cleanupError);
+                logger.warning("Could not remove temporary data file " + temporaryFile + ": " + cleanupError);
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * Writes JSON data to the given file.
+     */
+    void writeAddressBook(ReadOnlyAddressBook addressBook, Path filePath) throws IOException {
         JsonUtil.saveJsonFile(new JsonSerializableAddressBook(addressBook), filePath);
+    }
+
+    /**
+     * Preserves the existing file's access permissions on file systems that support POSIX permissions.
+     */
+    private void copyPermissionsIfSupported(Path target, Path temporaryFile) throws IOException {
+        PosixFileAttributeView permissions = Files.getFileAttributeView(target, PosixFileAttributeView.class);
+        if (Files.exists(target) && permissions != null) {
+            Files.setPosixFilePermissions(temporaryFile, permissions.readAttributes().permissions());
+        }
+    }
+
+    /**
+     * Commits a fully written file. There is deliberately no non-atomic fallback, which could lose saved data.
+     */
+    void replaceFile(Path temporaryFile, Path target) throws IOException {
+        Files.move(temporaryFile, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    /**
+     * Removes an uncommitted temporary file after a failed save.
+     */
+    void deleteTemporaryFile(Path temporaryFile) throws IOException {
+        Files.deleteIfExists(temporaryFile);
     }
 
 }
