@@ -203,6 +203,19 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_blankFollowUp_failure() {
+        // EP: f/ is given without a date; on add this is rejected rather than read as "no follow-up".
+        String requiredFields = NAME_DESC_AMY + PHONE_DESC_AMY + EMAIL_DESC_AMY + ADDRESS_DESC_AMY;
+        assertParseFailure(parser, requiredFields + " " + PREFIX_FOLLOW_UP,
+                AddCommandParser.MESSAGE_BLANK_FOLLOW_UP);
+        assertParseFailure(parser, requiredFields + " " + PREFIX_FOLLOW_UP + "   ",
+                AddCommandParser.MESSAGE_BLANK_FOLLOW_UP);
+        // A blank f/ followed by another prefix is still blank.
+        assertParseFailure(parser, NAME_DESC_AMY + PHONE_DESC_AMY + " " + PREFIX_FOLLOW_UP
+                + EMAIL_DESC_AMY + ADDRESS_DESC_AMY, AddCommandParser.MESSAGE_BLANK_FOLLOW_UP);
+    }
+
+    @Test
     public void parse_repeatedFollowUp_failure() {
         // EP: more than one follow-up prefix; two is the first invalid occurrence count.
         assertParseFailure(parser, NAME_DESC_AMY + PHONE_DESC_AMY + EMAIL_DESC_AMY + ADDRESS_DESC_AMY

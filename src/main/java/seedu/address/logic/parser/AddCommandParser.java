@@ -29,6 +29,9 @@ import seedu.address.model.tag.Tag;
  */
 public class AddCommandParser implements Parser<AddCommand> {
 
+    public static final String MESSAGE_BLANK_FOLLOW_UP =
+            "Follow-up date must not be blank when adding a contact. Leave out f/ if there is no follow-up yet.";
+
     /**
      * Parses the given {@code String} of arguments in the context of the AddCommand
      * and returns an AddCommand object for execution.
@@ -53,13 +56,29 @@ public class AddCommandParser implements Parser<AddCommand> {
         Status status = argMultimap.getValue(PREFIX_STATUS).isPresent()
                 ? ParserUtil.parseStatus(argMultimap.getValue(PREFIX_STATUS).get()) : Status.DEFAULT;
         Set<Tag> tagList = ParserUtil.parseTags(argMultimap.getAllValues(PREFIX_TAG));
-        Optional<FollowUp> followUp = argMultimap.getValue(PREFIX_FOLLOW_UP).isPresent()
-                ? Optional.of(ParserUtil.parseFollowUp(argMultimap.getValue(PREFIX_FOLLOW_UP).get()))
-                : Optional.empty();
+        Optional<FollowUp> followUp = parseOptionalFollowUp(argMultimap);
 
         Person person = new Person(name, phone, email, address, status, tagList, followUp);
 
         return new AddCommand(person);
+    }
+
+    /**
+     * Parses the optional follow-up date in {@code argMultimap}.
+     * Unlike edit, where an empty {@code f/} clears the date, an empty {@code f/} on add is rejected
+     * so that the user is told to leave the prefix out instead of seeing a date format error.
+     *
+     * @throws ParseException if {@code f/} is given with a blank or invalid date.
+     */
+    private static Optional<FollowUp> parseOptionalFollowUp(ArgumentMultimap argMultimap) throws ParseException {
+        Optional<String> followUpValue = argMultimap.getValue(PREFIX_FOLLOW_UP);
+        if (followUpValue.isEmpty()) {
+            return Optional.empty();
+        }
+        if (followUpValue.get().isBlank()) {
+            throw new ParseException(MESSAGE_BLANK_FOLLOW_UP);
+        }
+        return Optional.of(ParserUtil.parseFollowUp(followUpValue.get()));
     }
 
     /**
