@@ -2,9 +2,11 @@ package seedu.address.model.tag;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -12,6 +14,9 @@ import java.util.Locale;
 import org.junit.jupiter.api.Test;
 
 public class TagTest {
+
+    /** Generous limit for work that must not grow out of control, even on a slow machine. */
+    private static final Duration FAST = Duration.ofSeconds(2);
 
     @Test
     public void constructor_null_throwsNullPointerException() {
@@ -68,9 +73,104 @@ public class TagTest {
         assertFalse(Tag.isValidTagName("vip\uFE0F")); // variation selector
         assertFalse(Tag.isValidTagName("a\u20DD")); // enclosing circle
 
-        // EP: combining mark with no letter or digit before it.
+        // EP: combining mark with no letter before it.
         assertFalse(Tag.isValidTagName("\u0301"));
         assertFalse(Tag.isValidTagName("\u0301abc"));
+        assertFalse(Tag.isValidTagName("1\u0301"));
+
+        // EP: Hangul fillers, which are classed as letters but draw nothing.
+        assertFalse(Tag.isValidTagName("\u3164")); // Hangul filler
+        assertFalse(Tag.isValidTagName("a\u3164b"));
+        assertFalse(Tag.isValidTagName("\u115F")); // Hangul choseong filler
+        assertFalse(Tag.isValidTagName("\u1160")); // Hangul jungseong filler
+        assertFalse(Tag.isValidTagName("\uFFA0")); // halfwidth Hangul filler
+        assertFalse(Tag.isValidTagName("vip\uFFA0"));
+
+        // EP: invisible joiners and selectors that are classed as combining marks.
+        assertFalse(Tag.isValidTagName("a\u034Fb")); // combining grapheme joiner
+        assertFalse(Tag.isValidTagName("a\u180Bb")); // Mongolian free variation selector one
+        assertFalse(Tag.isValidTagName("a\u180Cb"));
+        assertFalse(Tag.isValidTagName("a\u180Db"));
+        assertFalse(Tag.isValidTagName("a\u180Eb")); // Mongolian vowel separator
+        assertFalse(Tag.isValidTagName("a\u180Fb")); // Mongolian free variation selector four
+
+        // EP: number symbols that are not decimal digits.
+        assertFalse(Tag.isValidTagName("\u00BD")); // vulgar fraction one half
+        assertFalse(Tag.isValidTagName("\u00B2")); // superscript two
+        assertFalse(Tag.isValidTagName("\u2460")); // circled digit one
+        assertFalse(Tag.isValidTagName("vip\u00B2"));
+        assertFalse(Tag.isValidTagName("\u216B")); // Roman numeral twelve
+    }
+
+    @Test
+    public void isValidTagName_combiningMarks_atMostTwoPerLetter() {
+        // Boundary value: two marks on one letter is the most allowed. "x" has no precomposed accented
+        // forms, so NFC normalization keeps every mark separate.
+        assertTrue(Tag.isValidTagName("x\u0301"));
+        assertTrue(Tag.isValidTagName("x\u0301\u0302"));
+        assertTrue(Tag.isValidTagName("x\u0301\u0302y\u0303\u0304"));
+
+        // Boundary value: three marks on one letter is one too many.
+        assertFalse(Tag.isValidTagName("x\u0301\u0302\u0303"));
+        assertFalse(Tag.isValidTagName("ab\u0301\u0302\u0303c"));
+
+        // EP: a tall stack of marks on one letter.
+        assertFalse(Tag.isValidTagName("z" + "\u0301\u0302\u0303\u0304\u0305".repeat(6)));
+    }
+
+    @Test
+    public void isValidTagName_asciiCharacters_agreeWithPattern() {
+        // Plain ASCII tags skip the pattern for speed, so check that every ASCII character gets the same answer.
+        for (char c = 0; c < 128; c++) {
+            for (String test : List.of(String.valueOf(c), "a" + c, c + "1")) {
+                assertEquals(test.matches(Tag.VALIDATION_REGEX), Tag.isValidTagName(test), "U+" + (int) c);
+            }
+        }
+    }
+
+    @Test
+    public void isValidTagName_length_atMostFiftyCharacters() {
+        // Boundary values: 50 characters is the longest allowed and 51 is one too many.
+        assertTrue(Tag.isValidTagName("a".repeat(Tag.MAX_LENGTH)));
+        assertFalse(Tag.isValidTagName("a".repeat(Tag.MAX_LENGTH + 1)));
+        assertTrue(Tag.isValidTagName("\u4FDD".repeat(50)));
+        assertFalse(Tag.isValidTagName("\u4FDD".repeat(51)));
+
+        // EP: the limit counts characters after composing accents, so a decomposed accent counts once.
+        assertTrue(Tag.isValidTagName("e\u0301".repeat(50)));
+        assertFalse(Tag.isValidTagName("e\u0301".repeat(51)));
+
+        // EP: the limit counts characters, not UTF-16 units, so letters outside the BMP count once.
+        assertTrue(Tag.isValidTagName("\uD840\uDC00".repeat(50))); // CJK extension B
+        assertFalse(Tag.isValidTagName("\uD840\uDC00".repeat(51)));
+
+        // EP: a fully decomposed Greek letter takes four characters, but composes to one.
+        String decomposedGreek = "\u03C9\u0313\u0342\u0345"; // omega with psili, perispomeni and ypogegrammeni
+        assertTrue(Tag.isValidTagName(decomposedGreek.repeat(50)));
+        assertFalse(Tag.isValidTagName(decomposedGreek.repeat(51)));
+
+        assertThrows(IllegalArgumentException.class, Tag.MESSAGE_CONSTRAINTS, () -> new Tag("a".repeat(51)));
+        assertTrue(Tag.MESSAGE_CONSTRAINTS.contains("50 characters"));
+    }
+
+    @Test
+    public void isValidTagName_overlyLongInputs_rejectedQuickly() {
+        // Case mapping a long run of Greek sigma takes minutes, so the length must be checked first.
+        String sigmas = "\u03A3".repeat(100_000);
+        assertTimeoutPreemptively(FAST, () -> assertFalse(Tag.isValidTagName(sigmas)));
+        assertTimeoutPreemptively(FAST, () ->
+                assertThrows(IllegalArgumentException.class, Tag.MESSAGE_CONSTRAINTS, () -> new Tag(sigmas)));
+
+        List<String> longTags = List.of("a".repeat(51), "\u03A3".repeat(51), "\u03C2".repeat(51),
+                "\u00DF".repeat(51), "\u0130".repeat(51), "\u0390".repeat(51), "\u4FDD".repeat(51),
+                "\u0939\u093F".repeat(51), "\u0661".repeat(51), "\uD840\uDC00".repeat(51));
+        assertTimeoutPreemptively(FAST, () -> {
+            for (int i = 0; i < 1_000; i++) {
+                for (String longTag : longTags) {
+                    assertFalse(Tag.isValidTagName(longTag));
+                }
+            }
+        });
     }
 
     @Test
@@ -89,7 +189,7 @@ public class TagTest {
         assertTrue(Tag.isValidTagName("7"));
 
         // EP: a long single word.
-        assertTrue(Tag.isValidTagName("a".repeat(1000)));
+        assertTrue(Tag.isValidTagName("insuranceRenewal2026"));
 
         // EP: a tag that looks like a command prefix.
         assertTrue(Tag.isValidTagName("st"));
@@ -107,6 +207,11 @@ public class TagTest {
         // EP: digits from other scripts.
         assertTrue(Tag.isValidTagName("\u0661\u0662\u0663")); // Arabic-Indic
         assertTrue(Tag.isValidTagName("\u0967\u0968")); // Devanagari
+        assertTrue(Tag.isValidTagName("policy\u0661\u0662")); // letters then Arabic-Indic digits
+        assertTrue(Tag.isValidTagName("\uFF11\uFF12")); // fullwidth digits
+
+        // EP: Hangul syllables, which are visible letters unlike the Hangul fillers.
+        assertTrue(Tag.isValidTagName("\uBCF4\uD5D8")); // a Korean word for insurance
 
         // EP: decomposed accent (e followed by a combining acute accent).
         assertTrue(Tag.isValidTagName("cafe\u0301"));
@@ -147,9 +252,13 @@ public class TagTest {
         assertEqualTags("\u03BF\u03C3", "\u03BF\u03C2");
         // Lowercasing this capital gives a string that must be composed again to match.
         assertEqualTags("\u03AA\u0301", "\u0390");
-        // Dotless i uppercases to ASCII I, as in Java's equalsIgnoreCase.
+        // Dotless i and long s uppercase to ASCII I and S under Locale.ROOT case mapping, so they fold
+        // together with i and s. This is on purpose: it matches Java's equalsIgnoreCase and keeps the
+        // result the same whatever the user's default locale is.
         assertEqualTags("\u0131", "I");
         assertEqualTags("\u0131", "i");
+        assertEqualTags("\u017F", "S");
+        assertEqualTags("\u017F", "s");
     }
 
     @Test
@@ -197,6 +306,26 @@ public class TagTest {
         assertTrue(greek.hasSameNameIgnoringCase("\u03AA\u0301".toLowerCase(Locale.ROOT)));
         assertTrue(greek.hasSameNameIgnoringCase("\u0390"));
         assertThrows(NullPointerException.class, () -> tag.hasSameNameIgnoringCase(null));
+
+        // EP: a string that is not a valid tag name never matches, however long it is.
+        assertFalse(tag.hasSameNameIgnoringCase("caf\u00E9!"));
+        Tag sigmas = new Tag("\u03A3".repeat(50));
+        assertTrue(sigmas.hasSameNameIgnoringCase("\u03C3".repeat(50)));
+        String manySigmas = "\u03C3".repeat(100_000);
+        assertTimeoutPreemptively(FAST, () -> assertFalse(sigmas.hasSameNameIgnoringCase(manySigmas)));
+    }
+
+    @Test
+    public void equalsAndHashCode_longestTags_comparedQuickly() {
+        // The comparison key is worked out once when the tag is made, so comparing is a plain string check.
+        Tag upperCase = new Tag("\u03A3".repeat(Tag.MAX_LENGTH));
+        Tag lowerCase = new Tag("\u03C3".repeat(Tag.MAX_LENGTH - 1) + "\u03C2");
+        assertTimeoutPreemptively(FAST, () -> {
+            for (int i = 0; i < 2_000_000; i++) {
+                assertTrue(upperCase.equals(lowerCase));
+                assertEquals(upperCase.hashCode(), lowerCase.hashCode());
+            }
+        });
     }
 
     @Test

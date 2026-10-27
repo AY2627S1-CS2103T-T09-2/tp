@@ -137,4 +137,22 @@ public class PersonMatchesFiltersPredicateTest {
         assertFalse(predicate.equals(null));
         assertFalse(predicate.equals("referral"));
     }
+
+    @Test
+    public void equalsAndHashCode_tagsEqualIgnoringCase_match() {
+        // Sharp s uppercases to "SS", so t/STRASSE and t/straße filter on the same tag.
+        PersonMatchesFiltersPredicate upperCase =
+                new PersonMatchesFiltersPredicate(Optional.empty(), Optional.of(new Tag("STRASSE")));
+        PersonMatchesFiltersPredicate sharpS =
+                new PersonMatchesFiltersPredicate(Optional.empty(), Optional.of(new Tag("stra\u00DFe")));
+
+        assertEquals(upperCase, sharpS);
+        assertEquals(sharpS, upperCase);
+        assertEquals(upperCase.hashCode(), sharpS.hashCode());
+
+        Person streetTag = new PersonBuilder().withTags("Stra\u00DFe").build();
+        assertTrue(upperCase.test(streetTag));
+        assertTrue(sharpS.test(streetTag));
+        assertFalse(upperCase.test(clientFamily));
+    }
 }
