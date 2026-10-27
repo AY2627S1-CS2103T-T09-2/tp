@@ -24,6 +24,7 @@ public class FollowUpTest {
     public void constructor_invalidFollowUp_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> new FollowUp(""));
         assertThrows(IllegalArgumentException.class, () -> new FollowUp("31-02-2026"));
+        assertThrows(IllegalArgumentException.class, () -> new FollowUp("01-01-0000"));
     }
 
     @Test
@@ -52,12 +53,14 @@ public class FollowUpTest {
         assertFalse(FollowUp.isValidFollowUp("29-02-2026")); // not a leap year
         assertFalse(FollowUp.isValidFollowUp("00-09-2026")); // day zero
         assertFalse(FollowUp.isValidFollowUp("20-13-2026")); // month 13
+        assertFalse(FollowUp.isValidFollowUp("01-01-0000")); // year zero is not a calendar year
 
         // valid dates
         assertTrue(FollowUp.isValidFollowUp("20-09-2026"));
         assertTrue(FollowUp.isValidFollowUp("01-01-2027"));
         assertTrue(FollowUp.isValidFollowUp("29-02-2028")); // leap year
         assertTrue(FollowUp.isValidFollowUp("31-12-2026"));
+        assertTrue(FollowUp.isValidFollowUp("01-01-0001"));
     }
 
     @Test
@@ -135,6 +138,7 @@ public class FollowUpTest {
     @Test
     public void isRealDate() {
         assertFalse(FollowUp.isRealDate("31-02-2026"));
+        assertFalse(FollowUp.isRealDate("01-01-0000"));
         assertTrue(FollowUp.isRealDate("28-02-2026"));
     }
 

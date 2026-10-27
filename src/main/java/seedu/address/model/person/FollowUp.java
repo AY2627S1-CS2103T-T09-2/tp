@@ -55,8 +55,7 @@ public class FollowUp {
      */
     public static boolean isRealDate(String test) {
         try {
-            LocalDate.parse(test, FORMATTER);
-            return true;
+            return LocalDate.parse(test, FORMATTER).getYear() > 0;
         } catch (DateTimeParseException e) {
             return false;
         }
