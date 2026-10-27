@@ -15,33 +15,36 @@ public class StringUtilTest {
     @Test
     public void isNonZeroUnsignedInteger() {
 
-        // EP: empty strings
-        assertFalse(StringUtil.isNonZeroUnsignedInteger("")); // Boundary value
+        // EP: no digits (empty or whitespace-only input).
+        assertFalse(StringUtil.isNonZeroUnsignedInteger("")); // Boundary: zero characters.
         assertFalse(StringUtil.isNonZeroUnsignedInteger("  "));
 
-        // EP: not a number
+        // EP: non-numeric text, represented by single and multiple letters.
         assertFalse(StringUtil.isNonZeroUnsignedInteger("a"));
         assertFalse(StringUtil.isNonZeroUnsignedInteger("aaa"));
 
-        // EP: zero
+        // EP: zero, immediately below the minimum accepted value of 1.
         assertFalse(StringUtil.isNonZeroUnsignedInteger("0"));
 
-        // EP: zero as prefix
+        // EP: unsigned positive integers with leading zeros; the numeric value is still valid.
         assertTrue(StringUtil.isNonZeroUnsignedInteger("01"));
 
-        // EP: signed numbers
+        // EP: negative integers.
         assertFalse(StringUtil.isNonZeroUnsignedInteger("-1"));
+
+        // EP: positive integers with an explicit plus sign, which this format forbids.
         assertFalse(StringUtil.isNonZeroUnsignedInteger("+1"));
 
-        // EP: numbers with white space
+        // EP: digits mixed with whitespace; this utility does not trim its input.
         assertFalse(StringUtil.isNonZeroUnsignedInteger(" 10 ")); // Leading/trailing spaces
         assertFalse(StringUtil.isNonZeroUnsignedInteger("1 0")); // Spaces in the middle
 
-        // EP: number larger than Integer.MAX_VALUE
-        assertFalse(StringUtil.isNonZeroUnsignedInteger(Long.toString(Integer.MAX_VALUE + 1)));
+        // EP: unsigned integers above the int range.
+        // Boundary: first out-of-range value; long arithmetic prevents overflow in the test itself.
+        assertFalse(StringUtil.isNonZeroUnsignedInteger(Long.toString((long) Integer.MAX_VALUE + 1)));
 
-        // EP: valid numbers, should return true
-        assertTrue(StringUtil.isNonZeroUnsignedInteger("1")); // Boundary value
+        // EP: unsigned positive integers within the int range.
+        assertTrue(StringUtil.isNonZeroUnsignedInteger("1")); // Boundary: minimum accepted value.
         assertTrue(StringUtil.isNonZeroUnsignedInteger("10"));
     }
 
@@ -104,22 +107,22 @@ public class StringUtilTest {
     @Test
     public void containsWordIgnoreCase_validInputs_correctResult() {
 
-        // Empty sentence
-        assertFalse(StringUtil.containsWordIgnoreCase("", "abc")); // Boundary case
+        // EP: sentences containing no words, including the zero-character boundary.
+        assertFalse(StringUtil.containsWordIgnoreCase("", "abc"));
         assertFalse(StringUtil.containsWordIgnoreCase("    ", "123"));
 
-        // Matches a partial word only
+        // EP: only a partial overlap; full-word matching must reject shorter and longer queries.
         assertFalse(StringUtil.containsWordIgnoreCase("aaa bbb ccc", "bb")); // Sentence word bigger than query word
         assertFalse(StringUtil.containsWordIgnoreCase("aaa bbb ccc", "bbbb")); // Query word bigger than sentence word
 
-        // Matches word in the sentence, different upper/lower case letters
-        assertTrue(StringUtil.containsWordIgnoreCase("aaa bBb ccc", "Bbb")); // First word (boundary case)
+        // EP: a complete word matches, regardless of case or surrounding whitespace.
+        assertTrue(StringUtil.containsWordIgnoreCase("aaa bBb ccc", "Bbb")); // Middle word.
         assertTrue(StringUtil.containsWordIgnoreCase("aaa bBb ccc@1", "CCc@1")); // Last word (boundary case)
         assertTrue(StringUtil.containsWordIgnoreCase("  AAA   bBb   ccc  ", "aaa")); // Sentence has extra spaces
         assertTrue(StringUtil.containsWordIgnoreCase("Aaa", "aaa")); // Only one word in sentence (boundary case)
         assertTrue(StringUtil.containsWordIgnoreCase("aaa bbb ccc", "  ccc  ")); // Leading/trailing spaces
 
-        // Matches multiple words in sentence
+        // EP: multiple matching occurrences; any one match is sufficient.
         assertTrue(StringUtil.containsWordIgnoreCase("AAA bBb ccc  bbb", "bbB"));
     }
 
@@ -127,9 +130,19 @@ public class StringUtilTest {
 
     @Test
     public void containsWordStartingWithIgnoreCase_validInputs_correctResult() {
+        // EP: a query matches the start of a word, regardless of position or letter case.
         assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Alice Tan", "ta"));
         assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Alice Tan", "ALI"));
+        // EP: each part and the original hyphenated word can be matched by prefix.
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Anne-Marie Tan", "mar"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Anne-Marie Tan", "ANNE"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Anne-Marie Tan", "Anne-Marie"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Anne-Marie Tan", "anne-m"));
+
+        // EP: a query occurs only inside a word, so substring matching would be incorrect.
         assertFalse(StringUtil.containsWordStartingWithIgnoreCase("Alice Tan", "lic"));
+
+        // EP: a query starts with a whole word but is longer than that word.
         assertFalse(StringUtil.containsWordStartingWithIgnoreCase("Alice Tan", "tanley"));
     }
 

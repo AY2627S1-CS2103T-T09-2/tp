@@ -1,6 +1,7 @@
 package seedu.address.ui;
 
 import java.util.List;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 import javafx.fxml.FXML;
@@ -89,12 +90,14 @@ public class HelpWindow extends UiPart<Stage> {
                 }
             }
         }
+        logger.fine(() -> "Configured command guide fonts; ui=" + uiFamily + ", code=" + family);
     }
 
     /**
      * Uses table columns on wide windows and labelled, stacked fields on narrow windows.
      */
     private void layoutCommandGuide(boolean compact) {
+        boolean layoutChanged = compactLayout != compact;
         compactLayout = compact;
         commandGuideTable.setVisible(!compact);
         commandGuideTable.setManaged(!compact);
@@ -133,6 +136,9 @@ public class HelpWindow extends UiPart<Stage> {
                 }
             }
         }
+        if (layoutChanged) {
+            logger.fine(() -> "Command guide layout changed to " + (compact ? "stacked" : "table"));
+        }
     }
 
     /**
@@ -155,9 +161,9 @@ public class HelpWindow extends UiPart<Stage> {
      *     </ul>
      */
     public void show() {
-        logger.fine("Showing help page about the application.");
         fitToScreen();
         getRoot().show();
+        logger.fine("Showing command guide.");
     }
 
     /**
@@ -165,8 +171,10 @@ public class HelpWindow extends UiPart<Stage> {
      */
     private void fitToScreen() {
         Stage stage = getRoot();
-        double width = stage.getWidth();
-        double height = stage.getHeight();
+        double previousWidth = stage.getWidth();
+        double previousHeight = stage.getHeight();
+        double width = previousWidth;
+        double height = previousHeight;
         width = Double.isNaN(width) || width <= 0 ? DEFAULT_WIDTH : width;
         height = Double.isNaN(height) || height <= 0 ? DEFAULT_HEIGHT : height;
         Screen screen = Screen.getPrimary();
@@ -183,6 +191,10 @@ public class HelpWindow extends UiPart<Stage> {
         stage.setHeight(height);
         stage.setX(visualBounds.getMinX() + (visualBounds.getWidth() - width) / 2);
         stage.setY(visualBounds.getMinY() + (visualBounds.getHeight() - height) / 2);
+        if (Double.compare(previousWidth, width) != 0 || Double.compare(previousHeight, height) != 0) {
+            logger.fine("Adjusted command guide size; from=" + previousWidth + "x" + previousHeight
+                    + ", to=" + width + "x" + height);
+        }
     }
 
     /**
@@ -211,9 +223,19 @@ public class HelpWindow extends UiPart<Stage> {
      */
     @FXML
     private void copyUrl() {
-        final Clipboard clipboard = Clipboard.getSystemClipboard();
+        copyUserGuideUrl(Clipboard.getSystemClipboard()::setContent);
+    }
+
+    /**
+     * Copies the guide URL with the supplied clipboard writer and records whether the write succeeded.
+     */
+    static void copyUserGuideUrl(Function<ClipboardContent, Boolean> clipboardWriter) {
         final ClipboardContent url = new ClipboardContent();
         url.putString(USERGUIDE_URL);
-        clipboard.setContent(url);
+        if (clipboardWriter.apply(url)) {
+            logger.fine("Copied User Guide URL to clipboard.");
+        } else {
+            logger.warning("Could not copy the User Guide URL to the clipboard.");
+        }
     }
 }

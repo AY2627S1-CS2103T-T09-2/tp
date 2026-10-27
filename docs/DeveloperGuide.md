@@ -95,6 +95,10 @@ The sequence diagram below illustrates the interactions within the `Logic` compo
 
 <puml src="diagrams/DeleteSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `delete 1` Command" />
 
+The sequence diagram below illustrates how the `find` command filters contacts by name keywords.
+
+<puml src="diagrams/FindSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `find` Command" />
+
 <box type="info" seamless>
 
 **Note:** The lifeline for `DeleteCommandParser` should end at the destroy marker (X), but due to a limitation of PlantUML, the lifeline continues till the end of diagram.
@@ -125,6 +129,8 @@ How the parsing works:
 `Status.DEFAULT` is `PROSPECT`. Each `Person` stores one status and optionally one follow-up date.
 `Name` accepts Unicode letters and common name punctuation after an initial letter; `Phone` accepts
 an optional leading plus sign and separators between at least three digits.
+`Phone` is capped at 30 characters and `Email` at 254. Both lengths are checked before the regex, so
+a very long value from a command or the data file is rejected instead of overflowing the stack.
 
 
 The `Model` component,
@@ -208,7 +214,7 @@ The change may not have been saved to disk.
 * `DueCommand` works out the cutoff from a `Clock`. The app passes the system clock, and tests pass a fixed one, so the tests do not depend on the real date.
 * `FollowUpDueByPredicate` keeps contacts that have a follow-up on or before the cutoff. Contacts without a follow-up are left out.
 * `Model#updateFilteredPersonList(Predicate, Comparator)` filters and sorts the displayed list in one step. `ModelManager` wraps its `FilteredList` in a `SortedList`, and `getFilteredPersonList()` returns the sorted view, so index-based commands such as `done 1` act on the order the user sees.
-* The one-argument `updateFilteredPersonList(Predicate)` clears the comparator, so `list`, `find` and every command that resets the list go back to the stored order.
+* The one-argument `updateFilteredPersonList(Predicate)` clears the comparator, so `list` and `find` replace the current view and return to stored order. Adding or editing a contact retains the active filter and sort order; the displayed list updates as contacts change.
 
 The sequence diagram below shows how `due 7` is executed.
 
@@ -332,13 +338,17 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   * 5a1. System saves the date and warns the agent that it is in the past.
   * Use case ends.
 
-**Use case: Find contacts by name**
+**Use case: Find contacts by name or phone**
 
 **MSS**
 
-1. Agent enters `find KEYWORD [MORE_KEYWORDS]`.
-2. System ignores leading and trailing spaces and checks that at least one keyword was supplied.
-3. System searches contact names case-insensitively. A complete word matching any supplied keyword is sufficient.
+1. Agent enters `find KEYWORD [MORE_KEYWORDS]` or `find p/PHONE_DIGITS`.
+2. System ignores leading and trailing spaces and checks that the search value is present.
+   A phone search must contain digits only.
+3. For a name search, the system matches the start of any word in a contact's name against any supplied keyword,
+   ignoring case. For example, `find ta` matches `John Tan`.
+   For a phone search, it looks for the supplied consecutive digits in the phone number, ignoring stored formatting
+   such as spaces and dashes.
 4. System shows only matching contacts and reports how many were found.
 
    Use case ends.
@@ -348,7 +358,13 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 2a. No name keyword was supplied.
   * 2a1. System shows `Please enter at least one name keyword to search for. Example: find alice tan`.
   * Use case ends without changing the contact list.
-* 3a. No contact name contains a matching complete word.
+* 2b. No phone digits were supplied after `p/`.
+  * 2b1. System shows `Please enter at least one phone digit to search for. Example: find p/9123`.
+  * Use case ends without changing the contact list.
+* 2c. A phone search contains non-digit characters.
+  * 2c1. System explains that the phone search must contain digits only.
+  * Use case ends without changing the contact list.
+* 3a. No contact matches the name keywords or phone digits.
   * 3a1. System shows an empty result list and reports `0 contacts listed.`
   * Use case ends.
 
@@ -441,7 +457,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Pending follow-up**: A follow-up date that is still recorded on a contact. Marking it done removes the date.
 * **Duplicate contact**: A contact whose name matches an existing contact's name after ignoring letter case and extra spaces. Easy-Insurance refuses to add a duplicate.
 * **Index**: The number shown next to a contact in the currently displayed list. Commands such as `edit`, `delete` and `done` refer to contacts by index.
-* **Name keyword**: A non-empty, complete word used by `find` to match contact names, ignoring letter case. Partial-name matching is outside the initial version.
+* **Name keyword**: Non-empty text used by `find` to match the start of any word in a contact's name, ignoring letter case.
+* **Phone search digits**: A non-empty sequence of digits used by `find p/PHONE_DIGITS` to match consecutive digits in a phone number, ignoring stored formatting.
 * **Tag**: A short label made of letters and digits, such as `referral`, that the agent attaches to a contact. A contact can have any number of tags.
 * **Card**: The box in the contact list that shows one contact's details, including its status and follow-up date.
 * **CLI**: Command line interface. The agent types commands into the command box instead of clicking buttons.
@@ -520,6 +537,20 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `list`<br>
       Expected: All four contacts are shown.
       The result is `Listed all contacts.`
+
+1. Adding and editing while a filter is active
+
+   1. Prerequisites: Run `list st/CLIENT` with the four test contacts above.<br>
+      Expected: Only the two clients are shown.
+
+   1. Test case: `add n/Hidden Prospect p/91110005 e/five@example.com a/5 Test Road st/PROSPECT`<br>
+      Expected: The contact is saved but remains hidden. The result explains that the current view hides it and suggests `list` to show all contacts.
+
+   1. Test case: `add n/Visible Client p/91110006 e/six@example.com a/6 Test Road st/CLIENT`<br>
+      Expected: The new client appears in the filtered list without a hidden-contact note.
+
+   1. Test case: `edit 1 st/PROSPECT`<br>
+      Expected: The edited contact leaves the filtered list. The other clients remain visible.
 
 1. Rejecting invalid filters
 
@@ -654,7 +685,7 @@ testers are expected to do more *exploratory* testing.
       Expected: The earliest follow-up in the sorted list is completed.
 
    1. Other incorrect commands to try: `due -1`, `due 366`, `due abc`, `due 7 days`<br>
-      Expected: No change to the list. Error: `Number of days must be a whole number from 0 to 365, e.g. due 7`
+      Expected: No change to the list. Error: `Number of days must be a whole number from 0 to 365, e.g. due 7.`
 
 ### Saving data
 
@@ -671,6 +702,26 @@ testers are expected to do more *exploratory* testing.
 
    1. Relaunch the app.<br>
       Expected: The app starts with an empty contact list, because the file could not be read. A copy of the invalid file is saved as `data/addressbook.json.bak`. Restoring the original value and relaunching brings the contacts back.
+
+   1. Repeat with one contact's `"phone"` changed to 31 or more digits.<br>
+      Expected: The same as above. The app still opens.
+
+1. Dealing with a data file containing JSON `null`
+
+   1. Close the app. Replace the entire contents of `data/addressbook.json` with `null`.
+
+   1. Relaunch the app.<br>
+      Expected: The app starts with an empty contact list. Both `data/addressbook.json` and its new `.bak` copy contain exactly `null`; sample contacts do not appear.
+
+1. Dealing with a failed backup
+
+   1. Close the app. Put invalid JSON in `data/addressbook.json`. If `data/addressbook.json.bak` exists, move it somewhere safe, then create a non-empty folder with that name.
+
+   1. Relaunch the app.<br>
+      Expected: Startup stops with an error naming the data and backup paths. The original `data/addressbook.json` remains unchanged.
+
+   1. Remove the blocking folder and relaunch.<br>
+      Expected: The invalid data is backed up and the app starts with an empty contact list.
 
 1. Dealing with an older data file
 

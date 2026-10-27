@@ -71,7 +71,8 @@ public class JsonAddressBookStorage {
     /**
      * Similar to {@link #readAddressBook()}, but if the data file exists and cannot be loaded,
      * copies it to {@code <file name>.bak} in the same folder before rethrowing the exception.
-     * A failed copy is logged and does not stop the exception from being rethrown.
+     * If the backup cannot be created, throws a {@link DataBackupException} so startup cannot
+     * continue with an empty writable contact list.
      *
      * @throws DataLoadingException if loading the data from storage failed.
      */
@@ -79,7 +80,9 @@ public class JsonAddressBookStorage {
         try {
             return readAddressBook(filePath);
         } catch (DataLoadingException e) {
-            backUpFile(filePath);
+            if (backUpFile(filePath).isEmpty()) {
+                throw new DataBackupException(filePath, getBackupFilePath(filePath), e);
+            }
             throw e;
         }
     }
