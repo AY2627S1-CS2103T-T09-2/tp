@@ -16,6 +16,7 @@ import seedu.address.model.tag.Tag;
 public class PersonMatchesFiltersPredicate implements Predicate<Person> {
 
     private final Optional<Status> status;
+    private final Optional<Tag> tag;
     private final Optional<String> tagName;
 
     /**
@@ -27,8 +28,9 @@ public class PersonMatchesFiltersPredicate implements Predicate<Person> {
      */
     public PersonMatchesFiltersPredicate(Optional<Status> status, Optional<Tag> tag) {
         this.status = requireNonNull(status);
-        this.tagName = requireNonNull(tag)
-                .map(value -> value.tagName.toLowerCase(Locale.ROOT));
+        // The tag works out its case-insensitive key once here, so each check below is a plain comparison.
+        this.tag = requireNonNull(tag);
+        this.tagName = tag.map(value -> value.tagName.toLowerCase(Locale.ROOT));
     }
 
     /**
@@ -56,8 +58,8 @@ public class PersonMatchesFiltersPredicate implements Predicate<Person> {
     public boolean test(Person person) {
         requireNonNull(person);
         boolean isStatusMatch = status.isEmpty() || person.getStatus() == status.get();
-        boolean isTagMatch = tagName.isEmpty()
-                || person.getTags().stream().anyMatch(tag -> tag.tagName.equalsIgnoreCase(tagName.get()));
+        // Tag equality and hash codes both ignore case, so a set lookup finds the tag in any case.
+        boolean isTagMatch = tag.isEmpty() || person.getTags().contains(tag.get());
         return isStatusMatch && isTagMatch;
     }
 
@@ -71,12 +73,13 @@ public class PersonMatchesFiltersPredicate implements Predicate<Person> {
             return false;
         }
 
-        return status.equals(otherPredicate.status) && tagName.equals(otherPredicate.tagName);
+        // Tags compare ignoring case, so t/STRASSE and t/straße give equal predicates.
+        return status.equals(otherPredicate.status) && tag.equals(otherPredicate.tag);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(status, tagName);
+        return Objects.hash(status, tag);
     }
 
     @Override
