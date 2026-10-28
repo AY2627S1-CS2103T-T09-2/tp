@@ -120,7 +120,8 @@ public class JsonUtil {
             trailingToken = parser.nextToken();
         } catch (JsonProcessingException e) {
             // The leftover text is not even a valid JSON token, e.g. a stray comma or brace.
-            // The token location points at its first character, unlike the exception's location.
+            // The token location is usually closer to the stray text than the exception's location,
+            // though for some characters it can still point at the end of the JSON value.
             throw new IOException(getTrailingContentMessage(parser), e);
         }
 
