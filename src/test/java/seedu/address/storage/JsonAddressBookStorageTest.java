@@ -534,6 +534,32 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
+    public void readAddressBookWithBackup_contentAfterJson_backupCreatedWithSameContent() throws Exception {
+        // EP: a valid address book followed by extra content must not load as just the first part.
+        Path validFile = testFolder.resolve("valid.json");
+        new JsonAddressBookStorage(validFile).saveAddressBook(getTypicalAddressBook());
+        String validJson = Files.readString(validFile);
+        String secondBook = "{\"persons\":[{\"name\":\"Bob Second\",\"phone\":\"98765432\"}]}";
+
+        assertContentAfterJsonBackedUp(validJson + "," + secondBook);
+        assertContentAfterJsonBackedUp(validJson + "\n" + secondBook);
+        assertContentAfterJsonBackedUp(validJson + "\n}");
+        assertContentAfterJsonBackedUp(validJson + " this is junk");
+    }
+
+    @Test
+    public void readAddressBookWithBackup_whitespaceAfterJson_loadsWithoutBackup() throws Exception {
+        // EP: trailing newlines and spaces are normal at the end of a hand-edited file.
+        Path filePath = testFolder.resolve("addressbook.json");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+        storage.saveAddressBook(getTypicalAddressBook());
+        Files.writeString(filePath, Files.readString(filePath) + "\n\n  \t\r\n");
+
+        assertEquals(getTypicalAddressBook(), new AddressBook(storage.readAddressBookWithBackup().get()));
+        assertFalse(Files.exists(JsonAddressBookStorage.getBackupFilePath(filePath)));
+    }
+
+    @Test
     public void readAddressBookWithBackup_tooLongPhone_backupCreatedWithSameContent() throws Exception {
         // EP: a phone far over the length limit is invalid data, so it is backed up like any other.
         assertCorruptedFileBackedUp("tooLongPhoneAddressBook.json");
@@ -616,6 +642,22 @@ public class JsonAddressBookStorageTest {
 
         assertFalse(JsonAddressBookStorage.backUpFile(folder).isPresent());
         assertFalse(Files.exists(JsonAddressBookStorage.getBackupFilePath(folder)));
+    }
+
+    /**
+     * Writes {@code content} to a temporary data file, reads it with backup, and checks that the
+     * read fails, the data file is untouched and the backup matches it byte for byte.
+     */
+    private void assertContentAfterJsonBackedUp(String content) throws IOException {
+        Path filePath = testFolder.resolve("addressbook.json");
+        Files.writeString(filePath, content);
+        byte[] original = Files.readAllBytes(filePath);
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        assertThrows(DataLoadingException.class, storage::readAddressBookWithBackup);
+
+        assertArrayEquals(original, Files.readAllBytes(filePath));
+        assertArrayEquals(original, Files.readAllBytes(JsonAddressBookStorage.getBackupFilePath(filePath)));
     }
 
     /**

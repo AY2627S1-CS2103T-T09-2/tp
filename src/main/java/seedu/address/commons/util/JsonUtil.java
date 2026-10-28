@@ -10,7 +10,10 @@ import java.util.logging.Logger;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonLocation;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -22,6 +25,9 @@ import seedu.address.commons.exceptions.DataLoadingException;
  * Converts a Java object instance to JSON and vice versa
  */
 public class JsonUtil {
+
+    public static final String MESSAGE_TRAILING_CONTENT =
+            "Unexpected content after the end of the JSON data at line %d, column %d";
 
     private static final Logger logger = LogsCenter.getLogger(JsonUtil.class);
 
@@ -89,12 +95,43 @@ public class JsonUtil {
 
 
     /**
-     * Converts a given string representation of JSON data to an instance of a class
+     * Converts a given string representation of JSON data to an instance of a class.
+     * The string must hold exactly one JSON value; only whitespace may follow it.
      * @param <T> The generic type to create an instance of
      * @return The instance of T with the specified values in the JSON string
+     * @throws IOException if the JSON is invalid or there is content after the JSON value
      */
     public static <T> T fromJsonString(String json, Class<T> instanceClass) throws IOException {
-        return objectMapper.readValue(json, instanceClass);
+        try (JsonParser parser = objectMapper.getFactory().createParser(json)) {
+            T instance = objectMapper.readValue(parser, instanceClass);
+            requireNoTrailingContent(parser);
+            return instance;
+        }
+    }
+
+    /**
+     * Throws an {@code IOException} if {@code parser} has anything other than whitespace left after
+     * the JSON value it just read. Jackson stops after the first value, so without this check a
+     * second object or stray text at the end of a data file would be dropped without any error.
+     */
+    private static void requireNoTrailingContent(JsonParser parser) throws IOException {
+        JsonToken trailingToken;
+        try {
+            trailingToken = parser.nextToken();
+        } catch (JsonProcessingException e) {
+            // The leftover text is not even a valid JSON token, e.g. a stray comma or brace.
+            // The token location points at its first character, unlike the exception's location.
+            throw new IOException(getTrailingContentMessage(parser), e);
+        }
+
+        if (trailingToken != null) {
+            throw new IOException(getTrailingContentMessage(parser));
+        }
+    }
+
+    private static String getTrailingContentMessage(JsonParser parser) {
+        JsonLocation location = parser.getTokenLocation();
+        return String.format(MESSAGE_TRAILING_CONTENT, location.getLineNr(), location.getColumnNr());
     }
 
     /**
