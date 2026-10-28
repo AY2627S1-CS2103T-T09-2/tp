@@ -1,11 +1,14 @@
 package seedu.address.logic;
 
+import java.util.Comparator;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import seedu.address.logic.parser.Prefix;
+import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Person;
+import seedu.address.model.tag.Tag;
 
 /**
  * Container for user visible messages.
@@ -55,9 +58,13 @@ public class Messages {
     }
 
     /**
-     * Formats the {@code person} for display to the user.
+     * Formats the {@code person} for display, using card order for tags and {@code none} for empty fields.
      */
     public static String format(Person person) {
+        String tags = person.getTags().stream()
+                .sorted(Comparator.comparing(tag -> tag.tagName))
+                .map(Tag::toString)
+                .collect(Collectors.joining(" "));
         final StringBuilder builder = new StringBuilder();
         builder.append(person.getName())
                 .append("; Phone: ")
@@ -68,9 +75,10 @@ public class Messages {
                 .append(person.getAddress())
                 .append("; Status: ")
                 .append(person.getStatus())
-                .append("; Tags: ");
-        person.getTags().forEach(builder::append);
-        person.getFollowUp().ifPresent(followUp -> builder.append("; Follow-up: ").append(followUp));
+                .append("; Tags: ")
+                .append(tags.isEmpty() ? "none" : tags)
+                .append("; Follow-up: ")
+                .append(person.getFollowUp().map(FollowUp::toString).orElse("none"));
         return builder.toString();
     }
 
