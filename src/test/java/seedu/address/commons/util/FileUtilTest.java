@@ -52,7 +52,7 @@ public class FileUtilTest {
     public void readFromFile_leadingByteOrderMark_keptAsCharacter() throws Exception {
         // Documents existing behaviour: a UTF-8 byte order mark is valid UTF-8 and is not stripped here.
         Path file = writeBytes(bytes(0xEF, 0xBB, 0xBF, 'a'));
-        assertEquals("﻿a", FileUtil.readFromFile(file));
+        assertEquals("\uFEFFa", FileUtil.readFromFile(file));
     }
 
     @Test
