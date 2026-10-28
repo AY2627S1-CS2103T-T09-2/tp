@@ -111,8 +111,9 @@ The contact list shows blue, green, and grey badges respectively for these statu
 </box>
 
 Names with extra spaces are saved with single spaces. A contact cannot be added if its name matches an existing contact's name after ignoring case and extra spaces.
-Names must start with a letter, including accented letters. They may then contain letters, digits, spaces,
-hyphens (`-`), apostrophes (`'`), periods (`.`), commas (`,`), and slashes (`/`), so names such as
+Names must start with a letter, including accented letters, and end with a letter or digit. Punctuation cannot
+appear at the end of a name. Names may then contain letters, digits, spaces, hyphens (`-`), apostrophes (`'`),
+periods (`.`), commas (`,`), and slashes (`/`), so names such as
 `Anne-Marie`, `O'Connor`, and `Raj s/o Kumar` are accepted. Phone numbers must contain at least three
 digits. They may start with `+` and include spaces or dashes between digits, for example `+65 9123-4567`.
 Phone numbers are saved exactly as entered. If a name is already in the contact list, Easy-Insurance

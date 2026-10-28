@@ -13,8 +13,8 @@ import java.text.Normalizer.Form;
 public class Name {
 
     public static final String MESSAGE_CONSTRAINTS =
-            "Names must start with a letter and may contain letters, digits, spaces, hyphens, apostrophes, "
-                    + "periods, commas and slashes.";
+            "Names must start with a letter and end with a letter or digit. They may contain letters, digits, "
+                    + "spaces, hyphens, apostrophes, periods, commas and slashes between characters.";
 
     /*
      * The first and last characters must be Unicode letters, marks or numbers. The characters
