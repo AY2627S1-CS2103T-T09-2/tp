@@ -169,6 +169,28 @@ public class JsonUserPrefsStorageTest {
         assertEquals(new UserPrefs(), storage.readUserPrefs().get());
     }
 
+    @Test
+    public void readUserPrefs_contentAfterJson_defaultsCanBeSavedAndReadBack() throws Exception {
+        // EP: extra content after the preferences is rejected, so the app falls back to defaults.
+        Path prefsFilePath = testFolder.resolve("prefs.json");
+        String validPrefs = Files.readString(TEST_DATA_FOLDER.resolve("TypicalUserPref.json"));
+        JsonUserPrefsStorage storage = new JsonUserPrefsStorage(prefsFilePath);
+
+        for (String trailing : new String[] {" junk", "}", ",{}", "{}"}) {
+            Files.writeString(prefsFilePath, validPrefs + trailing);
+            assertThrows(DataLoadingException.class, storage::readUserPrefs);
+        }
+
+        storage.saveUserPrefs(new UserPrefs());
+        assertEquals(new UserPrefs(), storage.readUserPrefs().get());
+    }
+
+    @Test
+    public void readUserPrefs_whitespaceAfterJson_successfullyRead() throws Exception {
+        String validPrefs = Files.readString(TEST_DATA_FOLDER.resolve("TypicalUserPref.json"));
+        assertEquals(readUserPrefs("TypicalUserPref.json"), readUserPrefsJson(validPrefs + "\n\n \t\r\n"));
+    }
+
     private Optional<UserPrefs> readUserPrefsJson(String json) throws IOException, DataLoadingException {
         Path prefsFilePath = testFolder.resolve("prefs.json");
         Files.writeString(prefsFilePath, json);
