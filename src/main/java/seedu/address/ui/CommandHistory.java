@@ -48,6 +48,9 @@ public class CommandHistory {
 
         if (currentIndex == entries.size()) {
             unfinishedInput = currentInput;
+            if (currentIndex > 1 && entries.get(currentIndex - 1).equals(currentInput)) {
+                currentIndex--;
+            }
         }
         currentIndex--;
         return entries.get(currentIndex);
