@@ -13,14 +13,15 @@ import java.text.Normalizer.Form;
 public class Name {
 
     public static final String MESSAGE_CONSTRAINTS =
-            "Names must start with a letter and may contain letters, digits, spaces, hyphens, apostrophes, "
-                    + "periods, commas and slashes.";
+            "Names must start with a letter and end with a letter or digit. They may contain letters, digits, "
+                    + "spaces, hyphens, apostrophes, periods, commas and slashes between characters.";
 
     /*
-     * The first character must be a Unicode letter. The remaining characters may include
-     * punctuation used in names such as "s/o" and "d/o".
+     * The first and last characters must be Unicode letters, marks or numbers. The characters
+     * between them may include punctuation used in names such as "s/o" and "d/o".
      */
-    public static final String VALIDATION_REGEX = "\\p{L}[\\p{L}\\p{M}\\p{N} '.,/-]*";
+    public static final String VALIDATION_REGEX =
+            "\\p{L}(?:[\\p{L}\\p{M}\\p{N} '.,/-]*[\\p{L}\\p{M}\\p{N}])?";
 
     public final String fullName;
 
@@ -31,8 +32,9 @@ public class Name {
      */
     public Name(String name) {
         requireNonNull(name);
-        checkArgument(isValidName(name), MESSAGE_CONSTRAINTS);
-        fullName = Normalizer.normalize(name.trim().replaceAll(" +", " "), Form.NFC);
+        String trimmedName = name.trim();
+        checkArgument(isValidName(trimmedName), MESSAGE_CONSTRAINTS);
+        fullName = Normalizer.normalize(trimmedName.replaceAll(" +", " "), Form.NFC);
     }
 
     /**

@@ -50,6 +50,9 @@ public class NameTest {
         assertFalse(Name.isValidName("12345")); // must start with a letter
         assertFalse(Name.isValidName("-Alice"));
         assertFalse(Name.isValidName(" Alice"));
+        assertFalse(Name.isValidName("Alice-"));
+        assertFalse(Name.isValidName("Alice'"));
+        assertFalse(Name.isValidName("Alice."));
 
         // EP: names starting with a letter and containing only letters, digits and spaces.
         assertTrue(Name.isValidName("peter jack")); // alphabets only
