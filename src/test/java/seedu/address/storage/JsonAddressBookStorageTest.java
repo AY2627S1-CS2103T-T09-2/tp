@@ -540,6 +540,26 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
+    public void readAddressBookWithBackup_unicodeStatusLookalikes_preservesOriginalAndBackup() throws Exception {
+        Path filePath = testFolder.resolve("addressbook.json");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        // EP: valid JSON contains an invalid dotted or dotless Unicode I in its status.
+        for (String status : List.of("CL\u0130ENT", "cl\u0131ent")) {
+            String json = "{\"persons\":[{\"name\":\"Alice Tan\",\"phone\":\"91234567\","
+                    + "\"email\":\"alice@example.com\",\"address\":\"1 Test Road\","
+                    + "\"status\":\"" + status + "\",\"tags\":[]}]}";
+            Files.writeString(filePath, json);
+            byte[] originalBytes = Files.readAllBytes(filePath);
+
+            assertThrows(DataLoadingException.class, storage::readAddressBookWithBackup);
+
+            assertArrayEquals(originalBytes, Files.readAllBytes(filePath));
+            assertArrayEquals(originalBytes, Files.readAllBytes(JsonAddressBookStorage.getBackupFilePath(filePath)));
+        }
+    }
+
+    @Test
     public void readAddressBookWithBackup_existingBackup_backupReplaced() throws Exception {
         // EP: a backup already exists; the newest unreadable file replaces it.
         Path backupPath = testFolder.resolve("addressbook.json.bak");
