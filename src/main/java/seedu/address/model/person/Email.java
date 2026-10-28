@@ -12,6 +12,7 @@ public class Email {
     public static final int MAX_LENGTH = 254;
 
     private static final String SPECIAL_CHARACTERS = "+_.-";
+    private static final String REPEATABLE_SPECIAL_CHARACTERS = "+_-";
     public static final String MESSAGE_CONSTRAINTS = "Emails should be of the format local-part@domain "
             + "and adhere to the following constraints:\n"
             + "1. The local-part should only contain alphanumeric characters and these special characters, excluding "
@@ -28,7 +29,8 @@ public class Email {
     // alphanumeric and special characters
     private static final String ALPHANUMERIC_NO_UNDERSCORE = "[^\\W_]+";
     private static final String LOCAL_PART_REGEX = "^" + ALPHANUMERIC_NO_UNDERSCORE
-            + "([" + SPECIAL_CHARACTERS + "]+" + ALPHANUMERIC_NO_UNDERSCORE + ")*";
+            + "(([" + REPEATABLE_SPECIAL_CHARACTERS + "]+|\\.)"
+            + ALPHANUMERIC_NO_UNDERSCORE + ")*";
     private static final String DOMAIN_PART_REGEX = ALPHANUMERIC_NO_UNDERSCORE
             + "(-+" + ALPHANUMERIC_NO_UNDERSCORE + ")*";
     private static final String DOMAIN_LAST_PART_REGEX = "(" + DOMAIN_PART_REGEX + "){2,}$";
