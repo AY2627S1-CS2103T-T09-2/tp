@@ -3,6 +3,7 @@ package seedu.address.logic;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -248,6 +249,94 @@ public class LogicManagerIntegrationTest {
         assertState(expectedPersons, expectedPersons);
         reload();
         assertState(expectedPersons, expectedPersons);
+    }
+
+    @Test
+    public void execute_addUppercaseNameAbbreviation_preservesNameAndAddress() throws Exception {
+        // EP: uppercase A/L and A/P are name text, with the address before or after the name.
+        for (String abbreviation : List.of("A/L", "A/P")) {
+            String nameField = " n/Ravi " + abbreviation + " Kumar";
+            for (String fields : List.of(nameField + " a/1 North Road", " a/1 North Road" + nameField)) {
+                initialize(List.of());
+                Person expectedPerson = new PersonBuilder(noFollowUp)
+                        .withName("Ravi " + abbreviation + " Kumar").build();
+
+                logic.execute("add" + fields + " p/81000001 e/nora@example.com t/family");
+
+                assertState(List.of(expectedPerson), List.of(expectedPerson));
+                reload();
+                assertState(List.of(expectedPerson), List.of(expectedPerson));
+            }
+        }
+    }
+
+    @Test
+    public void execute_editUppercaseNameAbbreviation_changesOnlySuppliedFields() throws Exception {
+        for (String abbreviation : List.of("A/L", "A/P")) {
+            initialize(List.of(nextWeek));
+            Person renamedPerson = new PersonBuilder(nextWeek).withName("Ravi " + abbreviation + " Kumar").build();
+
+            // EP: no address parameter; preserve the address and every other contact field.
+            logic.execute("edit 1 n/Ravi " + abbreviation + " Kumar");
+            assertState(List.of(renamedPerson), List.of(renamedPerson));
+            reload();
+            assertState(List.of(renamedPerson), List.of(renamedPerson));
+
+            // EP: an explicit address parameter replaces the address without splitting the name.
+            Person movedPerson = new PersonBuilder(renamedPerson).withAddress("20 Tampines Street 2").build();
+            logic.execute("edit 1 n/Ravi " + abbreviation + " Kumar a/20 Tampines Street 2");
+            assertState(List.of(movedPerson), List.of(movedPerson));
+            reload();
+            assertState(List.of(movedPerson), List.of(movedPerson));
+        }
+    }
+
+    @Test
+    public void execute_addLowercaseAddressPrefix_splitsNameAndAddress() throws Exception {
+        // EP: lowercase a/ starts an address whether the following l or p is lowercase or uppercase.
+        for (String suffix : List.of("l", "L", "p", "P")) {
+            initialize(List.of());
+            Person expectedPerson = new PersonBuilder(noFollowUp).withName("Ravi")
+                    .withAddress(suffix + " Kumar").build();
+
+            logic.execute("add n/Ravi a/" + suffix + " Kumar p/81000001 e/nora@example.com t/family");
+
+            assertState(List.of(expectedPerson), List.of(expectedPerson));
+            reload();
+            assertState(List.of(expectedPerson), List.of(expectedPerson));
+        }
+    }
+
+    @Test
+    public void execute_editLowercaseAddressPrefix_replacesNameAndAddress() throws Exception {
+        // EP: lowercase a/ supplies an address update rather than preserving the original address.
+        for (String suffix : List.of("l", "L", "p", "P")) {
+            initialize(List.of(nextWeek));
+            Person expectedPerson = new PersonBuilder(nextWeek).withName("Ravi")
+                    .withAddress(suffix + " Kumar").build();
+
+            logic.execute("edit 1 n/Ravi a/" + suffix + " Kumar");
+
+            assertState(List.of(expectedPerson), List.of(expectedPerson));
+            reload();
+            assertState(List.of(expectedPerson), List.of(expectedPerson));
+        }
+    }
+
+    @Test
+    public void execute_lowercaseNameAbbreviationAndAddress_rejectsDuplicatePrefix() throws Exception {
+        byte[] originalFile = Files.readAllBytes(dataFile);
+        // EP: a lowercase abbreviation followed by another address exceeds the one-address-prefix limit.
+        for (String suffix : List.of("l", "L", "p", "P")) {
+            for (String command : List.of(
+                    "add n/Ravi a/" + suffix + " Kumar p/92345678 e/ravi@example.com a/1 Road",
+                    "edit 1 n/Ravi a/" + suffix + " Kumar a/1 Road")) {
+                ParseException exception = assertThrows(ParseException.class, () -> logic.execute(command));
+                assertEquals(Messages.getErrorMessageForDuplicatePrefixes(PREFIX_ADDRESS), exception.getMessage());
+                assertState(originalPersons, originalPersons);
+                assertArrayEquals(originalFile, Files.readAllBytes(dataFile));
+            }
+        }
     }
 
     @Test
