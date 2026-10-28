@@ -49,6 +49,16 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
+    public void toModelType_equivalentUnicodeNames_returnsCanonicalName() throws Exception {
+        // EP: composed and decomposed accents represent the same valid name in stored data.
+        for (String name : List.of("Jos\u00e9 Garc\u00eda", "Jose\u0301 Garci\u0301a")) {
+            JsonAdaptedPerson person = new JsonAdaptedPerson(
+                    name, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+            assertEquals("Jos\u00e9 Garc\u00eda", person.toModelType().getName().fullName);
+        }
+    }
+
+    @Test
     public void toModelType_statusRoundTrip_returnsPerson() throws Exception {
         // EP: an explicitly supplied valid status survives conversion.
         assertEquals(CLIENT_BENSON, new JsonAdaptedPerson(CLIENT_BENSON).toModelType());

@@ -34,6 +34,8 @@ import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.logic.LogicManager;
 import seedu.address.logic.commands.exceptions.CommandException;
@@ -46,6 +48,8 @@ import seedu.address.testutil.PersonBuilder;
 
 public class JsonAddressBookStorageTest {
     private static final Path TEST_DATA_FOLDER = Paths.get("src", "test", "data", "JsonAddressBookStorageTest");
+    private static final String PERSON_JSON_FORMAT = "{\"name\":\"%s\",\"phone\":\"91234567\","
+            + "\"email\":\"jose@example.com\",\"address\":\"1 Test Road\",\"tags\":[]}";
 
     @TempDir
     public Path testFolder;
@@ -88,6 +92,41 @@ public class JsonAddressBookStorageTest {
     public void readAddressBook_invalidAndValidPersonAddressBook_throwDataLoadingException() {
         // EP: valid and invalid contacts are mixed; loading must reject the whole file.
         assertThrows(DataLoadingException.class, () -> readAddressBook("invalidAndValidPersonAddressBook.json"));
+    }
+
+    @Test
+    public void readAndSaveAddressBook_equivalentUnicodeNames_preservesCanonicalName() throws Exception {
+        Path filePath = testFolder.resolve("addressbook.json");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        // EP: raw JSON uses either composed or decomposed accents for the same valid name.
+        for (String name : List.of("Jos\u00e9 Garc\u00eda", "Jose\u0301 Garci\u0301a")) {
+            Files.writeString(filePath, "{\"persons\":[" + String.format(PERSON_JSON_FORMAT, name) + "]}");
+            ReadOnlyAddressBook readBack = storage.readAddressBook().get();
+            assertEquals(1, readBack.getPersonList().size());
+            assertEquals("Jos\u00e9 Garc\u00eda", readBack.getPersonList().get(0).getName().fullName);
+
+            storage.saveAddressBook(readBack);
+            // Check the saved JSON directly so normalization during loading cannot hide a noncanonical save.
+            assertEquals("Jos\u00e9 Garc\u00eda", new ObjectMapper().readTree(filePath.toFile())
+                    .get("persons").get(0).get("name").asText());
+            ReadOnlyAddressBook reloaded = new JsonAddressBookStorage(filePath).readAddressBook().get();
+            assertEquals(new AddressBook(readBack), new AddressBook(reloaded));
+        }
+    }
+
+    @Test
+    public void readAddressBookWithBackup_equivalentUnicodeNames_rejectsDuplicateContacts() throws Exception {
+        // EP: two raw JSON entries have canonically equivalent names; reject them as duplicate contacts.
+        Path filePath = testFolder.resolve("addressbook.json");
+        String json = "{\"persons\":[" + String.format(PERSON_JSON_FORMAT, "Jos\u00e9 Garc\u00eda") + ","
+                + String.format(PERSON_JSON_FORMAT, "Jose\u0301 Garci\u0301a") + "]}";
+        Files.writeString(filePath, json);
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        assertThrows(DataLoadingException.class, storage::readAddressBookWithBackup);
+        assertEquals(json, Files.readString(filePath));
+        assertEquals(-1L, Files.mismatch(filePath, JsonAddressBookStorage.getBackupFilePath(filePath)));
     }
 
     @Test
