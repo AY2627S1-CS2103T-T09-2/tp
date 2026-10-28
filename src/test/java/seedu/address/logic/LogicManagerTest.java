@@ -11,6 +11,7 @@ import static seedu.address.testutil.Assert.assertThrows;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,13 +26,18 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.UserPrefs;
+import seedu.address.model.person.Person;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
+import seedu.address.testutil.PersonBuilder;
 
 public class LogicManagerTest {
     private static final IOException DUMMY_IO_EXCEPTION = new IOException("dummy IO exception");
     private static final IOException DUMMY_AD_EXCEPTION = new AccessDeniedException("dummy access denied exception");
+    private static final String ADD_TAG_TEST_COMMAND =
+            "add n/Tag Test p/91234567 e/tag@example.com a/1 Road t/VIP";
+    private static final String EDIT_TAG_TO_LOWER_CASE_COMMAND = "edit 1 t/vip";
 
     @TempDir
     public Path temporaryFolder;
@@ -85,8 +91,79 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_editTagLetterCaseOnly_savesNewSpelling() throws Exception {
+        // EP: only the letter case of a tag changes. Tags compare case-insensitively, but the data file
+        // keeps the exact spelling, so the edit must still be saved and survive a reload.
+        logic.execute(ADD_TAG_TEST_COMMAND);
+        logic.execute(EDIT_TAG_TO_LOWER_CASE_COMMAND);
+
+        assertEquals(List.of("vip"), getTagNames(model.getAddressBook().getPersonList().get(0)));
+        ReadOnlyAddressBook reloaded = new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"))
+                .readAddressBook().orElseThrow();
+        assertEquals(List.of("vip"), getTagNames(reloaded.getPersonList().get(0)));
+    }
+
+    @Test
+    public void execute_commandsThatChangeNoData_doNotSave() throws Exception {
+        // EP: read-only commands, and edits that set every field to its current value, leave the data
+        // unchanged, so nothing is written. A tag letter case change is then saved exactly once.
+        model.addPerson(buildTagTestPerson());
+        int[] saveCount = {0};
+        JsonAddressBookStorage countingStorage =
+                new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json")) {
+                    @Override
+                    public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
+                        saveCount[0]++;
+                        super.saveAddressBook(addressBook);
+                    }
+                };
+        logic = new LogicManager(model, new StorageManager(countingStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"))));
+
+        for (String command : List.of("find Tag", "due", "help", "list", "edit 1 n/Tag Test", "edit 1 t/VIP")) {
+            logic.execute(command);
+            assertEquals(0, saveCount[0], "Unexpected save after: " + command);
+        }
+
+        logic.execute(EDIT_TAG_TO_LOWER_CASE_COMMAND);
+        assertEquals(1, saveCount[0]);
+    }
+
+    @Test
+    public void execute_tagLetterCaseEditSaveFails_restoresOriginalSpelling() {
+        // EP: a tag letter case edit reaches storage, so a save failure reports an error and rolls back.
+        model.addPerson(buildTagTestPerson());
+        JsonAddressBookStorage failingStorage =
+                new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json")) {
+                    @Override
+                    public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
+                        throw DUMMY_IO_EXCEPTION;
+                    }
+                };
+        logic = new LogicManager(model, new StorageManager(failingStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"))));
+
+        assertThrows(CommandException.class,
+                String.format(LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()), () ->
+                        logic.execute(EDIT_TAG_TO_LOWER_CASE_COMMAND));
+        assertEquals(List.of("VIP"), getTagNames(model.getAddressBook().getPersonList().get(0)));
+    }
+
+    @Test
     public void getFilteredPersonList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, () -> logic.getFilteredPersonList().remove(0));
+    }
+
+    private static Person buildTagTestPerson() {
+        return new PersonBuilder().withName("Tag Test").withPhone("91234567").withEmail("tag@example.com")
+                .withAddress("1 Road").withTags("VIP").build();
+    }
+
+    /**
+     * Returns the exact tag spellings of {@code person}, sorted so the result does not depend on set order.
+     */
+    private static List<String> getTagNames(Person person) {
+        return person.getTags().stream().map(tag -> tag.tagName).sorted().toList();
     }
 
     /**
