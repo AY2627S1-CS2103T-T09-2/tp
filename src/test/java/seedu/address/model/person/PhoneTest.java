@@ -53,6 +53,10 @@ public class PhoneTest {
         assertFalse(Phone.isValidPhone("9123-"));
         assertFalse(Phone.isValidPhone(" 9123"));
 
+        // repeated separators between digits
+        assertFalse(Phone.isValidPhone("9123--4567"));
+        assertFalse(Phone.isValidPhone("9123  4567"));
+
         // EP: digit-only numbers with at least three digits; longer values are also supported.
         assertTrue(Phone.isValidPhone("911")); // Boundary value: minimum of three digits.
         assertTrue(Phone.isValidPhone("93121534"));
