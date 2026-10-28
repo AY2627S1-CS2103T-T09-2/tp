@@ -82,6 +82,27 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </box>
 
+### Recalling previous commands
+
+While the command box is focused, press the arrow keys without modifier keys:
+
+* **Up** recalls the previous submitted command. Press it again to move to older commands.
+* **Down** moves to newer commands. Moving past the newest command restores the unfinished input you had before browsing.
+* At either end, further presses stay there without wrapping around.
+
+Recalling a command only fills the command box. You can edit it, then press **Enter** to submit it.
+If you edit a recalled command and then browse away without submitting it, those edits are discarded.
+Each non-blank submission resets browsing to the newest end of the history.
+
+When you start browsing, if the newest command already matches the command box and an older entry exists,
+the first **Up** skips that newest entry.
+
+The app remembers the **100 most recent non-blank submitted commands**, including commands that produced errors.
+This history is kept only for the current session and is cleared when you restart the app.
+
+Other text-editing keys and modified arrow keys keep their normal behavior. When the contact list is focused,
+Up and Down navigate the list instead.
+
 ### Viewing help: `help`
 
 Opens the Easy-Insurance Command Guide, which shows the available commands together with their formats and examples.
@@ -111,12 +132,18 @@ The contact list shows blue, green, and grey badges respectively for these statu
 
 <box type="tip" seamless>
 
-**Tags:** A contact can have any number of tags, including zero.
+**Tags:** A contact can have any number of tags, including zero. Each tag is a single word of letters and digits,
+up to 50 characters long, such as `t/referral` or `t/lifePolicy2`. Accented and non-English letters are accepted
+(`t/café`), but spaces and symbols are not, so `t/high value` and `t/high-value` are rejected; write `t/highValue`
+instead. Digits must be decimal digits (0 to 9, or the same digits in another script, such as `٣`), so number
+symbols like `½`, `²` and `①` are rejected.
+Tags ignore case, so `t/VIP` and `t/vip` are the same tag and a contact keeps only one of them.
 </box>
 
 Names with extra spaces are saved with single spaces. A contact cannot be added if its name matches an existing contact's name after ignoring case and extra spaces.
-Names must start with a letter, including accented letters. They may then contain letters, digits, spaces,
-hyphens (`-`), apostrophes (`'`), periods (`.`), commas (`,`), and slashes (`/`), so names such as
+Names must start with a letter, including accented letters, and end with a letter or digit. Punctuation cannot
+appear at the end of a name. Names may then contain letters, digits, spaces, hyphens (`-`), apostrophes (`'`),
+periods (`.`), commas (`,`), and slashes (`/`), so names such as
 `Anne-Marie`, `O'Connor`, and `Raj s/o Kumar` are accepted. Phone numbers must contain at least three
 digits. They may start with `+` and include spaces or dashes between digits, for example `+65 9123-4567`.
 A phone number can be at most 30 characters long and an email at most 254 characters long.
@@ -334,7 +361,12 @@ Format: `exit`
 
 ### Saving the data
 
-Easy-Insurance automatically saves contact details, follow-up information and interaction notes after every successful command. You do not need to save manually.
+Easy-Insurance automatically saves after a command changes contact details, follow-up information or
+interaction notes. You do not need to save manually. Commands that leave contact data unchanged, such as
+`list`, `find`, `due`, `history`, `help` and `exit`, do not write to the data file.
+
+If saving fails, the app shows an error and restores your previous contacts and displayed list. Resolve the
+reported file or folder problem, then enter the command again. The previous saved data remains unchanged.
 
 ### Editing the data file
 
@@ -343,7 +375,8 @@ Easy-Insurance data is saved automatically as a JSON file `data/addressbook.json
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, Easy-Insurance copies it to `addressbook.json.bak` in the same `data` folder and then starts with an empty contact list. The invalid `addressbook.json` is overwritten after your next successful command, but the `.bak` copy is kept. To recover, close the app, fix the `.bak` file and rename it back to `addressbook.json`. A later backup replaces the previous `.bak` file, so we still recommend keeping your own copy before editing.<br>
+If your changes make the data file invalid, Easy-Insurance copies it to `addressbook.json.bak` in the same `data` folder and then starts with an empty contact list. The invalid `addressbook.json` is overwritten after your next successful command that changes contact data, but the `.bak` copy is kept. To recover, close the app, fix the `.bak` file and rename it back to `addressbook.json`. A later backup replaces the previous `.bak` file, so we still recommend keeping your own copy before editing.<br>
+If Easy-Insurance cannot make the backup, it stops starting and leaves `addressbook.json` unchanged. Check that the `data` folder is writable and that `addressbook.json.bak` is not a folder, then try again.<br>
 Two contacts whose names differ only in case or extra spaces also make the data file invalid and cause it to load as an empty contact list.<br>
 Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
@@ -361,6 +394,7 @@ Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways
 
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
 2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
+3. **If you run two copies of Easy-Insurance from the same folder at once**, or edit `data/addressbook.json` while the app is open, whichever copy saves last overwrites the other's changes. The remedy is to run only one copy at a time and to close the app before editing the data file.
 
 --------------------------------------------------------------------------------------------------------------------
 

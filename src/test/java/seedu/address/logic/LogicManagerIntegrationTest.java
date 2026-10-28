@@ -27,6 +27,7 @@ import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Status;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
@@ -338,6 +339,52 @@ public class LogicManagerIntegrationTest {
             for (String command : List.of("due -1", "due 366", "due 2147483648")) {
                 assertFailure(command, ParseException.class);
             }
+        }
+    }
+
+    @Test
+    public void execute_unicodeStatus_preservesDataViewAndFile() throws Exception {
+        // EP: rejected commands retain the full list, due ordering, or a combined status/tag filter.
+        for (String viewCommand : List.of("list", "due 7", "list st/CLIENT t/referral")) {
+            logic.execute(viewCommand);
+            List<Person> displayedBefore = List.copyOf(logic.getFilteredPersonList());
+            byte[] fileBefore = Files.readAllBytes(dataFile);
+
+            // EP: dotted I, dotless i and long s resemble ASCII status letters but are unsupported.
+            for (String status : List.of("CL\u0130ENT", "cl\u0131ent", "PRO\u017FPECT")) {
+                for (String command : List.of(
+                        "add n/Status Test p/89999999 e/status@example.com a/7 Test Road st/" + status,
+                        "edit 1 n/Changed Name st/" + status,
+                        "list st/" + status)) {
+                    ParseException exception = assertThrows(ParseException.class, () -> logic.execute(command),
+                            command);
+                    assertEquals(Status.MESSAGE_CONSTRAINTS, exception.getMessage(), command);
+                    assertState(originalPersons, displayedBefore);
+                    assertArrayEquals(fileBefore, Files.readAllBytes(dataFile), command);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void execute_mixedCaseStatuses_savesAndFiltersContacts() throws Exception {
+        initialize(List.of());
+        // EP: each supported ASCII status accepts mixed case and surrounding spaces through add and list.
+        for (String status : List.of("pRoSpEcT", "cLiEnT", "iNaCtIvE")) {
+            Person expectedPerson = new PersonBuilder().withName("Status Test").withPhone("89999999")
+                    .withEmail("status@example.com").withAddress("7 Test Road").withStatus(status).build();
+            logic.execute("add n/Status Test p/89999999 e/status@example.com a/7 Test Road st/  " + status + "  ");
+            logic.execute("list st/  " + status + "  ");
+            assertState(List.of(expectedPerson), List.of(expectedPerson));
+
+            // EP: editing to another supported status removes a contact from the active status filter.
+            String editedStatus = status.equals("iNaCtIvE") ? "cLiEnT" : "iNaCtIvE";
+            Person editedPerson = new PersonBuilder(expectedPerson).withStatus(editedStatus).build();
+            logic.execute("edit 1 st/  " + editedStatus + "  ");
+            assertState(List.of(editedPerson), List.of());
+            reload();
+            assertState(List.of(editedPerson), List.of(editedPerson));
+            initialize(List.of());
         }
     }
 

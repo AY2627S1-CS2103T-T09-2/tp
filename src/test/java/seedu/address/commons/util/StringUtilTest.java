@@ -133,6 +133,11 @@ public class StringUtilTest {
         // EP: a query matches the start of a word, regardless of position or letter case.
         assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Alice Tan", "ta"));
         assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Alice Tan", "ALI"));
+        // EP: each part and the original hyphenated word can be matched by prefix.
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Anne-Marie Tan", "mar"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Anne-Marie Tan", "ANNE"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Anne-Marie Tan", "Anne-Marie"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Anne-Marie Tan", "anne-m"));
 
         // EP: a query occurs only inside a word, so substring matching would be incorrect.
         assertFalse(StringUtil.containsWordStartingWithIgnoreCase("Alice Tan", "lic"));

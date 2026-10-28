@@ -20,6 +20,7 @@ import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.ReadOnlyUserPrefs;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.util.SampleDataUtil;
+import seedu.address.storage.DataBackupException;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.Storage;
@@ -77,6 +78,8 @@ public class MainApp extends Application {
                         + " populated with sample Easy-Insurance contacts.");
             }
             initialData = addressBookOptional.orElseGet(SampleDataUtil::getSampleAddressBook);
+        } catch (DataBackupException e) {
+            throw new IllegalStateException("Cannot start Easy-Insurance: " + e.getMessage(), e);
         } catch (DataLoadingException e) {
             logger.warning("Data file at " + storage.getAddressBookFilePath() + " could not be loaded."
                     + " Will be starting with an empty Easy-Insurance contact list.");

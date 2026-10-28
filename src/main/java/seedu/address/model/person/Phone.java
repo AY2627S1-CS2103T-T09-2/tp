@@ -17,7 +17,9 @@ public class Phone {
 
     // The lookahead checks for 3 digits; the rest uses a character class, which the regex engine
     // matches in a loop rather than by recursion, so very long input cannot overflow the stack.
-    public static final String VALIDATION_REGEX = "\\+?(?=(?:[ -]*\\d){3})\\d[\\d -]*\\d";
+    // The negative lookahead rejects consecutive spaces or dashes between digits.
+    public static final String VALIDATION_REGEX =
+            "\\+?(?=(?:[ -]*\\d){3})(?![\\d -]*[ -]{2})\\d[\\d -]*\\d";
     public final String value;
 
     /**
