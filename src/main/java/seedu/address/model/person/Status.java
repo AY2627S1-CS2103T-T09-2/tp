@@ -30,7 +30,7 @@ public enum Status {
             return false;
         }
 
-        String normalizedInput = trimmedInput.toUpperCase(Locale.ROOT);
+        String normalizedInput = normalize(input);
         for (Status status : values()) {
             if (status.name().equals(normalizedInput)) {
                 return true;
@@ -45,6 +45,13 @@ public enum Status {
     public static Status parse(String input) {
         requireNonNull(input);
         checkArgument(isValidStatus(input), MESSAGE_CONSTRAINTS);
-        return valueOf(input.trim().toUpperCase(Locale.ROOT));
+        return valueOf(normalize(input));
+    }
+
+    /**
+     * Returns the spelling used for status validation and conversion, independent of the default locale.
+     */
+    private static String normalize(String input) {
+        return input.trim().toUpperCase(Locale.ROOT);
     }
 }

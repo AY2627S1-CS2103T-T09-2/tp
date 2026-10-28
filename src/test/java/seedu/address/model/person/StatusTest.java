@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 public class StatusTest {
 
     private static final List<String> INVALID_UNICODE_STATUSES =
-            List.of("CL\u0130ENT", "cl\u0131ent", "PRO\u017fPECT", "\uff23LIENT");
+            List.of("CL\u0130ENT", "cl\u0131ent", "PRO\u017fPECT", "\uff23LIENT", "\u0421LIENT");
 
     @Test
     public void default_isProspect() {
@@ -49,7 +49,7 @@ public class StatusTest {
 
     @Test
     public void isValidStatus_unicodeLookalikes_returnsFalse() {
-        // EP: non-ASCII lookalikes: dotted I, dotless i, long s and full-width C.
+        // EP: non-ASCII lookalikes: dotted I, dotless i, long s, full-width C and Cyrillic C.
         for (String input : INVALID_UNICODE_STATUSES) {
             assertFalse(Status.isValidStatus(input), input);
         }
