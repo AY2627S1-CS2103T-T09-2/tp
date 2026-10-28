@@ -364,7 +364,7 @@ Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways
 ## FAQ
 
 **Q**: How do I transfer my data to another computer?<br>
-**A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous Easy-Insurance home folder.
+**A**: Install the app on the other computer and make sure it is closed. In its home folder, create a folder named `data` if there is not one already. Copy `addressbook.json` from the `data` folder in your old home folder into this `data` folder, replacing any file already there. Your contacts appear the next time you launch the app.
 
 --------------------------------------------------------------------------------------------------------------------
 
