@@ -91,7 +91,7 @@ While the command box is focused, press the arrow keys without modifier keys:
 * At either end, further presses stay there without wrapping around.
 
 Recalling a command only fills the command box. You can edit it, then press **Enter** to submit it.
-Each submission resets browsing to the newest end of the history.
+Each non-blank submission resets browsing to the newest end of the history.
 
 The app remembers the **100 most recent non-blank submitted commands**, including commands that produced errors.
 This history is kept only for the current session and is cleared when you restart the app.
