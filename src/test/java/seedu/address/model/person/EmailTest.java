@@ -74,9 +74,13 @@ public class EmailTest {
         assertTrue(Email.isValidEmail("PeterJack+1190@example.com"));
         assertTrue(Email.isValidEmail("PeterJack-1190@example.com"));
 
-        // EP: consecutive supported punctuation in the local part.
-        assertTrue(Email.isValidEmail("peter..jack@example.com"));
-        assertTrue(Email.isValidEmail("peter++jack@example.com"));
+        // EP: consecutive periods in the local part are not allowed.
+        assertFalse(Email.isValidEmail("peter..jack@example.com"));
+
+        // EP: consecutive supported non-period punctuation in the local part.
+        assertTrue(Email.isValidEmail("sales__sg@example.com"));
+        assertTrue(Email.isValidEmail("sales++sg@example.com"));
+        assertTrue(Email.isValidEmail("sales--sg@example.com"));
         assertTrue(Email.isValidEmail("peter_-jack@example.com"));
 
         // EP: valid domain labels containing consecutive hyphens.
