@@ -32,6 +32,33 @@ public class CommandHistoryTest {
     }
 
     @Test
+    public void navigate_newestMatchesInput_recallsOlderCommandAndRestoresInput() {
+        // EP: a failed command remains in the input; the first Up recalls an older entry.
+        CommandHistory history = new CommandHistory();
+        history.add("list");
+        history.add("invalid command");
+
+        assertEquals("list", history.previous("invalid command"));
+        assertEquals("invalid command", history.next("list"));
+        assertEquals("invalid command", history.next("invalid command"));
+
+        // EP: starting another browsing cycle skips the matching newest entry again.
+        assertEquals("list", history.previous("invalid command"));
+    }
+
+    @Test
+    public void navigate_onlyEntryMatchesInput_preservesInputWithoutWrapping() {
+        // EP: the only entry matches the input; there is no older entry to recall.
+        CommandHistory history = new CommandHistory();
+        history.add("invalid command");
+
+        assertEquals("invalid command", history.previous("invalid command"));
+        assertEquals("invalid command", history.previous("invalid command"));
+        assertEquals("invalid command", history.next("invalid command"));
+        assertEquals("invalid command", history.next("invalid command"));
+    }
+
+    @Test
     public void navigate_multipleEntries_recallsInSubmissionOrder() {
         // EP: multiple entries allow movement in both directions between the boundaries.
         CommandHistory history = new CommandHistory();
