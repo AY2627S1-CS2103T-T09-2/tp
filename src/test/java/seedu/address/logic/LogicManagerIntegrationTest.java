@@ -39,6 +39,9 @@ import seedu.address.testutil.PersonBuilder;
  */
 public class LogicManagerIntegrationTest {
 
+    private static final String NORA_EDIT_FEEDBACK = "Edited contact: Nora Tan; Phone: 81000001; "
+            + "Email: nora@example.com; Address: 1 North Road; Status: PROSPECT; ";
+
     @TempDir
     private Path temporaryFolder;
 
@@ -131,6 +134,62 @@ public class LogicManagerIntegrationTest {
         assertFilteredEdit("list st/CLIENT", List.of(nextMonth, nextWeek, zaraOverdue));
         assertFilteredEdit("list t/ReFeRrAl", List.of(nextMonth, nextWeek, amyOverdue));
         assertFilteredEdit("list st/client t/referral", List.of(nextMonth, nextWeek));
+    }
+
+    @Test
+    public void execute_clearFollowUp_reportsEmptyDateAndPreservesOtherFields() throws Exception {
+        Person clearedPerson = new PersonBuilder(noFollowUp).withInteractionNotes("Called client").build();
+        Person personWithFollowUp = new PersonBuilder(clearedPerson).withFollowUp("25-12-2099").build();
+        initialize(List.of(nextMonth, personWithFollowUp));
+        logic.execute("find Nora");
+
+        // EP: clearing a pending date, then clearing an already-empty date, in a filtered view.
+        for (int attempt = 0; attempt < 2; attempt++) {
+            CommandResult result = logic.execute("edit 1 f/");
+            assertEquals(NORA_EDIT_FEEDBACK + "Tags: [family]; Follow-up: none", result.getFeedbackToUser());
+            assertState(List.of(nextMonth, clearedPerson), List.of(clearedPerson));
+        }
+
+        reload();
+        assertState(List.of(nextMonth, clearedPerson), List.of(nextMonth, clearedPerson));
+    }
+
+    @Test
+    public void execute_replaceThenClearTags_reportsTagsAndPreservesFollowUp() throws Exception {
+        Person personWithFollowUp = new PersonBuilder(noFollowUp).withFollowUp("25-12-2099").build();
+        initialize(List.of(personWithFollowUp));
+
+        // EP: replacing tags with multiple values reports each tag separately in card order.
+        CommandResult result = logic.execute("edit 1 t/b t/a");
+        assertEquals(NORA_EDIT_FEEDBACK + "Tags: [a] [b]; Follow-up: 25-12-2099", result.getFeedbackToUser());
+        Person editedPerson = new PersonBuilder(personWithFollowUp).withTags("a", "b").build();
+        assertState(List.of(editedPerson), List.of(editedPerson));
+
+        // EP: clearing populated tags and repeating the clear both explicitly report an empty tag set.
+        Person clearedPerson = new PersonBuilder(personWithFollowUp).withTags().build();
+        for (int attempt = 0; attempt < 2; attempt++) {
+            result = logic.execute("edit 1 t/");
+            assertEquals(NORA_EDIT_FEEDBACK + "Tags: none; Follow-up: 25-12-2099", result.getFeedbackToUser());
+            assertState(List.of(clearedPerson), List.of(clearedPerson));
+        }
+
+        reload();
+        assertState(List.of(clearedPerson), List.of(clearedPerson));
+    }
+
+    @Test
+    public void execute_clearTagsAndFollowUp_reportsBothEmptyFields() throws Exception {
+        Person clearedPerson = new PersonBuilder(noFollowUp).withTags().withInteractionNotes("Called client").build();
+        Person originalPerson = new PersonBuilder(clearedPerson).withTags("family", "referral")
+                .withFollowUp("25-12-2099").build();
+        initialize(List.of(originalPerson));
+
+        // EP: both optional fields are explicitly cleared in the same parsed command.
+        CommandResult result = logic.execute("edit 1 f/ t/");
+        assertEquals(NORA_EDIT_FEEDBACK + "Tags: none; Follow-up: none", result.getFeedbackToUser());
+        assertState(List.of(clearedPerson), List.of(clearedPerson));
+        reload();
+        assertState(List.of(clearedPerson), List.of(clearedPerson));
     }
 
     @Test
