@@ -74,8 +74,8 @@ public class MainApp extends Application {
         try {
             addressBookOptional = storage.readAddressBookWithBackup();
             if (addressBookOptional.isEmpty()) {
-                logger.info("Creating a new data file " + storage.getAddressBookFilePath()
-                        + " populated with sample Easy-Insurance contacts.");
+                logger.info("Data file " + storage.getAddressBookFilePath() + " not found. Starting with sample"
+                        + " Easy-Insurance contacts; the file is created when contact data first changes.");
             }
             initialData = addressBookOptional.orElseGet(SampleDataUtil::getSampleAddressBook);
         } catch (DataBackupException e) {

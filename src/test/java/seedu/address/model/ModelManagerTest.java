@@ -148,4 +148,23 @@ public class ModelManagerTest {
         differentUserPrefs.setGuiSettings(new GuiSettings(1, 2, 3, 4));
         assertFalse(modelManager.equals(new ModelManager(addressBook, differentUserPrefs)));
     }
+
+    @Test
+    public void equals_differentSortOrder_returnsFalseUntilReset() {
+        AddressBook addressBook = new AddressBookBuilder().withPerson(ALICE).withPerson(BENSON).build();
+        UserPrefs userPrefs = new UserPrefs();
+        modelManager = new ModelManager(addressBook, userPrefs);
+        ModelManager unsortedModelManager = new ModelManager(addressBook, userPrefs);
+
+        // same contacts shown in a different order -> returns false
+        modelManager.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS,
+                Comparator.comparing((Person person) -> person.getName().fullName).reversed());
+        assertEquals(List.of(BENSON, ALICE), modelManager.getFilteredPersonList());
+        assertFalse(modelManager.equals(unsortedModelManager));
+        assertFalse(unsortedModelManager.equals(modelManager));
+
+        // filter reset without a comparator restores insertion order -> returns true
+        modelManager.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+        assertTrue(modelManager.equals(unsortedModelManager));
+    }
 }

@@ -710,7 +710,7 @@ testers are expected to do more *exploratory* testing.
    1. Close the app. Delete `data/addressbook.json` from the folder you ran the app from.
 
    1. Relaunch the app.<br>
-      Expected: The app starts with the sample contacts. The data file is created again after the next command that runs without an error, such as `list`.
+      Expected: The app starts with the sample contacts. The data file is created again after the next command that changes contact data, such as `add` or `note`. Commands that only show data, such as `list`, do not create it.
 
 1. Dealing with a corrupted data file
 
