@@ -335,6 +335,8 @@ Examples:
 
 ### Viewing follow-ups that are due: `due`
 
+Shows contacts whose follow-up date is today or earlier, or within the next `DAYS` days if given, earliest first.
+
 Format: `due [DAYS]`
 
 * `due` shows follow-ups due today, plus any overdue ones.
