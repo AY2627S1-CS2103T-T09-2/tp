@@ -67,7 +67,7 @@ public class InteractionNote {
         if (test == null || test.isBlank()) {
             return false;
         }
-    
+
         String trimmedNote = test.trim();
         return trimmedNote.codePointCount(0, trimmedNote.length()) <= MAX_LENGTH;
     }
