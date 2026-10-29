@@ -120,6 +120,13 @@ Opens the Easy-Insurance Command Guide, which shows the available commands toget
 The help window also provides a **Copy User Guide URL** button for copying the full User Guide link.
 The full URL is shown below the command guide. After copying, a message confirms success or asks you to retry.
 
+When Help opens, the command guide has keyboard focus:
+
+* Press **Up/Down** or **Page Up/Page Down** to scroll the guide.
+* Press **Tab** to focus **Copy User Guide URL**, and **Space** to activate it.
+  Press **Shift+Tab** to return to the guide.
+* Press **Esc** to close Help.
+
 ![help message](images/helpMessage.png)
 
 Format: `help`
