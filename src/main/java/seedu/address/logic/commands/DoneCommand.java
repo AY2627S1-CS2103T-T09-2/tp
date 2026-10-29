@@ -20,8 +20,12 @@ import seedu.address.model.person.Person;
 public class DoneCommand extends Command {
 
     public static final String COMMAND_WORD = "done";
-    public static final String MESSAGE_USAGE = COMMAND_WORD + " INDEX";
+    public static final String MESSAGE_USAGE = COMMAND_WORD
+            + ": Marks the pending follow-up of the contact identified by the displayed index as completed.\n"
+            + "Parameters: INDEX (must be a positive integer)\n"
+            + "Example: " + COMMAND_WORD + " 1";
     public static final String MESSAGE_SUCCESS = "Marked follow-up for %1$s as completed (scheduled for %2$s).";
+
     public static final String MESSAGE_NO_PENDING_FOLLOW_UP = "%1$s does not have a pending follow-up.";
 
     private static final Logger logger = LogsCenter.getLogger(DoneCommand.class);
