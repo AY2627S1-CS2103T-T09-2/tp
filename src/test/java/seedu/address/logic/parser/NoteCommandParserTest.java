@@ -27,29 +27,25 @@ public class NoteCommandParserTest {
 
     @Test
     public void parse_missingSpaceBeforePrefix_throwsParseException() {
-        assertThrows(
-                ParseException.class,
+        assertThrows(ParseException.class,
                 () -> parser.parse("1nt/nospace"));
     }
 
     @Test
     public void parse_duplicateNotePrefix_throwsParseException() {
-        assertThrows(
-                ParseException.class,
+        assertThrows(ParseException.class,
                 () -> parser.parse("1 nt/a nt/b"));
     }
 
     @Test
     public void parse_missingIndex_throwsParseException() {
-        assertThrows(
-                ParseException.class,
+        assertThrows(ParseException.class,
                 () -> parser.parse("nt/Called client"));
     }
 
     @Test
     public void parse_missingNote_throwsParseException() {
-        assertThrows(
-                ParseException.class,
+        assertThrows(ParseException.class,
                 () -> parser.parse("1 nt/"));
     }
 }
