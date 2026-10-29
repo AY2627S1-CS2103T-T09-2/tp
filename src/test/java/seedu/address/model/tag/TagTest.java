@@ -241,7 +241,15 @@ public class TagTest {
 
     @Test
     public void isValidTagName_overlyLongInputs_rejectedQuickly() {
-        // Case mapping a long run of Greek sigma takes minutes, so the length must be checked first.
+        // NFC sorts the combining marks on each letter, and sorting a long run of marks given in the wrong
+        // order takes over ten seconds here, so the raw length must be checked before normalizing.
+        String unsortedMarks = "a" + "\u0315".repeat(100_000) + "\u0300".repeat(100_000);
+        assertTimeoutPreemptively(FAST, () -> assertFalse(Tag.isValidTagName(unsortedMarks)));
+        assertTimeoutPreemptively(FAST, () -> assertThrows(IllegalArgumentException.class,
+                Tag.MESSAGE_CONSTRAINTS, () -> new Tag(unsortedMarks)));
+
+        // Lowercasing a long run of capital sigma takes over a minute, so the constructor must reject
+        // the name before it works out the case-insensitive comparison key.
         String sigmas = "\u03A3".repeat(100_000);
         assertTimeoutPreemptively(FAST, () -> assertFalse(Tag.isValidTagName(sigmas)));
         assertTimeoutPreemptively(FAST, () ->
@@ -336,8 +344,10 @@ public class TagTest {
         assertEqualTags("\u03A3", "\u03C2");
         assertEqualTags("\u03BF\u03C3", "\u039F\u03A3");
         assertEqualTags("\u03BF\u03C3", "\u03BF\u03C2");
-        // Lowercasing this capital gives a string that must be composed again to match.
+        // A capital with no precomposed form matches the precomposed small letter.
         assertEqualTags("\u03AA\u0301", "\u0390");
+        // Lowercasing this capital gives a string that must be composed again to match.
+        assertEqualTags("\u1FFC\u0342", "\u1FF7");
         // Dotless i and long s uppercase to ASCII I and S under Locale.ROOT case mapping, so they fold
         // together with i and s. This is on purpose: it matches Java's equalsIgnoreCase and keeps the
         // result the same whatever the user's default locale is.
@@ -345,6 +355,9 @@ public class TagTest {
         assertEqualTags("\u0131", "i");
         assertEqualTags("\u017F", "S");
         assertEqualTags("\u017F", "s");
+        // Uppercasing dotless i with an accent gives I and a separate accent, which must be composed again.
+        assertEqualTags("\u0131\u0300", "\u00CC");
+        assertEqualTags("\u0131\u0300", "\u00EC");
     }
 
     @Test
