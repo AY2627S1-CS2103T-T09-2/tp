@@ -21,7 +21,7 @@ public class NoteCommandParser implements Parser<NoteCommand> {
         String trimmedArgs = args.trim();
         String notePrefix = PREFIX_NOTE.getPrefix();
 
-        int prefixPosition = trimmedArgs.indexOf(notePrefix);
+        int prefixPosition = findNotePrefixPosition(trimmedArgs, notePrefix);
 
         if (prefixPosition < 0) {
             throw new ParseException(
@@ -55,5 +55,30 @@ public class NoteCommandParser implements Parser<NoteCommand> {
         return new NoteCommand(
                 index,
                 new InteractionNote(noteText));
+    }
+
+    /**
+     * Returns the position of the first note prefix that is separated from
+     * the contact index by whitespace.
+     */
+    private static int findNotePrefixPosition(String args, String notePrefix) {
+        int searchFrom = 0;
+
+        while (searchFrom < args.length()) {
+            int position = args.indexOf(notePrefix, searchFrom);
+
+            if (position < 0) {
+                return -1;
+            }
+
+            if (position > 0
+                    && Character.isWhitespace(args.charAt(position - 1))) {
+                return position;
+            }
+
+            searchFrom = position + notePrefix.length();
+        }
+
+        return -1;
     }
 }

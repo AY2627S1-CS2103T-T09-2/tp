@@ -16,8 +16,8 @@ public class InteractionNote {
     public static final int MAX_LENGTH = 2000;
 
     public static final String MESSAGE_CONSTRAINTS =
-            "Interaction notes must not be blank and must not exceed "
-                    + MAX_LENGTH + " characters.";
+            "Interaction notes must not be blank, must not contain control characters, "
+                    + "and must not exceed " + MAX_LENGTH + " characters.";
 
     private final String value;
     private final LocalDateTime createdAt;
@@ -64,9 +64,10 @@ public class InteractionNote {
      * Returns true if the given string is a valid interaction note.
      */
     public static boolean isValidNote(String test) {
-        return test != null
-                && !isVisuallyBlank(test)
-                && test.trim().length() <= MAX_LENGTH;
+      return test != null
+              && !isVisuallyBlank(test)
+              && test.trim().length() <= MAX_LENGTH
+              && test.chars().noneMatch(Character::isISOControl);
     }
 
     /**

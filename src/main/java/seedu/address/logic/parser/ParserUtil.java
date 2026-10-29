@@ -1,10 +1,15 @@
 package seedu.address.logic.parser;
 
 import static java.util.Objects.requireNonNull;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_LAST_CONTACT;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_NOTE;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.StringUtil;
@@ -23,6 +28,74 @@ import seedu.address.model.tag.Tag;
 public class ParserUtil {
 
     public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer.";
+
+    public static final String MESSAGE_UNSUPPORTED_PREFIX = "%1$s is not used by %2$s.";
+    public static final String MESSAGE_USE_NOTE_COMMAND = "Use note INDEX nt/NOTE to add a note.";
+    public static final String MESSAGE_USE_CONTACTED_COMMAND =
+            "Use contacted INDEX d/DD-MM-YYYY to record the last contact date.";
+
+    /**
+     * Name words that start like a prefix, such as {@code d/o} in "Siti d/o Ahmad" or "Siti D/O-Kumar",
+     * in any case and not followed by another letter or digit.
+     */
+    private static final Pattern NAME_WORD_LIKE_PREFIX = Pattern.compile("(?i)(?:a/[lp]|d/o)(?![\\p{L}\\p{N}]).*");
+
+    /**
+     * Returns the first prefix in {@code args} that is one of {@link CliSyntax#ALL_PREFIXES} but not one of
+     * {@code supportedPrefixes}, or an empty {@code Optional} if there is none.
+     * A prefix counts only in lowercase at the start of a word, where words are split on spaces, tabs and
+     * line breaks, so {@code data/x} and {@code NT/x} do not count. This is wider than {@link ArgumentTokenizer}, which
+     * only finds a prefix after a plain space, so a prefix typed after a tab is reported too instead of being
+     * saved as part of the field before it. The name words {@code a/l}, {@code a/p} and {@code d/o}
+     * (in any case, alone or joined by punctuation such as {@code d/o-Kumar}) do not count either, so names
+     * such as "Siti d/o Ahmad" are left alone.
+     */
+    public static Optional<Prefix> findUnsupportedPrefix(String args, Prefix... supportedPrefixes) {
+        requireNonNull(args);
+        List<Prefix> supported = List.of(supportedPrefixes);
+        for (String word : args.strip().split("\\s+")) {
+            if (NAME_WORD_LIKE_PREFIX.matcher(word).matches()) {
+                continue;
+            }
+            Optional<Prefix> unsupportedPrefix = CliSyntax.ALL_PREFIXES.stream()
+                    .filter(prefix -> !supported.contains(prefix) && word.startsWith(prefix.getPrefix()))
+                    .findFirst();
+            if (unsupportedPrefix.isPresent()) {
+                return unsupportedPrefix;
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Checks that {@code args} has no prefix of another command, as found by
+     * {@link #findUnsupportedPrefix(String, Prefix...)}. Without this check, such a prefix and its value
+     * would be saved as part of the field before it, e.g. {@code add n/Bob nt/Met at roadshow ...} would
+     * name the contact "Bob nt/Met at roadshow".
+     *
+     * @throws ParseException naming the prefix, {@code commandWord} and the command that uses the prefix.
+     */
+    public static void verifyNoUnsupportedPrefix(String args, String commandWord, Prefix... supportedPrefixes)
+            throws ParseException {
+        Optional<Prefix> unsupportedPrefix = findUnsupportedPrefix(args, supportedPrefixes);
+        if (unsupportedPrefix.isEmpty()) {
+            return;
+        }
+        Prefix prefix = unsupportedPrefix.get();
+        String hint = prefix.equals(PREFIX_NOTE) ? MESSAGE_USE_NOTE_COMMAND
+                : prefix.equals(PREFIX_LAST_CONTACT) ? MESSAGE_USE_CONTACTED_COMMAND
+                : "";
+        throw new ParseException(getUnsupportedPrefixMessage(prefix, commandWord, hint));
+    }
+
+    /**
+     * Returns the error for a {@code prefix} that {@code commandWord} does not take, in the form
+     * {@code "nt/ is not used by add."} followed by {@code hint} if it is not empty.
+     */
+    public static String getUnsupportedPrefixMessage(Prefix prefix, String commandWord, String hint) {
+        String message = String.format(MESSAGE_UNSUPPORTED_PREFIX, prefix, commandWord);
+        return hint.isEmpty() ? message : message + " " + hint;
+    }
 
     /**
      * Parses {@code oneBasedIndex} into an {@code Index} and returns it. Leading and trailing whitespaces will be

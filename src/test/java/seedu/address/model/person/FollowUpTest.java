@@ -44,7 +44,10 @@ public class FollowUpTest {
         assertThrows(NullPointerException.class, () -> FollowUp.isValidFollowUp(null));
 
         // EP: blank input rather than date text.
-        assertFalse(FollowUp.isValidFollowUp("")); // Boundary value: zero characters.
+        // Boundary value: zero characters.
+        // @@author tommyquak
+        assertFalse(FollowUp.isValidFollowUp(""));
+        // @@author
         assertFalse(FollowUp.isValidFollowUp(" ")); // spaces only
 
         // EP: nonnumeric input.
@@ -66,22 +69,40 @@ public class FollowUpTest {
 
         // EP: days beyond the selected month's length.
         assertFalse(FollowUp.isValidFollowUp("31-02-2026")); // February has no 31st
-        assertFalse(FollowUp.isValidFollowUp("29-02-2026")); // Boundary value: day after non-leap February ends.
+        // Boundary value: day after non-leap February ends.
+        // @@author tommyquak
+        assertFalse(FollowUp.isValidFollowUp("29-02-2026"));
+        // @@author
 
         // EP: day numbers below the calendar range.
-        assertFalse(FollowUp.isValidFollowUp("00-09-2026")); // Boundary value: one below the minimum day.
+        // Boundary value: one below the minimum day.
+        // @@author tommyquak
+        assertFalse(FollowUp.isValidFollowUp("00-09-2026"));
+        // @@author
 
         // EP: month numbers above the calendar range.
-        assertFalse(FollowUp.isValidFollowUp("20-13-2026")); // Boundary value: one above the maximum month.
+        // Boundary value: one above the maximum month.
+        // @@author tommyquak
+        assertFalse(FollowUp.isValidFollowUp("20-13-2026"));
+        // @@author
 
         // EP: year below the supported range. Boundary value: year zero.
         assertFalse(FollowUp.isValidFollowUp("01-01-0000"));
 
         // EP: real calendar dates in DD-MM-YYYY form, including month/year ends and leap days.
         assertTrue(FollowUp.isValidFollowUp("20-09-2026"));
-        assertTrue(FollowUp.isValidFollowUp("01-01-2027")); // Boundary values: minimum day and month.
-        assertTrue(FollowUp.isValidFollowUp("29-02-2028")); // Boundary value: final day of a leap-year February.
-        assertTrue(FollowUp.isValidFollowUp("31-12-2026")); // Boundary value: final day of the year.
+        // Boundary values: minimum day and month.
+        // @@author tommyquak
+        assertTrue(FollowUp.isValidFollowUp("01-01-2027"));
+        // @@author
+        // Boundary value: final day of a leap-year February.
+        // @@author tommyquak
+        assertTrue(FollowUp.isValidFollowUp("29-02-2028"));
+        // @@author
+        // Boundary value: final day of the year.
+        // @@author tommyquak
+        assertTrue(FollowUp.isValidFollowUp("31-12-2026"));
+        // @@author
         assertTrue(FollowUp.isValidFollowUp("01-01-0001")); // Boundary value: minimum supported year.
     }
 
@@ -95,13 +116,19 @@ public class FollowUpTest {
         FollowUp followUp = new FollowUp("20-09-2026");
 
         // EP: follow-up before the comparison date. Boundary value: one day before it.
+        // @@author tommyquak
         assertTrue(followUp.isBefore(LocalDate.of(2026, 9, 21)));
+        // @@author
 
         // EP: follow-up equal to the comparison date; strict comparison excludes equality.
+        // @@author tommyquak
         assertFalse(followUp.isBefore(LocalDate.of(2026, 9, 20)));
+        // @@author
 
         // EP: follow-up after the comparison date. Boundary value: one day after it.
+        // @@author tommyquak
         assertFalse(followUp.isBefore(LocalDate.of(2026, 9, 19)));
+        // @@author
 
         // EP: null comparison date.
         assertThrows(NullPointerException.class, () -> followUp.isBefore(null));
@@ -112,13 +139,19 @@ public class FollowUpTest {
         FollowUp followUp = new FollowUp("20-09-2026");
 
         // EP: follow-up before the cutoff. Boundary value: one day before it.
+        // @@author tommyquak
         assertTrue(followUp.isOnOrBefore(LocalDate.of(2026, 9, 21)));
+        // @@author
 
         // EP: follow-up on the cutoff; inclusive comparison includes equality.
+        // @@author tommyquak
         assertTrue(followUp.isOnOrBefore(LocalDate.of(2026, 9, 20)));
+        // @@author
 
         // EP: follow-up after the cutoff. Boundary value: one day after it.
+        // @@author tommyquak
         assertFalse(followUp.isOnOrBefore(LocalDate.of(2026, 9, 19)));
+        // @@author
 
         // EP: null cutoff.
         assertThrows(NullPointerException.class, () -> followUp.isOnOrBefore(null));

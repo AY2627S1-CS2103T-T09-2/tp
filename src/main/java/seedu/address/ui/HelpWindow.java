@@ -5,19 +5,25 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 
 import javafx.fxml.FXML;
+import javafx.geometry.Dimension2D;
+import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import seedu.address.commons.core.LogsCenter;
 
 /**
@@ -30,14 +36,23 @@ public class HelpWindow extends UiPart<Stage> {
 
     private static final Logger logger = LogsCenter.getLogger(HelpWindow.class);
     private static final String FXML = "HelpWindow.fxml";
-    private static final double DEFAULT_WIDTH = 1040;
-    private static final double DEFAULT_HEIGHT = 720;
+    private static final double DEFAULT_WIDTH = 640;
+    private static final double DEFAULT_HEIGHT = 540;
+    private static final double MIN_WIDTH = 600;
+    private static final double MIN_HEIGHT = 480;
+    private static final double WINDOW_GAP = 16;
     private static final double COMPACT_LAYOUT_WIDTH = 760;
 
     private boolean compactLayout;
 
     @FXML
     private Button copyButton;
+
+    @FXML
+    private Label userGuideUrl;
+
+    @FXML
+    private Label copyStatus;
 
     @FXML
     private ScrollPane commandGuideScrollPane;
@@ -55,8 +70,10 @@ public class HelpWindow extends UiPart<Stage> {
      */
     public HelpWindow(Stage root) {
         super(FXML, root);
+        userGuideUrl.setText(USERGUIDE_URL);
         configureFonts();
         layoutCommandGuide(false);
+        getRoot().getScene().addEventFilter(KeyEvent.KEY_PRESSED, event -> handleCloseKey(event, this::hide));
         commandGuideScrollPane.viewportBoundsProperty().addListener((observable, oldBounds, newBounds) -> {
             boolean compact = newBounds.getWidth() < COMPACT_LAYOUT_WIDTH;
             if (newBounds.getWidth() > 0 && compact != compactLayout) {
@@ -161,40 +178,109 @@ public class HelpWindow extends UiPart<Stage> {
      *     </ul>
      */
     public void show() {
-        fitToScreen();
+        show(null);
+    }
+
+    /**
+     * Shows Help beside the main window on first opening, retaining its position on later openings.
+     * A null main window uses the primary screen for the initial placement.
+     */
+    public void show(Window mainWindow) {
+        fitToScreen(mainWindow);
+        copyStatus.setText("");
+        Rectangle2D bounds = new Rectangle2D(getRoot().getX(), getRoot().getY(),
+                getRoot().getWidth(), getRoot().getHeight());
         getRoot().show();
+        // The native window manager may adjust the bounds while showing a previously hidden window.
+        getRoot().setX(bounds.getMinX());
+        getRoot().setY(bounds.getMinY());
+        getRoot().setWidth(bounds.getWidth());
+        getRoot().setHeight(bounds.getHeight());
+        commandGuideScrollPane.requestFocus();
         logger.fine("Showing command guide.");
     }
 
     /**
-     * Fits and centers the help window within its screen's usable area.
+     * Keeps Help within its screen's usable area without resetting a user-chosen position or size.
      */
-    private void fitToScreen() {
+    private void fitToScreen(Window mainWindow) {
         Stage stage = getRoot();
         double previousWidth = stage.getWidth();
         double previousHeight = stage.getHeight();
-        double width = previousWidth;
-        double height = previousHeight;
-        width = Double.isNaN(width) || width <= 0 ? DEFAULT_WIDTH : width;
-        height = Double.isNaN(height) || height <= 0 ? DEFAULT_HEIGHT : height;
         Screen screen = Screen.getPrimary();
 
         if (!Double.isNaN(stage.getX()) && !Double.isNaN(stage.getY())) {
             screen = Screen.getScreensForRectangle(stage.getX(), stage.getY(), 1, 1).stream()
                     .findFirst().orElse(screen);
+        } else if (mainWindow != null) {
+            screen = Screen.getScreensForRectangle(mainWindow.getX(), mainWindow.getY(),
+                    mainWindow.getWidth(), mainWindow.getHeight()).stream().findFirst().orElse(screen);
         }
 
         Rectangle2D visualBounds = screen.getVisualBounds();
-        width = Math.min(width, visualBounds.getWidth());
-        height = Math.min(height, visualBounds.getHeight());
+        Dimension2D size = getWindowSize(previousWidth, previousHeight, visualBounds);
+        double width = size.getWidth();
+        double height = size.getHeight();
+        stage.setMinWidth(Math.min(MIN_WIDTH, visualBounds.getWidth()));
+        stage.setMinHeight(Math.min(MIN_HEIGHT, visualBounds.getHeight()));
         stage.setWidth(width);
         stage.setHeight(height);
-        stage.setX(visualBounds.getMinX() + (visualBounds.getWidth() - width) / 2);
-        stage.setY(visualBounds.getMinY() + (visualBounds.getHeight() - height) / 2);
+        Point2D position;
+        if ((Double.isNaN(stage.getX()) || Double.isNaN(stage.getY())) && mainWindow != null) {
+            Rectangle2D mainBounds = new Rectangle2D(mainWindow.getX(), mainWindow.getY(),
+                    mainWindow.getWidth(), mainWindow.getHeight());
+            position = getInitialPosition(mainBounds, width, height, visualBounds);
+        } else {
+            position = getWindowPosition(stage.getX(), stage.getY(), width, height, visualBounds);
+        }
+        stage.setX(position.getX());
+        stage.setY(position.getY());
         if (Double.compare(previousWidth, width) != 0 || Double.compare(previousHeight, height) != 0) {
             logger.fine("Adjusted command guide size; from=" + previousWidth + "x" + previousHeight
                     + ", to=" + width + "x" + height);
         }
+    }
+
+    /**
+     * Returns an initial position beside the main window, using the less occupied screen edge if neither side fits.
+     */
+    static Point2D getInitialPosition(Rectangle2D mainBounds, double width, double height, Rectangle2D visualBounds) {
+        double rightSpace = visualBounds.getMaxX() - mainBounds.getMaxX();
+        double leftSpace = mainBounds.getMinX() - visualBounds.getMinX();
+        double x;
+        if (rightSpace >= width + WINDOW_GAP) {
+            x = mainBounds.getMaxX() + WINDOW_GAP;
+        } else if (leftSpace >= width + WINDOW_GAP) {
+            x = mainBounds.getMinX() - width - WINDOW_GAP;
+        } else {
+            x = rightSpace >= leftSpace ? visualBounds.getMaxX() - width : visualBounds.getMinX();
+        }
+        return getWindowPosition(x, mainBounds.getMinY() + WINDOW_GAP, width, height, visualBounds);
+    }
+
+    /**
+     * Preserves an on-screen position, centers unset coordinates and clamps inaccessible coordinates to the screen.
+     */
+    static Point2D getWindowPosition(double x, double y, double width, double height, Rectangle2D visualBounds) {
+        double visibleWidth = Math.min(width, visualBounds.getWidth());
+        double visibleHeight = Math.min(height, visualBounds.getHeight());
+        double requestedX = Double.isNaN(x)
+                ? visualBounds.getMinX() + (visualBounds.getWidth() - visibleWidth) / 2 : x;
+        double requestedY = Double.isNaN(y)
+                ? visualBounds.getMinY() + (visualBounds.getHeight() - visibleHeight) / 2 : y;
+        return new Point2D(
+                Math.max(visualBounds.getMinX(), Math.min(requestedX, visualBounds.getMaxX() - visibleWidth)),
+                Math.max(visualBounds.getMinY(), Math.min(requestedY, visualBounds.getMaxY() - visibleHeight)));
+    }
+
+    /**
+     * Returns a usable window size that fits the screen, using defaults for unset dimensions.
+     */
+    static Dimension2D getWindowSize(double width, double height, Rectangle2D visualBounds) {
+        double requestedWidth = Double.isNaN(width) || width <= 0 ? DEFAULT_WIDTH : width;
+        double requestedHeight = Double.isNaN(height) || height <= 0 ? DEFAULT_HEIGHT : height;
+        return new Dimension2D(Math.min(Math.max(requestedWidth, MIN_WIDTH), visualBounds.getWidth()),
+                Math.min(Math.max(requestedHeight, MIN_HEIGHT), visualBounds.getHeight()));
     }
 
     /**
@@ -216,6 +302,18 @@ public class HelpWindow extends UiPart<Stage> {
      */
     public void focus() {
         getRoot().requestFocus();
+        commandGuideScrollPane.requestFocus();
+    }
+
+    /**
+     * Closes Help on a plain Escape press without intercepting scrolling, traversal or platform shortcuts.
+     */
+    static void handleCloseKey(KeyEvent event, Runnable closeWindow) {
+        if (event.getEventType() == KeyEvent.KEY_PRESSED && event.getCode() == KeyCode.ESCAPE
+                && !event.isShiftDown() && !event.isControlDown() && !event.isAltDown() && !event.isMetaDown()) {
+            closeWindow.run();
+            event.consume();
+        }
     }
 
     /**
@@ -223,19 +321,20 @@ public class HelpWindow extends UiPart<Stage> {
      */
     @FXML
     private void copyUrl() {
-        copyUserGuideUrl(Clipboard.getSystemClipboard()::setContent);
+        copyStatus.setText(copyUserGuideUrl(Clipboard.getSystemClipboard()::setContent));
     }
 
     /**
-     * Copies the guide URL with the supplied clipboard writer and records whether the write succeeded.
+     * Copies the guide URL, logs the outcome and returns feedback for the user.
      */
-    static void copyUserGuideUrl(Function<ClipboardContent, Boolean> clipboardWriter) {
+    static String copyUserGuideUrl(Function<ClipboardContent, Boolean> clipboardWriter) {
         final ClipboardContent url = new ClipboardContent();
         url.putString(USERGUIDE_URL);
         if (clipboardWriter.apply(url)) {
             logger.fine("Copied User Guide URL to clipboard.");
-        } else {
-            logger.warning("Could not copy the User Guide URL to the clipboard.");
+            return "User Guide URL copied.";
         }
+        logger.warning("Could not copy the User Guide URL to the clipboard.");
+        return "Could not copy the User Guide URL. Try again.";
     }
 }

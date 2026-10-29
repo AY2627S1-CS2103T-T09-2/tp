@@ -49,6 +49,7 @@
               </VBox>
 
               <ScrollPane fx:id="commandGuideScrollPane"
+                          focusTraversable="true" accessibleText="Command guide"
                           fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
                           minHeight="0.0" minWidth="0.0" VBox.vgrow="ALWAYS">
                 <content>
@@ -214,7 +215,7 @@
                           <Label text="find"
                                  styleClass="command-guide-cell, command-guide-name"
                                  maxWidth="Infinity" />
-                          <Label text="find KEYWORD [MORE_KEYWORDS]&#10;or find p/PHONE_DIGITS"
+                          <Label text="find KEYWORD [MORE_KEYWORDS]...&#10;or find p/PHONE_DIGITS"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-format"
                                  maxWidth="Infinity" />
                           <Label text="find ta&#10;find p/9123"
@@ -269,6 +270,7 @@
                         </children>
                       </GridPane>
 
+                      <!-- @@author kaseyho -->
                       <GridPane hgap="20.0" vgap="6.0" styleClass="command-guide-row">
                         <children>
                           <Label text="list"
@@ -288,7 +290,9 @@
                                  visible="false" managed="false" />
                         </children>
                       </GridPane>
+                      <!-- @@author -->
 
+                      <!-- @@author PBez02 -->
                       <GridPane hgap="20.0" vgap="6.0" styleClass="command-guide-row">
                         <children>
                           <Label text="note"
@@ -308,6 +312,7 @@
                                  visible="false" managed="false" />
                         </children>
                       </GridPane>
+                      <!-- @@author -->
 
                       <GridPane hgap="20.0" vgap="6.0" styleClass="command-guide-row">
                         <children>
@@ -353,19 +358,27 @@
                 </content>
               </ScrollPane>
 
-              <HBox alignment="CENTER_LEFT" spacing="16.0" styleClass="command-guide-footer">
+              <VBox spacing="6.0" minHeight="-Infinity" styleClass="command-guide-footer">
                 <children>
                   <Label text="Full instructions are in the User Guide."
                          minWidth="0.0" maxWidth="Infinity" wrapText="true"
-                         HBox.hgrow="ALWAYS" styleClass="command-guide-hint" />
-                  <Button fx:id="copyButton"
-                          minWidth="170.0"
-                          mnemonicParsing="false"
-                          onAction="#copyUrl"
-                          text="Copy User Guide URL"
-                          accessibleText="Copy User Guide URL" />
+                         styleClass="command-guide-hint" />
+                  <Label fx:id="userGuideUrl" minWidth="0.0" maxWidth="Infinity"
+                         wrapText="true" styleClass="command-guide-hint" />
+                  <HBox alignment="CENTER_LEFT" spacing="12.0">
+                    <children>
+                      <Button fx:id="copyButton"
+                              minWidth="170.0"
+                              mnemonicParsing="false"
+                              onAction="#copyUrl"
+                              text="Copy User Guide URL"
+                              accessibleText="Copy User Guide URL" />
+                      <Label fx:id="copyStatus" minWidth="0.0" minHeight="36.0" maxWidth="Infinity"
+                             wrapText="true" HBox.hgrow="ALWAYS" styleClass="command-guide-hint" />
+                    </children>
+                  </HBox>
                 </children>
-              </HBox>
+              </VBox>
             </children>
           </VBox>
         </children>

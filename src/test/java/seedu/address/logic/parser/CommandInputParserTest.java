@@ -79,6 +79,53 @@ public class CommandInputParserTest {
     }
 
     @Test
+    public void parseCommand_nonBreakingSpaceAfterCommandWord_returnsCommand() throws Exception {
+        // EP: a non-breaking space between the command word and its argument acts as whitespace.
+        String nonBreakingSpace = "\u00A0";
+
+        DeleteCommand expectedCommand =
+                new DeleteCommand(INDEX_FIRST_PERSON);
+
+        assertEquals(
+                expectedCommand,
+                parser.parseCommand(
+                        DeleteCommand.COMMAND_WORD
+                                + nonBreakingSpace
+                                + INDEX_FIRST_PERSON.getOneBased()));
+    }
+
+    @Test
+    public void parseCommand_nonBreakingSpaceBetweenArguments_returnsCommand() throws Exception {
+        // EP: a non-breaking space between command arguments acts as ordinary whitespace.
+        String nonBreakingSpace = "\u00A0";
+
+        assertTrue(
+                parser.parseCommand(
+                        NoteCommand.COMMAND_WORD
+                                + " 1"
+                                + nonBreakingSpace
+                                + "nt/Called client")
+                        instanceof NoteCommand);
+    }
+
+    @Test
+    public void parseCommand_nonBreakingSpaceAtStart_returnsCommand() throws Exception {
+        // EP: leading non-breaking whitespace is ignored before the command word.
+        String nonBreakingSpace = "\u00A0";
+
+        DeleteCommand expectedCommand =
+                new DeleteCommand(INDEX_FIRST_PERSON);
+
+        assertEquals(
+                expectedCommand,
+                parser.parseCommand(
+                        nonBreakingSpace
+                                + DeleteCommand.COMMAND_WORD
+                                + " "
+                                + INDEX_FIRST_PERSON.getOneBased()));
+    }
+
+    @Test
     public void parseCommand_deleteNote() throws ParseException {
         // EP: a recognized deletenote command with two valid indexes is dispatched to its parser.
         DeleteNoteCommand expectedCommand =

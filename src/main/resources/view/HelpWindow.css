@@ -19,7 +19,14 @@
 #commandGuideScrollPane {
     -fx-background-color: transparent;
     -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-border-width: 2;
+    -fx-border-radius: 4;
     -fx-padding: 0;
+}
+
+#commandGuideScrollPane:focused {
+    -fx-border-color: #86b6d8;
 }
 
 #commandGuideScrollPane > .viewport {
