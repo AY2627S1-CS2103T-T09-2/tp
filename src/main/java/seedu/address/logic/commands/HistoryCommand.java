@@ -3,7 +3,8 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -57,10 +58,10 @@ public class HistoryCommand extends Command {
 
         Person person = lastShownList.get(targetIndex.getZeroBased());
 
-        List<InteractionNote> notes = person.getInteractionNotes().stream()
-                .sorted(Comparator.comparing(
-                        InteractionNote::getCreatedAt).reversed())
-                .toList();
+        List<InteractionNote> notes =
+                new ArrayList<>(person.getInteractionNotes());
+
+        Collections.reverse(notes);
 
         if (notes.isEmpty()) {
             return new CommandResult(
