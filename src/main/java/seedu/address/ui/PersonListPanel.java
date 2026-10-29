@@ -29,6 +29,11 @@ public class PersonListPanel extends UiPart<Region> {
         personListView.setCellFactory(listView -> new PersonListViewCell());
     }
 
+    /** Scrolls the list to the contact at the given zero-based displayed index. */
+    public void scrollTo(int displayedIndex) {
+        personListView.scrollTo(displayedIndex);
+    }
+
     /**
      * Custom {@code ListCell} that displays the graphics of a {@code Person} using a {@code PersonCard}.
      */

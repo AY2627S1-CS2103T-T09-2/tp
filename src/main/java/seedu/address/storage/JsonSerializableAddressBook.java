@@ -12,6 +12,7 @@ import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.model.AddressBook;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.exceptions.DuplicatePersonException;
 
 /**
  * An Immutable AddressBook that is serializable to JSON format.
@@ -47,16 +48,18 @@ class JsonSerializableAddressBook {
      * @throws IllegalValueException if there were any data constraints violated.
      */
     public AddressBook toModelType() throws IllegalValueException {
-        AddressBook addressBook = new AddressBook();
+        List<Person> convertedPersons = new ArrayList<>(persons.size());
         for (JsonAdaptedPerson jsonAdaptedPerson : persons) {
             if (jsonAdaptedPerson == null) {
                 throw new IllegalValueException(MESSAGE_NULL_PERSON);
             }
-            Person person = jsonAdaptedPerson.toModelType();
-            if (addressBook.hasPerson(person)) {
-                throw new IllegalValueException(MESSAGE_DUPLICATE_PERSON);
-            }
-            addressBook.addPerson(person);
+            convertedPersons.add(jsonAdaptedPerson.toModelType());
+        }
+        AddressBook addressBook = new AddressBook();
+        try {
+            addressBook.setPersons(convertedPersons);
+        } catch (DuplicatePersonException e) {
+            throw new IllegalValueException(MESSAGE_DUPLICATE_PERSON);
         }
         return addressBook;
     }

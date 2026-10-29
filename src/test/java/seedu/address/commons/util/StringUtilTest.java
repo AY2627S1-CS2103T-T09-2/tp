@@ -138,9 +138,15 @@ public class StringUtilTest {
         assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Anne-Marie Tan", "ANNE"));
         assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Anne-Marie Tan", "Anne-Marie"));
         assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Anne-Marie Tan", "anne-m"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("O'Connor", "con"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Dr. Lee", "lee"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Tan, Alice", "ali"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Raj s/o Kumar", "o"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("O'Connor", "O'Con"));
 
         // EP: a query occurs only inside a word, so substring matching would be incorrect.
         assertFalse(StringUtil.containsWordStartingWithIgnoreCase("Alice Tan", "lic"));
+        assertFalse(StringUtil.containsWordStartingWithIgnoreCase("O'Connor", "onn"));
 
         // EP: a query starts with a whole word but is longer than that word.
         assertFalse(StringUtil.containsWordStartingWithIgnoreCase("Alice Tan", "tanley"));

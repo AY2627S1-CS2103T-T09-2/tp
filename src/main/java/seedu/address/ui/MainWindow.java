@@ -181,6 +181,7 @@ public class MainWindow extends UiPart<Stage> {
             CommandResult commandResult = logic.execute(commandText);
             logger.info("Result: " + commandResult.getFeedbackToUser());
             resultDisplay.setFeedbackToUser(commandResult.getFeedbackToUser());
+            commandResult.getIndexToScrollTo().ifPresent(personListPanel::scrollTo);
 
             if (commandResult.isShowHelp()) {
                 handleHelp();

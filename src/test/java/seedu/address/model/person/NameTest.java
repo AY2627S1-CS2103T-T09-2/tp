@@ -96,6 +96,18 @@ public class NameTest {
         // EP: normalization must not make otherwise invalid names valid.
         assertFalse(Name.isValidName("José^"));
         assertFalse(Name.isValidName("Jose\u0301^"));
+        assertFalse(Name.isValidName("A½"));
+        assertFalse(Name.isValidName("John²"));
+        assertFalse(Name.isValidName("Alice¼"));
+        assertTrue(Name.isValidName("Ravi2"));
+        assertTrue(Name.isValidName("Ravi٢"));
+        assertTrue(Name.isValidName("கு"));
+        assertTrue(Name.isValidName("குமார்"));
+
+        // Reject pathological input before Unicode normalization or regex matching becomes expensive.
+        assertFalse(Name.isValidName("A" + "\u0315".repeat(50_000) + "\u0300".repeat(50_000)));
+        assertTrue(Name.isValidName("A".repeat(Name.MAX_INPUT_LENGTH)));
+        assertFalse(Name.isValidName("A".repeat(Name.MAX_INPUT_LENGTH + 1)));
     }
 
     @Test

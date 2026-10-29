@@ -5,12 +5,16 @@ import static seedu.address.testutil.Assert.assertThrows;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.AddressBook;
+import seedu.address.model.person.Person;
+import seedu.address.testutil.PersonBuilder;
 import seedu.address.testutil.TypicalPersons;
 
 public class JsonSerializableAddressBookTest {
@@ -46,6 +50,19 @@ public class JsonSerializableAddressBookTest {
                 JsonSerializableAddressBook.class).get();
         assertThrows(IllegalValueException.class, JsonSerializableAddressBook.MESSAGE_DUPLICATE_PERSON,
                 dataFromFile::toModelType);
+    }
+
+    @Test
+    public void toModelType_largeAddressBook_preservesEveryContact() throws Exception {
+        List<Person> people = IntStream.range(0, 5000)
+                .mapToObj(index -> new PersonBuilder().withName("Contact " + index).build())
+                .toList();
+        AddressBook source = new AddressBook();
+        source.setPersons(people);
+
+        AddressBook loaded = new JsonSerializableAddressBook(source).toModelType();
+
+        assertEquals(source, loaded);
     }
 
     @Test

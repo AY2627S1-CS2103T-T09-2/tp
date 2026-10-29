@@ -56,6 +56,8 @@ public class EditCommand extends Command {
     public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited contact: %1$s";
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
     public static final String MESSAGE_DUPLICATE_PERSON = "This contact already exists: %1$s (%2$s).";
+    public static final String MESSAGE_HIDDEN_CONTACT =
+            "This contact is hidden by the current view. Type 'list' to show all contacts.\n";
 
     private final Index index;
     private final EditPersonDescriptor editPersonDescriptor;
@@ -96,6 +98,9 @@ public class EditCommand extends Command {
 
         model.setPerson(personToEdit, editedPerson);
         String feedback = String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        if (!model.getFilteredPersonList().contains(editedPerson)) {
+            feedback = MESSAGE_HIDDEN_CONTACT + feedback;
+        }
         if (editPersonDescriptor.isFollowUpEdited()) {
             feedback += editedPerson.getFollowUp().filter(FollowUp::isPast)
                     .map(FollowUp::getPastDateWarning).orElse("");
