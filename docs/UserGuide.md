@@ -118,6 +118,7 @@ Up and Down navigate the list instead.
 Opens the Easy-Insurance Command Guide, which shows the available commands together with their formats and examples.
 
 The help window also provides a **Copy User Guide URL** button for copying the full User Guide link.
+The full URL is shown below the command guide. After copying, a message confirms success or asks you to retry.
 
 ![help message](images/helpMessage.png)
 

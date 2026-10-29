@@ -37,6 +37,14 @@ public class HelpWindowTest {
     }
 
     @Test
+    public void copyUserGuideUrl_repeatedAttempts_reportsLatestOutcome() {
+        // EP: retrying after success or failure must report this attempt's outcome, not a stale confirmation.
+        assertClipboardOutcome(true, Level.FINE, "Copied User Guide URL");
+        assertClipboardOutcome(false, Level.WARNING, "Could not copy the User Guide URL");
+        assertClipboardOutcome(true, Level.FINE, "Copied User Guide URL");
+    }
+
+    @Test
     public void copyUserGuideUrl_clipboardThrows_doesNotHideProgrammingError() {
         // EP: the clipboard throws an unexpected exception instead of returning an outcome.
         try (LogCapture logs = new LogCapture(HelpWindow.class)) {
@@ -52,12 +60,15 @@ public class HelpWindowTest {
     private void assertClipboardOutcome(boolean copied, Level expectedLevel, String expectedContext) {
         AtomicInteger attempts = new AtomicInteger();
         try (LogCapture logs = new LogCapture(HelpWindow.class)) {
-            HelpWindow.copyUserGuideUrl(content -> {
+            String feedback = HelpWindow.copyUserGuideUrl(content -> {
                 attempts.incrementAndGet();
                 assertEquals(HelpWindow.USERGUIDE_URL, content.getString());
                 assertEquals(1, content.size());
                 return copied;
             });
+            String expectedFeedback = copied ? "User Guide URL copied."
+                    : "Could not copy the User Guide URL. Try again.";
+            assertEquals(expectedFeedback, feedback);
             assertEquals(1, attempts.get());
             logs.assertSingleLog(expectedLevel, expectedContext);
         }
