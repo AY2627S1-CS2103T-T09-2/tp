@@ -103,6 +103,21 @@ public class InteractionNoteTest {
     }
 
     @Test
+    public void constructor_controlCharacter_throwsIllegalArgumentException() {
+        // EP: control characters are not allowed in interaction note text.
+        assertThrows(IllegalArgumentException.class, () ->
+                new InteractionNote("Called\u0000client"));
+    }
+
+    @Test
+    public void isValidNote_controlCharacters_returnsFalse() {
+        // EP: notes containing ISO control characters are invalid.
+        assertFalse(InteractionNote.isValidNote("Called\u0000client"));
+        assertFalse(InteractionNote.isValidNote("Called\nclient"));
+        assertFalse(InteractionNote.isValidNote("Called\tclient"));
+    }
+
+    @Test
     public void equals() {
         InteractionNote note =
                 new InteractionNote("Met client", FIXED_TIME);
