@@ -137,7 +137,7 @@ public class JsonUtil {
      * recurses once per level, so this streaming pass, which uses no recursion, has to run first.
      * Repeated keys are checked here too because Jackson 2.7 does not say where the repeated key is,
      * which makes it hard to find in a large data file. Only the first value is checked; anything after
-     * it is reported by {@link #requireNoTrailingContent(JsonParser)} instead.
+     * it is reported by {@link #requireNoTrailingContent(JsonParser, String)} instead.
      */
     private static void requireValidStructure(String json) throws IOException {
         try (JsonParser parser = objectMapper.getFactory().createParser(json)) {

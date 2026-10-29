@@ -120,8 +120,8 @@ public class JsonUtilTest {
         // EP: only spaces, tabs and line breaks may follow the value, as the user guide says.
         assertTrailingContentRejected(VALID_JSON + "\f");
         assertTrailingContentRejected(VALID_JSON + "\u000B");
-        assertTrailingContentRejected(VALID_JSON + " ");
-        assertTrailingContentRejected(VALID_JSON + "　");
+        assertTrailingContentRejected(VALID_JSON + "\u00A0");
+        assertTrailingContentRejected(VALID_JSON + "\u3000");
     }
 
     @Test
