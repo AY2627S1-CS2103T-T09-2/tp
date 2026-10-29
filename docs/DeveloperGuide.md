@@ -1,7 +1,7 @@
 ---
-  layout: default.md
-  title: "Developer Guide"
-  pageNav: 3
+layout: default.md
+title: "Developer Guide"
+pageNav: 3
 ---
 
 # Easy-Insurance Developer Guide
@@ -126,7 +126,7 @@ How the parsing works:
 
 <puml src="diagrams/ModelClassDiagram.puml" width="450" />
 
-`Status.DEFAULT` is `PROSPECT`. Each `Person` stores one status and optionally one follow-up date.
+`Status.DEFAULT` is `PROSPECT`. Each `Person` stores one status, optionally one follow-up date, optionally one last-contact date, and zero or more interaction notes.
 `Name` accepts Unicode letters and common name punctuation after an initial letter; `Phone` accepts
 an optional leading plus sign and separators between at least three digits.
 
@@ -591,6 +591,7 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `add n/Ann Lee p/94567890 e/ann@example.com a/1 Clementi Ave f/31-02-2026`<br>
       Expected: No contact is added. Error: `31-02-2026 is not a real date.`
+
    1. Test case: `add n/Ann Lee p/94567890 e/ann@example.com a/1 Clementi Ave f/2026-12-25`<br>
       Expected: No contact is added. Error: `Follow-up date must be in DD-MM-YYYY format, e.g. 25-12-2026.`
 
@@ -678,7 +679,7 @@ testers are expected to do more *exploratory* testing.
    1. Close the app. Delete `data/addressbook.json` from the folder you ran the app from.
 
    1. Relaunch the app.<br>
-      Expected: The app starts with the sample contacts. The data file is created again after the next command that runs without an error, such as `list`.
+      Expected: The window starts with the sample contacts. The data file is created again after the next command that changes contact data.
 
 1. Dealing with a corrupted data file
 
@@ -689,7 +690,7 @@ testers are expected to do more *exploratory* testing.
 
 1. Dealing with an older data file
 
-   1. Close the app. Remove the `"status"` and `"followUp"` fields from one contact in `data/addressbook.json`.
+   1. Close the app. Remove the `"status"`, `"followUp"`, `"lastContact"` and `"interactionNotes"` fields from one contact in `data/addressbook.json`.
 
    1. Relaunch the app.<br>
-      Expected: The contact loads with status `PROSPECT` and no follow-up. Nothing else is lost.
+      Expected: The contact loads with status `PROSPECT`, no follow-up, no last-contact date and no interaction notes. Nothing else is lost.
