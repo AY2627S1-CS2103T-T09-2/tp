@@ -32,11 +32,17 @@ public class PhoneTest {
         assertThrows(NullPointerException.class, () -> Phone.isValidPhone(null));
 
         // EP: blank input with no digits.
-        assertFalse(Phone.isValidPhone("")); // Boundary value: zero characters.
+        // Boundary value: zero characters.
+        // @@author kaseyho-reused
+        assertFalse(Phone.isValidPhone(""));
+        // @@author
         assertFalse(Phone.isValidPhone(" ")); // spaces only
 
         // EP: fewer than the required three digits.
-        assertFalse(Phone.isValidPhone("91")); // Boundary value: one digit below the minimum.
+        // Boundary value: one digit below the minimum.
+        // @@author kaseyho-reused
+        assertFalse(Phone.isValidPhone("91"));
+        // @@author
 
         // EP: alphabetic characters, whether alone or mixed with digits.
         assertFalse(Phone.isValidPhone("phone")); // non-numeric
@@ -58,7 +64,10 @@ public class PhoneTest {
         assertFalse(Phone.isValidPhone("9123  4567"));
 
         // EP: digit-only numbers with at least three digits; longer values are also supported.
-        assertTrue(Phone.isValidPhone("911")); // Boundary value: minimum of three digits.
+        // Boundary value: minimum of three digits.
+        // @@author kaseyho-reused
+        assertTrue(Phone.isValidPhone("911"));
+        // @@author
         assertTrue(Phone.isValidPhone("93121534"));
         assertTrue(Phone.isValidPhone("124293842033123")); // long phone numbers
 

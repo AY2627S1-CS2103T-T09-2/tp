@@ -91,19 +91,29 @@ public class EditCommandParserTest {
     @Test
     public void parse_invalidValue_failure() {
         // EP: name contains unsupported punctuation.
+        // @@author kaseyho-reused
         assertParseFailure(parser, "1" + INVALID_NAME_DESC, Name.MESSAGE_CONSTRAINTS);
+        // @@author
 
         // EP: phone number contains a letter.
+        // @@author kaseyho-reused
         assertParseFailure(parser, "1" + INVALID_PHONE_DESC, Phone.MESSAGE_CONSTRAINTS);
+        // @@author
 
         // EP: email address lacks the @ separator.
+        // @@author kaseyho-reused
         assertParseFailure(parser, "1" + INVALID_EMAIL_DESC, Email.MESSAGE_CONSTRAINTS);
+        // @@author
 
         // EP: empty address; unlike tags and follow-up, this field cannot be cleared.
+        // @@author kaseyho-reused
         assertParseFailure(parser, "1" + INVALID_ADDRESS_DESC, Address.MESSAGE_CONSTRAINTS);
+        // @@author
 
         // EP: tag contains unsupported punctuation.
+        // @@author kaseyho-reused
         assertParseFailure(parser, "1" + INVALID_TAG_DESC, Tag.MESSAGE_CONSTRAINTS);
+        // @@author
 
         // EP: an invalid field alongside a valid field; a valid field cannot hide the invalid one.
         assertParseFailure(parser, "1" + INVALID_PHONE_DESC + EMAIL_DESC_AMY, Phone.MESSAGE_CONSTRAINTS);

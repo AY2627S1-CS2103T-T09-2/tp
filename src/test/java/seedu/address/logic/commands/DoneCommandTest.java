@@ -45,6 +45,7 @@ public class DoneCommandTest {
             .withFollowUp("25-12-2099")
             .build();
 
+    // @@author kaseyho
     @Test
     public void execute_validIndexUnfilteredList_completesFollowUp() {
         // EP: displayed contact has a pending follow-up; completing it preserves its other fields.
@@ -111,6 +112,7 @@ public class DoneCommandTest {
             assertNoContactDetails(logs);
         }
     }
+    // @@author
 
     @Test
     public void execute_completeFollowUp_preservesInteractionNotes() {
@@ -162,6 +164,7 @@ public class DoneCommandTest {
                 expectedModel);
     }
 
+    // @@author kaseyho
     @Test
     public void execute_noPendingFollowUp_throwsCommandException() {
         // EP: displayed contact has no pending follow-up, so there is nothing to complete.
@@ -225,9 +228,13 @@ public class DoneCommandTest {
             assertCommandFailure(
                     new DoneCommand(invalidIndex),
                     model,
+                    // @@author
+                    // @@author kqjy29
                     Messages.getInvalidPersonDisplayedIndexMessage(
                             invalidIndex.getOneBased(),
                             model.getFilteredPersonList().size()));
+            // @@author
+            // @@author kaseyho
 
             logs.assertSingleLog(
                     Level.FINE,
@@ -246,9 +253,13 @@ public class DoneCommandTest {
             assertCommandFailure(
                     new DoneCommand(INDEX_SECOND_PERSON),
                     model,
+                    // @@author
+                    // @@author kqjy29
                     Messages.getInvalidPersonDisplayedIndexMessage(
                             INDEX_SECOND_PERSON.getOneBased(),
                             model.getFilteredPersonList().size()));
+            // @@author
+            // @@author kaseyho
 
             logs.assertSingleLog(
                     Level.FINE,
@@ -309,12 +320,14 @@ public class DoneCommandTest {
                         new DoneCommand(INDEX_SECOND_PERSON)));
         assertFalse(firstCommand.equals(null));
         assertFalse(firstCommand.equals(new Object()));
+        // @@author
 
         assertEquals(
                 firstCommand.hashCode(),
                 new DoneCommand(Index.fromOneBased(1)).hashCode());
     }
 
+    // @@author kaseyho
     private void assertNoContactDetails(LogCapture logs) {
         String message =
                 logs.getRecords().getFirst().getMessage();
@@ -326,4 +339,5 @@ public class DoneCommandTest {
         assertFalse(message.contains("referral"));
         assertFalse(message.contains("lifePolicy"));
     }
+    // @@author
 }
