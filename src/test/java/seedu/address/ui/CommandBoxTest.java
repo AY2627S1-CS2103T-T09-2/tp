@@ -71,16 +71,22 @@ public class CommandBoxTest {
 
     @Test
     public void isBlankCommand_whitespaceOnly_returnsTrue() {
+        // EP: commands containing only ordinary or Unicode whitespace are blank.
         assertTrue(CommandBox.isBlankCommand("   "));
+        assertTrue(CommandBox.isBlankCommand("\u00A0"));
         assertTrue(CommandBox.isBlankCommand("\u2028"));
         assertTrue(CommandBox.isBlankCommand("\u2029"));
-        assertTrue(CommandBox.isBlankCommand(" \u2028\u2029 "));
+        assertTrue(CommandBox.isBlankCommand("\u202F"));
+        assertTrue(CommandBox.isBlankCommand("\u3000"));
+        assertTrue(CommandBox.isBlankCommand(" \u00A0\u2028\u2029 "));
     }
 
     @Test
     public void isBlankCommand_containsVisibleText_returnsFalse() {
+        // EP: any visible command text means the input is not blank.
         assertFalse(CommandBox.isBlankCommand("help"));
         assertFalse(CommandBox.isBlankCommand("  help  "));
+        assertFalse(CommandBox.isBlankCommand("\u00A0help\u00A0"));
     }
 
     private KeyEvent keyPressed(KeyCode code) {
