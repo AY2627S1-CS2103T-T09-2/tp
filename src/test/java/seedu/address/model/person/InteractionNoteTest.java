@@ -162,7 +162,7 @@ public class InteractionNoteTest {
 
         assertFalse(InteractionNote.isValidNote(noteOverMaximumLength));
     }
-  
+
     @Test
     public void constructor_controlCharacter_throwsIllegalArgumentException() {
         // EP: control characters are not allowed in interaction note text.
