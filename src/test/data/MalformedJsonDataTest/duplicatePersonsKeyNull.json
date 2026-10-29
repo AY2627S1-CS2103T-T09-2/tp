@@ -1,0 +1,11 @@
+{
+  "persons" : [ {
+    "name" : "Alice Tan",
+    "phone" : "91234567",
+    "email" : "alice@example.com",
+    "address" : "1 Test Road",
+    "tags" : [ "vip" ],
+    "interactionNotes" : [ ]
+  } ],
+  "persons" : null
+}

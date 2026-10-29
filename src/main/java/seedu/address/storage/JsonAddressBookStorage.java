@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
+import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFileAttributeView;
@@ -158,7 +159,7 @@ public class JsonAddressBookStorage {
             }
         }
 
-        Files.createDirectories(target.getParent());
+        createParentDirectories(target.getParent());
         Path temporaryFile = Files.createTempFile(target.getParent(), ".addressbook-", ".tmp");
         try {
             writeAddressBook(addressBook, temporaryFile);
@@ -170,6 +171,25 @@ public class JsonAddressBookStorage {
             } catch (IOException | SecurityException cleanupError) {
                 e.addSuppressed(cleanupError);
                 logger.warning("Could not remove temporary data file " + temporaryFile + ": " + cleanupError);
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * Creates the data folder, identifying any file that blocks a required parent directory.
+     */
+    private void createParentDirectories(Path directory) throws IOException {
+        try {
+            Files.createDirectories(directory);
+        } catch (IOException e) {
+            // File systems report blocked ancestors differently, so inspect the path before classifying the error.
+            for (Path ancestor = directory; ancestor != null; ancestor = ancestor.getParent()) {
+                if (Files.exists(ancestor) && !Files.isDirectory(ancestor)) {
+                    NotDirectoryException directoryError = new NotDirectoryException(ancestor.toString());
+                    directoryError.initCause(e);
+                    throw directoryError;
+                }
             }
             throw e;
         }
