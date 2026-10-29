@@ -320,7 +320,7 @@ Format: `note INDEX nt/NOTE`
 * The index refers to the number shown in the displayed contact list.
 * The index must be a positive integer and refer to a displayed contact.
 * `nt/NOTE` is required and cannot be blank.
-* The note may contain spaces.
+* The note may contain spaces and can be at most 2000 Unicode characters long.
 * New notes are appended to the contact's existing interaction history. Existing notes are not replaced.
 * Interaction notes remain attached to the contact when other contact details are edited or when a follow-up is marked as completed.
 
