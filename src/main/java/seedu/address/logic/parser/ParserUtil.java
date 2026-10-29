@@ -43,8 +43,10 @@ public class ParserUtil {
     /**
      * Returns the first prefix in {@code args} that is one of {@link CliSyntax#ALL_PREFIXES} but not one of
      * {@code supportedPrefixes}, or an empty {@code Optional} if there is none.
-     * As in {@link ArgumentTokenizer}, a prefix counts only in lowercase at the start of a word, so
-     * {@code data/x} and {@code NT/x} do not count. The name words {@code a/l}, {@code a/p} and {@code d/o}
+     * A prefix counts only in lowercase at the start of a word, where words are split on spaces, tabs and
+     * line breaks, so {@code data/x} and {@code NT/x} do not count. This is wider than {@link ArgumentTokenizer}, which
+     * only finds a prefix after a plain space, so a prefix typed after a tab is reported too instead of being
+     * saved as part of the field before it. The name words {@code a/l}, {@code a/p} and {@code d/o}
      * (in any case, alone or joined by punctuation such as {@code d/o-Kumar}) do not count either, so names
      * such as "Siti d/o Ahmad" are left alone.
      */
