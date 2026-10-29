@@ -351,8 +351,9 @@
     -fx-font-size: 11;
 }
 
+/* Light red clears 4.5:1 contrast on every row: 6.71 even, 4.65 odd and 5.33 selected. */
 .list-cell .label.follow_up_overdue {
-    -fx-text-fill: #ff8a80;
+    -fx-text-fill: #ffbcb5;
 }
 
 .status_label {
