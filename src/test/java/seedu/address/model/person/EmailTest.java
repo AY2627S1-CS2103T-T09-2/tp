@@ -106,12 +106,12 @@ public class EmailTest {
         String domain = "@example.com";
 
         // EP: email at the length limit.
-        String atLimit = "a".repeat(Email.MAX_LENGTH - domain.length()) + domain;
+        String atLimit = "a".repeat(Email.MAX_LENGTH - domain.length()) + domain; // Boundary value: exactly the limit.
         assertEquals(Email.MAX_LENGTH, atLimit.length());
         assertTrue(Email.isValidEmail(atLimit));
 
         // EP: email over the length limit.
-        assertFalse(Email.isValidEmail("a" + atLimit));
+        assertFalse(Email.isValidEmail("a" + atLimit)); // Boundary value: one character over the limit.
 
         // EP: very long emails with many local-part segments are rejected without overflowing the stack.
         assertFalse(Email.isValidEmail("a.".repeat(2500) + "a" + domain));
