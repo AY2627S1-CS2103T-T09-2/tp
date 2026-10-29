@@ -64,7 +64,7 @@ public class InteractionNote {
      * Returns true if the given string is a valid interaction note.
      */
     public static boolean isValidNote(String test) {
-        if (test == null || test.isBlank()) {
+        if (test == null || isVisuallyBlank(test)) {
             return false;
         }
 
