@@ -7,6 +7,7 @@ participant ":LogicManager" as LogicManager LOGIC_COLOR
 participant ":CommandInputParser" as CommandInputParser LOGIC_COLOR
 participant ":FindCommandParser" as FindCommandParser LOGIC_COLOR
 participant "f:FindCommand" as FindCommand LOGIC_COLOR
+participant ":Messages" as Messages LOGIC_COLOR
 participant "r:CommandResult" as CommandResult LOGIC_COLOR
 end box
 
@@ -26,15 +27,19 @@ create FindCommandParser
 CommandInputParser -> FindCommandParser
 activate FindCommandParser
 
-FindCommandParser -> FindCommandParser : parse("alice")
+FindCommandParser --> CommandInputParser
+deactivate FindCommandParser
 
-alt name search
+CommandInputParser -> FindCommandParser : parse("alice")
+activate FindCommandParser
+
+alt no p/ prefix
     create NamePredicate
     FindCommandParser -> NamePredicate : NameContainsKeywordsPredicate(["alice"])
     activate NamePredicate
     NamePredicate --> FindCommandParser
     deactivate NamePredicate
-else phone search
+else p/ prefix given
     create PhonePredicate
     FindCommandParser -> PhonePredicate : PhoneContainsKeywordPredicate("9123")
     activate PhonePredicate
@@ -69,8 +74,13 @@ activate Model
 Model --> FindCommand : number of matching contacts
 deactivate Model
 
+FindCommand -> Messages : getPersonListOverview(count)
+activate Messages
+Messages --> FindCommand : feedback
+deactivate Messages
+
 create CommandResult
-FindCommand -> CommandResult : getPersonListOverview(count)
+FindCommand -> CommandResult : new CommandResult(feedback)
 activate CommandResult
 CommandResult --> FindCommand
 deactivate CommandResult

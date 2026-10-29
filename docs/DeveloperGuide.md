@@ -95,7 +95,7 @@ The sequence diagram below illustrates the interactions within the `Logic` compo
 
 <puml src="diagrams/DeleteSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `delete 1` Command" />
 
-The sequence diagram below illustrates how the `find` command filters contacts by name keywords.
+The sequence diagram below illustrates how the `find` command filters contacts by name keywords or phone digits.
 
 <puml src="diagrams/FindSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `find` Command" />
 
