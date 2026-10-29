@@ -187,8 +187,9 @@ reads it once at startup by calling `Storage#readAddressBookWithBackup()`, which
    `readJsonFile` also rejects a file that contains only `null`.
 4. `JsonSerializableAddressBook#toModelType` converts each `JsonAdaptedPerson`, which checks every field with the
    same model methods that the commands use, such as `Name#isValidName`. Null entries and duplicate contacts are
-   rejected. A missing or blank `status` becomes `PROSPECT` and a missing `followUp` means no follow-up, so data
-   files from older versions still load.
+   rejected. A missing or blank `status` becomes `PROSPECT` and a missing `followUp` means no follow-up, so files
+   without the `status` and `followUp` fields still load. Values that later versions made stricter, such as v1.4
+   phones with repeated separators, are rejected like any other invalid value.
 5. A failure in any of steps 2 to 4 causes a `DataLoadingException`. `readAddressBookWithBackup` copies the data
    file to `addressbook.json.bak` in the same folder, replacing any older backup, and rethrows the exception.
    `MainApp` logs a warning and starts with an empty `AddressBook`. It also keeps a notice from
@@ -224,8 +225,8 @@ From then on, the `.bak` copy is the only copy of the old data.
 * **Alternative 1 (current choice):** Reject invalid UTF-8, repeated keys, deep nesting, trailing content and
   invalid field values. Accept unknown fields and missing optional fields.
   * Pros: No contact data is dropped or changed without the user knowing (only unknown fields, which the app does
-    not use, are discarded on the next save), and a rejected file is backed up whole. Files from older versions
-    still load.
+    not use, are discarded on the next save), and a rejected file is backed up whole. Files without the `status`
+    and `followUp` fields still load.
   * Cons: One bad value makes the whole file load as an empty list, instead of skipping only the bad contact.
 * **Alternative 2:** Read leniently, for example by skipping invalid contacts, keeping the last of repeated keys
   and replacing bad bytes.
