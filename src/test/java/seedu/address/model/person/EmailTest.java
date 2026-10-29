@@ -74,8 +74,10 @@ public class EmailTest {
         assertTrue(Email.isValidEmail("PeterJack+1190@example.com"));
         assertTrue(Email.isValidEmail("PeterJack-1190@example.com"));
 
-        // EP: consecutive periods in the local part are not allowed.
+        // EP: a period next to another special character in the local part is not allowed.
         assertFalse(Email.isValidEmail("peter..jack@example.com"));
+        assertFalse(Email.isValidEmail("peter.-jack@example.com"));
+        assertFalse(Email.isValidEmail("peter_.jack@example.com"));
 
         // EP: consecutive supported non-period punctuation in the local part.
         assertTrue(Email.isValidEmail("sales__sg@example.com"));
