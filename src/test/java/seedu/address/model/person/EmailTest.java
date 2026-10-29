@@ -85,7 +85,8 @@ public class EmailTest {
         assertTrue(Email.isValidEmail("sales--sg@example.com"));
         assertTrue(Email.isValidEmail("peter_-jack@example.com"));
 
-        // EP: valid domain labels containing consecutive hyphens.
+        // EP: valid domain labels containing hyphens.
+        assertTrue(Email.isValidEmail("eve@mail.a-b"));
         assertTrue(Email.isValidEmail("user@xn--bcher-kva.de"));
         assertTrue(Email.isValidEmail("user@example--domain.com"));
 
