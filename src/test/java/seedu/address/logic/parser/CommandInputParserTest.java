@@ -79,6 +79,21 @@ public class CommandInputParserTest {
     }
 
     @Test
+    public void parseCommand_nonBreakingSpaceAfterCommandWord_returnsCommand() throws Exception {
+        String nonBreakingSpace = "\u00A0";
+
+        DeleteCommand expectedCommand =
+                new DeleteCommand(INDEX_FIRST_PERSON);
+
+        assertEquals(
+                expectedCommand,
+                parser.parseCommand(
+                        DeleteCommand.COMMAND_WORD
+                                + nonBreakingSpace
+                                + INDEX_FIRST_PERSON.getOneBased()));
+    }
+
+    @Test
     public void parseCommand_deleteNote() throws ParseException {
         // EP: a recognized deletenote command with two valid indexes is dispatched to its parser.
         DeleteNoteCommand expectedCommand =
