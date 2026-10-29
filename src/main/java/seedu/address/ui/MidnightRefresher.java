@@ -7,9 +7,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import seedu.address.commons.core.LogsCenter;
 
 /**
@@ -18,6 +23,8 @@ import seedu.address.commons.core.LogsCenter;
  *
  * <p>The date is checked just after each local midnight, and at least once a minute in between, so a
  * computer that sleeps through midnight or a clock that is changed is also picked up promptly.
+ * The waiting is done on a background daemon thread, so the JavaFX animation timer is not kept running,
+ * and the refresh action itself runs on the JavaFX application thread.
  */
 public class MidnightRefresher {
 
@@ -29,18 +36,34 @@ public class MidnightRefresher {
 
     private static final Logger logger = LogsCenter.getLogger(MidnightRefresher.class);
 
+    private static final String THREAD_NAME = "midnight-refresher";
+
     private final Clock clock;
     private final Runnable refreshAction;
+    private final Supplier<ScheduledExecutorService> schedulerFactory;
+    private final Executor uiThread;
     private LocalDate lastSeenDate;
-    private PauseTransition timer;
+    private ScheduledExecutorService scheduler;
+    private boolean isStopped;
 
     /**
-     * Creates a {@code MidnightRefresher} that runs {@code refreshAction} whenever the date given by
-     * {@code clock} changes. Call {@link #start()} to begin checking.
+     * Creates a {@code MidnightRefresher} that runs {@code refreshAction} on the JavaFX application thread
+     * whenever the date given by {@code clock} changes. Call {@link #start()} to begin checking.
      */
     public MidnightRefresher(Clock clock, Runnable refreshAction) {
+        this(clock, refreshAction, MidnightRefresher::createDaemonScheduler, Platform::runLater);
+    }
+
+    /**
+     * Creates a {@code MidnightRefresher} that waits using a scheduler from {@code schedulerFactory}
+     * and runs each date check through {@code uiThread}.
+     */
+    MidnightRefresher(Clock clock, Runnable refreshAction, Supplier<ScheduledExecutorService> schedulerFactory,
+            Executor uiThread) {
         this.clock = requireNonNull(clock);
         this.refreshAction = requireNonNull(refreshAction);
+        this.schedulerFactory = requireNonNull(schedulerFactory);
+        this.uiThread = requireNonNull(uiThread);
         lastSeenDate = LocalDate.now(clock);
     }
 
@@ -83,23 +106,50 @@ public class MidnightRefresher {
     }
 
     /**
-     * Starts checking the date on the JavaFX application thread. Calling this again has no effect.
+     * Starts checking the date. Calling this again, or after {@link #stop()}, has no effect.
      */
-    public void start() {
-        if (timer != null) {
+    public synchronized void start() {
+        if (scheduler != null || isStopped) {
             return;
         }
 
-        timer = new PauseTransition();
-        timer.setOnFinished(event -> {
-            refreshIfDateChanged();
-            scheduleNextCheck();
-        });
+        scheduler = schedulerFactory.get();
         scheduleNextCheck();
     }
 
-    private void scheduleNextCheck() {
-        timer.setDuration(javafx.util.Duration.millis(getNextCheckDelay().toMillis()));
-        timer.playFromStart();
+    /**
+     * Stops checking the date and ends the background thread. Safe to call more than once.
+     */
+    public synchronized void stop() {
+        isStopped = true;
+        if (scheduler != null) {
+            scheduler.shutdownNow();
+        }
+    }
+
+    private synchronized void scheduleNextCheck() {
+        if (isStopped) {
+            return;
+        }
+
+        scheduler.schedule(this::runCheck, getNextCheckDelay().toMillis(), TimeUnit.MILLISECONDS);
+    }
+
+    private void runCheck() {
+        try {
+            uiThread.execute(this::refreshIfDateChanged);
+        } catch (RuntimeException e) {
+            logger.warning("Could not check the date for the contact list: " + e);
+        } finally {
+            scheduleNextCheck();
+        }
+    }
+
+    private static ScheduledExecutorService createDaemonScheduler() {
+        return Executors.newSingleThreadScheduledExecutor(task -> {
+            Thread thread = new Thread(task, THREAD_NAME);
+            thread.setDaemon(true);
+            return thread;
+        });
     }
 }

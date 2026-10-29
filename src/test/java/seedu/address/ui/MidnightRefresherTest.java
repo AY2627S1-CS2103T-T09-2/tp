@@ -10,6 +10,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
 
@@ -132,6 +140,91 @@ public class MidnightRefresherTest {
         assertEquals(1, refreshCount[0]);
     }
 
+    @Test
+    public void start_schedulesFirstCheckJustAfterMidnight() {
+        RecordingScheduler scheduler = new RecordingScheduler();
+        Clock clock = clockAt(SINGAPORE, "2026-10-29T23:59:30");
+        MidnightRefresher refresher = new MidnightRefresher(clock, () -> { }, () -> scheduler, Runnable::run);
+
+        refresher.start();
+        assertEquals(List.of(Duration.ofSeconds(31)), scheduler.delays);
+    }
+
+    @Test
+    public void start_calledTwice_schedulesOnce() {
+        RecordingScheduler scheduler = new RecordingScheduler();
+        int[] schedulersCreated = {0};
+        Supplier<ScheduledExecutorService> schedulerFactory = () -> {
+            schedulersCreated[0]++;
+            return scheduler;
+        };
+        Clock clock = clockAt(SINGAPORE, "2026-10-29T12:00:00");
+        MidnightRefresher refresher = new MidnightRefresher(clock, () -> { }, schedulerFactory, Runnable::run);
+
+        refresher.start();
+        refresher.start();
+        assertEquals(1, schedulersCreated[0]);
+        assertEquals(1, scheduler.tasks.size());
+    }
+
+    @Test
+    public void scheduledCheck_afterMidnight_refreshesOnUiThreadAndReschedules() {
+        MutableClock clock = new MutableClock(SINGAPORE, "2026-10-29T23:59:30");
+        RecordingScheduler scheduler = new RecordingScheduler();
+        List<String> events = new ArrayList<>();
+        Executor uiThread = action -> {
+            events.add("ui");
+            action.run();
+        };
+        Runnable refreshAction = () -> events.add("refresh");
+        MidnightRefresher refresher = new MidnightRefresher(clock, refreshAction, () -> scheduler, uiThread);
+        refresher.start();
+
+        clock.setTo("2026-10-30T00:00:01");
+        scheduler.tasks.get(0).run();
+        assertEquals(List.of("ui", "refresh"), events);
+        assertEquals(List.of(Duration.ofSeconds(31), MidnightRefresher.MAX_CHECK_INTERVAL), scheduler.delays);
+
+        // The next check on the same day reschedules again without refreshing.
+        scheduler.tasks.get(1).run();
+        assertEquals(List.of("ui", "refresh", "ui"), events);
+        assertEquals(3, scheduler.tasks.size());
+    }
+
+    @Test
+    public void stop_afterStart_shutsDownAndStopsRescheduling() {
+        RecordingScheduler scheduler = new RecordingScheduler();
+        Clock clock = clockAt(SINGAPORE, "2026-10-29T12:00:00");
+        MidnightRefresher refresher = new MidnightRefresher(clock, () -> { }, () -> scheduler, Runnable::run);
+        refresher.start();
+
+        refresher.stop();
+        assertTrue(scheduler.isShutdown());
+
+        // A check that was already running when stop() was called does not schedule another.
+        scheduler.tasks.get(0).run();
+        assertEquals(1, scheduler.tasks.size());
+
+        // Starting again after stopping has no effect.
+        refresher.start();
+        assertEquals(1, scheduler.tasks.size());
+    }
+
+    @Test
+    public void stop_beforeStart_createsNoScheduler() {
+        int[] schedulersCreated = {0};
+        Supplier<ScheduledExecutorService> schedulerFactory = () -> {
+            schedulersCreated[0]++;
+            return new RecordingScheduler();
+        };
+        Clock clock = clockAt(SINGAPORE, "2026-10-29T12:00:00");
+        MidnightRefresher refresher = new MidnightRefresher(clock, () -> { }, schedulerFactory, Runnable::run);
+
+        refresher.stop();
+        refresher.start();
+        assertEquals(0, schedulersCreated[0]);
+    }
+
     private static Clock clockAt(ZoneId zone, String localDateTime) {
         return Clock.fixed(toInstant(zone, localDateTime), zone);
     }
@@ -169,6 +262,26 @@ public class MidnightRefresherTest {
         @Override
         public Instant instant() {
             return instant;
+        }
+    }
+
+    /**
+     * A scheduler that records each scheduled check and its delay instead of running it, so a test can run
+     * the checks itself without waiting or starting a thread.
+     */
+    private static class RecordingScheduler extends ScheduledThreadPoolExecutor {
+        private final List<Runnable> tasks = new ArrayList<>();
+        private final List<Duration> delays = new ArrayList<>();
+
+        RecordingScheduler() {
+            super(1);
+        }
+
+        @Override
+        public ScheduledFuture<?> schedule(Runnable task, long delay, TimeUnit unit) {
+            tasks.add(task);
+            delays.add(Duration.of(delay, unit.toChronoUnit()));
+            return null;
         }
     }
 }

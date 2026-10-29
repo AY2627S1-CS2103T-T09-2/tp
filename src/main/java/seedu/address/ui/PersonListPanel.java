@@ -37,6 +37,13 @@ public class PersonListPanel extends UiPart<Region> {
     }
 
     /**
+     * Stops redrawing the cards at midnight. Called when the main window closes.
+     */
+    public void stopMidnightRefresh() {
+        midnightRefresher.stop();
+    }
+
+    /**
      * Custom {@code ListCell} that displays the graphics of a {@code Person} using a {@code PersonCard}.
      */
     class PersonListViewCell extends ListCell<Person> {
