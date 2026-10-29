@@ -38,7 +38,8 @@ public class MalformedJsonDataTest {
     @Test
     public void readAddressBookWithBackup_repeatedPersonsKey_backupCreatedWithSameContent() throws Exception {
         // EP: two contact lists in one file; loading either one alone would delete the other on the next save.
-        assertFixtureBackedUp("duplicatePersonsKey.json", "Duplicate field 'persons'");
+        assertFixtureBackedUp("duplicatePersonsKey.json",
+                String.format(JsonUtil.MESSAGE_DUPLICATE_KEY, "persons", 10, 3));
         assertFixtureBackedUp("duplicatePersonsKeyReversed.json", "Duplicate field 'persons'");
         assertFixtureBackedUp("duplicatePersonsKeyNull.json", "Duplicate field 'persons'");
     }
@@ -46,7 +47,8 @@ public class MalformedJsonDataTest {
     @Test
     public void readAddressBookWithBackup_repeatedKeyInPerson_backupCreatedWithSameContent() throws Exception {
         // EP: a repeated field inside one contact, including the null lists that used to crash startup.
-        assertFixtureBackedUp("duplicateNameKey.json", "Duplicate field 'name'");
+        assertFixtureBackedUp("duplicateNameKey.json",
+                String.format(JsonUtil.MESSAGE_DUPLICATE_KEY, "name", 9, 5));
         assertFixtureBackedUp("duplicateTagsKey.json", "Duplicate field 'tags'");
         assertFixtureBackedUp("duplicateTagsKeyNull.json", "Duplicate field 'tags'");
         assertFixtureBackedUp("duplicateInteractionNotesKeyNull.json", "Duplicate field 'interactionNotes'");

@@ -5,7 +5,12 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -38,6 +43,8 @@ public class JsonUtil {
     public static final String MESSAGE_TOO_DEEPLY_NESTED =
             "JSON data is nested more than " + MAX_NESTING_DEPTH + " levels deep at line %d, column %d";
 
+    public static final String MESSAGE_DUPLICATE_KEY = "Duplicate field '%s' at line %d, column %d";
+
     private static final Logger logger = LogsCenter.getLogger(JsonUtil.class);
 
     private static ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules()
@@ -46,6 +53,7 @@ public class JsonUtil {
             .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
             // A repeated key would otherwise silently replace the earlier value, e.g. drop a contact list.
+            // requireValidStructure reports repeated keys with their location first; this is a fallback.
             .configure(JsonParser.Feature.STRICT_DUPLICATE_DETECTION, true);
 
     static <T> void serializeObjectToJsonFile(Path jsonFile, T objectToSerialize) throws IOException {
@@ -115,7 +123,7 @@ public class JsonUtil {
      *     or there is content after the JSON value
      */
     public static <T> T fromJsonString(String json, Class<T> instanceClass) throws IOException {
-        requireNestingWithinLimit(json);
+        requireValidStructure(json);
         try (JsonParser parser = objectMapper.getFactory().createParser(json)) {
             T instance = objectMapper.readValue(parser, instanceClass);
             requireNoTrailingContent(parser);
@@ -125,30 +133,53 @@ public class JsonUtil {
 
     /**
      * Throws an {@code IOException} if the first JSON value in {@code json} nests objects and arrays
-     * deeper than {@link #MAX_NESTING_DEPTH}. Jackson's object mapping recurses once per level, so
-     * this streaming pass, which uses no recursion, has to run first. Only the first value is checked;
-     * anything after it is reported by {@link #requireNoTrailingContent(JsonParser)} instead.
+     * deeper than {@link #MAX_NESTING_DEPTH} or repeats a key within one object. Jackson's object mapping
+     * recurses once per level, so this streaming pass, which uses no recursion, has to run first.
+     * Repeated keys are checked here too because Jackson 2.7 does not say where the repeated key is,
+     * which makes it hard to find in a large data file. Only the first value is checked; anything after
+     * it is reported by {@link #requireNoTrailingContent(JsonParser)} instead.
      */
-    private static void requireNestingWithinLimit(String json) throws IOException {
+    private static void requireValidStructure(String json) throws IOException {
         try (JsonParser parser = objectMapper.getFactory().createParser(json)) {
+            parser.disable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
+            Deque<Set<String>> keysOfOpenObjects = new ArrayDeque<>();
             int depth = 0;
             JsonToken token;
             while ((token = parser.nextToken()) != null) {
                 if (token.isStructStart()) {
                     depth++;
                     if (depth > MAX_NESTING_DEPTH) {
-                        JsonLocation location = parser.getTokenLocation();
-                        throw new IOException(String.format(MESSAGE_TOO_DEEPLY_NESTED,
-                                location.getLineNr(), location.getColumnNr()));
+                        throw new IOException(formatWithLocation(MESSAGE_TOO_DEEPLY_NESTED, parser));
+                    }
+                    if (token == JsonToken.START_OBJECT) {
+                        keysOfOpenObjects.push(new HashSet<>());
                     }
                 } else if (token.isStructEnd()) {
                     depth--;
+                    if (token == JsonToken.END_OBJECT) {
+                        keysOfOpenObjects.pop();
+                    }
+                } else if (token == JsonToken.FIELD_NAME && !keysOfOpenObjects.peek().add(parser.getCurrentName())) {
+                    throw new IOException(formatWithLocation(MESSAGE_DUPLICATE_KEY, parser,
+                            parser.getCurrentName()));
                 }
                 if (depth == 0) {
                     return;
                 }
             }
         }
+    }
+
+    /**
+     * Formats {@code message} with {@code arguments} followed by the line and column where the
+     * current token of {@code parser} starts.
+     */
+    private static String formatWithLocation(String message, JsonParser parser, Object... arguments) {
+        JsonLocation location = parser.getTokenLocation();
+        Object[] allArguments = Arrays.copyOf(arguments, arguments.length + 2);
+        allArguments[arguments.length] = location.getLineNr();
+        allArguments[arguments.length + 1] = location.getColumnNr();
+        return String.format(message, allArguments);
     }
 
     /**

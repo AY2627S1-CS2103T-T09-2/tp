@@ -41,6 +41,27 @@ public class JsonUtilStrictReadingTest {
     }
 
     @Test
+    public void fromJsonString_repeatedKey_messageGivesLocation() {
+        // The location is where the repeated key starts, so it can be found in a large data file.
+        IOException e = assertThrows(IOException.class, () -> JsonUtil.fromJsonString(
+                "{\n  \"name\" : \"first\",\n  \"mapOfIntegerToString\" : { },\n  \"name\" : \"second\"\n}",
+                SerializableTestClass.class));
+        assertEquals(String.format(JsonUtil.MESSAGE_DUPLICATE_KEY, "name", 4, 3), e.getMessage());
+
+        e = assertThrows(IOException.class, () -> JsonUtil.fromJsonString(
+                "[{\"a\":1},\n{\"b\":{\"c\":2,\n    \"c\":3}}]", Object.class));
+        assertEquals(String.format(JsonUtil.MESSAGE_DUPLICATE_KEY, "c", 3, 5), e.getMessage());
+
+        // A repeated key that comes before too deep nesting is reported first, and the other way round.
+        e = assertThrows(IOException.class, () -> JsonUtil.fromJsonString(
+                "{\"a\":1,\"a\":" + nestedArrays(MAX_NESTING_DEPTH) + "}", Object.class));
+        assertEquals(String.format(JsonUtil.MESSAGE_DUPLICATE_KEY, "a", 1, 8), e.getMessage());
+        e = assertThrows(IOException.class, () -> JsonUtil.fromJsonString(
+                "{\"a\":" + nestedArrays(MAX_NESTING_DEPTH) + ",\"a\":1}", Object.class));
+        assertEquals(String.format(MESSAGE_TOO_DEEPLY_NESTED, 1, MAX_NESTING_DEPTH + 5), e.getMessage());
+    }
+
+    @Test
     public void fromJsonString_sameKeyInDifferentObjects_success() throws IOException {
         // EP: a key may repeat across sibling or nested objects; only repeats within one object are errors.
         assertEquals(List.of(Map.of("a", 1), Map.of("a", 2)),
