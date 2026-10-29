@@ -2,6 +2,8 @@ package seedu.address.logic;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -29,6 +31,9 @@ public class LogicManager implements Logic {
     public static final String FILE_OPS_PERMISSION_ERROR_FORMAT =
             "Could not save data to file %s due to insufficient permissions to write to the file or the folder.";
 
+    public static final String FILE_OPS_DIRECTORY_ERROR_FORMAT =
+            "Could not save data to file %s because %s is not a folder.";
+
     private final Logger logger = LogsCenter.getLogger(LogicManager.class);
 
     private final Model model;
@@ -54,7 +59,7 @@ public class LogicManager implements Logic {
         Predicate<? super Person> previousPredicate = model.getPersonListPredicate();
         Comparator<? super Person> previousComparator = model.getPersonListComparator();
         CommandResult commandResult = command.execute(model);
-        if (previousData.equals(model.getAddressBook())) {
+        if (previousData.isIdenticalTo(model.getAddressBook())) {
             return commandResult;
         }
 
@@ -68,12 +73,24 @@ public class LogicManager implements Logic {
                 model.updateFilteredPersonList(previousPredicate, previousComparator);
             }
             logger.log(Level.WARNING, "Save failed; restored previous contact data and displayed list.", e);
-            String errorFormat = e instanceof AccessDeniedException
-                    ? FILE_OPS_PERMISSION_ERROR_FORMAT : FILE_OPS_ERROR_FORMAT;
-            throw new CommandException(String.format(errorFormat, e.getMessage()), e);
+            throw new CommandException(getSaveErrorMessage(e), e);
         }
 
         return commandResult;
+    }
+
+    /**
+     * Formats permission and folder errors with the configured data file, preserving other I/O error details.
+     */
+    private String getSaveErrorMessage(IOException exception) {
+        Path dataFile = storage.getAddressBookFilePath();
+        if (exception instanceof AccessDeniedException) {
+            return String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, dataFile);
+        }
+        if (exception instanceof NotDirectoryException directoryException) {
+            return String.format(FILE_OPS_DIRECTORY_ERROR_FORMAT, dataFile, directoryException.getFile());
+        }
+        return String.format(FILE_OPS_ERROR_FORMAT, exception.getMessage());
     }
 
     @Override

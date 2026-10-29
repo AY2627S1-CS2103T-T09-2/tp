@@ -136,9 +136,11 @@ The contact list shows blue, green, and grey badges respectively for these statu
 
 **Tags:** A contact can have any number of tags, including zero. Each tag is a single word of letters and digits,
 up to 50 characters long, such as `t/referral` or `t/lifePolicy2`. Accented and non-English letters are accepted
-(`t/café`), but spaces and symbols are not, so `t/high value` and `t/high-value` are rejected; write `t/highValue`
-instead. Digits must be decimal digits (0 to 9, or the same digits in another script, such as `٣`), so number
-symbols like `½`, `²` and `①` are rejected.
+(`t/café`, `t/ज़िंदगी`), but spaces, symbols and invisible characters are not, so `t/high value` and `t/high-value`
+are rejected; write `t/highValue` instead. Each letter can carry up to 5 accents or marks, which is enough for words
+in scripts such as Hindi, Burmese and Hebrew, so only piled-up stacks of marks are rejected. Accents and marks count
+toward the 50 characters. Digits must be decimal digits (0 to 9, or the same digits in another script, such as `٣`),
+so number symbols like `½`, `²` and `①` are rejected.
 Tags ignore case, so `t/VIP` and `t/vip` are the same tag and a contact keeps only one of them.
 </box>
 
@@ -333,6 +335,8 @@ Examples:
 
 ### Viewing follow-ups that are due: `due`
 
+Shows contacts whose follow-up date is today or earlier, or within the next `DAYS` days if given, earliest first.
+
 Format: `due [DAYS]`
 
 * `due` shows follow-ups due today, plus any overdue ones.
@@ -343,6 +347,7 @@ Format: `due [DAYS]`
 * The result reports how many follow-ups are due, for example `3 follow-ups due by 28-10-2026.`
   If none are due, the result is `No follow-ups due by 28-10-2026.` and the displayed list is empty.
 * The index numbers follow this sorted list, so `done 1` after `due` completes the earliest follow-up.
+* After `done`, the contact leaves the due list because it no longer has a follow-up. Use `list` to see it again.
 * `list` shows all contacts again in their usual order.
 
 On the contact cards, a follow-up date that has already passed is shown in red with `(overdue)` after it.
@@ -384,6 +389,10 @@ interaction notes. You do not need to save manually. Commands that leave contact
 If saving fails, the app shows an error and restores your previous contacts and displayed list. Resolve the
 reported file or folder problem, then enter the command again. The previous saved data remains unchanged.
 
+For a permissions error, check that the reported data file and its parent folder are writable. If the error
+says a path is not a folder, move or rename the file blocking that folder path, restore the data folder if
+needed, then retry the command.
+
 ### Editing the data file
 
 Easy-Insurance data is saved automatically as a JSON file `data/addressbook.json`, inside the folder you run the app from. If you follow the Quick start, that is your home folder. Advanced users are welcome to update data directly by editing that data file.
@@ -391,7 +400,7 @@ Easy-Insurance data is saved automatically as a JSON file `data/addressbook.json
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid (including anything other than spaces or blank lines after its final closing `}`), Easy-Insurance copies it to `addressbook.json.bak` in the same `data` folder and then starts with an empty contact list. The invalid `addressbook.json` is overwritten after your next successful command that changes contact data, but the `.bak` copy is kept. To recover, close the app, fix the `.bak` file and rename it back to `addressbook.json`. A later backup replaces the previous `.bak` file, so we still recommend keeping your own copy before editing.<br>
+If your changes make the data file invalid (including anything other than spaces or blank lines after its final closing `}`, or saving it in an encoding other than UTF-8), Easy-Insurance copies it to `addressbook.json.bak` in the same `data` folder and then starts with an empty contact list. The invalid `addressbook.json` is overwritten after your next successful command that changes contact data, but the `.bak` copy is kept. To recover, close the app, fix the `.bak` file and rename it back to `addressbook.json`. A later backup replaces the previous `.bak` file, so we still recommend keeping your own copy before editing.<br>
 If Easy-Insurance cannot make the backup, it stops starting and leaves `addressbook.json` unchanged. Check that the `data` folder is writable and that `addressbook.json.bak` is not a folder, then try again.<br>
 Two contacts whose names differ only in case or extra spaces also make the data file invalid and cause it to load as an empty contact list.<br>
 Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
