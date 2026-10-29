@@ -26,11 +26,11 @@ public class HelpWindowSizeTest {
     public void getWindowSize_unsetDimensions_usesDefaults() {
         // EP: unset, zero and negative dimensions use the preferred opening size.
         Rectangle2D screen = new Rectangle2D(0, 0, 1920, 1080);
-        assertEquals(new Dimension2D(1040, 720), HelpWindow.getWindowSize(Double.NaN, Double.NaN, screen));
-        assertEquals(new Dimension2D(1040, 720), HelpWindow.getWindowSize(0, -1, screen));
+        assertEquals(new Dimension2D(640, 540), HelpWindow.getWindowSize(Double.NaN, Double.NaN, screen));
+        assertEquals(new Dimension2D(640, 540), HelpWindow.getWindowSize(0, -1, screen));
         // EP: each dimension is handled independently; an existing valid height is retained.
-        assertEquals(new Dimension2D(1040, 600), HelpWindow.getWindowSize(Double.NaN, 600, screen));
-        assertEquals(new Dimension2D(900, 720), HelpWindow.getWindowSize(900, 0, screen));
+        assertEquals(new Dimension2D(640, 600), HelpWindow.getWindowSize(Double.NaN, 600, screen));
+        assertEquals(new Dimension2D(900, 540), HelpWindow.getWindowSize(900, 0, screen));
     }
 
     @Test
