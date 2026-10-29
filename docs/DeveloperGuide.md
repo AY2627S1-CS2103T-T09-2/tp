@@ -205,6 +205,8 @@ These validation failures leave the contact unchanged. Execution stops before `M
 
 If saving fails with an `IOException` (including `AccessDeniedException`), `LogicManager` restores the
 pre-command address book, filter and sort order, then throws a `CommandException` with a save-error message.
+Permission errors name the configured data file rather than an internal temporary file. If a file blocks a
+required parent folder, the error names both the data file and the blocking path.
 The restored contact still has its pending follow-up, and the displayed indexes return to their previous order.
 No success result is returned. This rollback applies to commands that change contact data, including
 interaction notes. `LogicManager` compares the address book before and after execution and skips saving
@@ -637,7 +639,26 @@ testers are expected to do more *exploratory* testing.
       and the updated details are shown.
 
    1. Test case: `edit 1 f/`<br>
-      Expected: The first contact's follow-up is cleared and its card shows `Follow-up: None`.
+      Expected: The first contact's follow-up is cleared. The result includes `Follow-up: none`, and its card shows `Follow-up: None`. Other contact details remain unchanged.
+
+   1. Test case: Repeat `edit 1 f/`.<br>
+      Expected: The result still includes `Follow-up: none`. The contact remains unchanged.
+
+1. Replacing and clearing tags
+
+   1. Prerequisites: Run `list` and ensure at least one contact is shown.
+
+   1. Test case: `edit 1 t/b t/a`<br>
+      Expected: The first contact's tags are replaced with `a` and `b`. The result includes `Tags: [a] [b]`, and the follow-up date is unchanged.
+
+   1. Test case: `edit 1 t/`<br>
+      Expected: The tags are cleared. The result includes `Tags: none`, and the follow-up date is unchanged. Repeating the command still shows `Tags: none`.
+
+   1. Test case: `edit 1 t/ f/`<br>
+      Expected: Both tags and the follow-up are cleared. The result ends with `Tags: none; Follow-up: none`.
+
+   1. Test case: Close and reopen the app.<br>
+      Expected: The cleared fields remain empty, and the contact's other details are unchanged.
 
 1. Editing a contact with a past follow-up date
 
@@ -790,7 +811,3 @@ The items below are known flaws in the current version. Each item describes the 
 1. **Say that `find` cannot search by name and phone at the same time.**
    `find alice p/9123` and `find p/9123 alice` give `Phone search keywords must contain digits only. Example: find p/9123`, although `9123` is all digits. The real problem is that a name keyword and a phone search are mixed.<br>
    We plan to give this case its own message when there is a name keyword before `p/` or a word after the phone digits: `Search by name or by phone, not both. Use find KEYWORD [MORE_KEYWORDS] or find p/PHONE_DIGITS.` A phone search with a non-digit value, such as `find p/9a23`, keeps the current message.
-
-1. **Show empty tags and an empty follow-up as `none` in the `edit` success message.**
-   The success message leaves out the follow-up when there is none, and shows nothing after `Tags:` when there are no tags. `edit 1 f/` gives `Edited contact: John Tan; Phone: 91234567; Email: johntan@example.com; Address: 21 Clementi Ave 3; Status: PROSPECT; Tags: [referral][hotLead]`, so the user cannot tell from the message that the follow-up was cleared. `edit 2 t/` gives `...; Status: CLIENT; Tags: ; Follow-up: 16-10-2026`.<br>
-   We plan to always include both fields and show `none` when a field is empty. `edit 1 f/` then ends with `Tags: [referral][hotLead]; Follow-up: none`, and `edit 2 t/` shows `Tags: none; Follow-up: 16-10-2026`.
