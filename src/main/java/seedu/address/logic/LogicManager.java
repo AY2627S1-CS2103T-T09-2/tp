@@ -59,7 +59,7 @@ public class LogicManager implements Logic {
         Predicate<? super Person> previousPredicate = model.getPersonListPredicate();
         Comparator<? super Person> previousComparator = model.getPersonListComparator();
         CommandResult commandResult = command.execute(model);
-        if (previousData.equals(model.getAddressBook())) {
+        if (previousData.isIdenticalTo(model.getAddressBook())) {
             return commandResult;
         }
 
