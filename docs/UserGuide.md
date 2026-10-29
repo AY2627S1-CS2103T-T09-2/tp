@@ -69,8 +69,7 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 
 * `help` and `exit` accept no parameters.<br>
   Extra parameters are rejected with an error naming the command.<br>
-  For example, `clear 123` shows `The clear command does not accept additional parameters.`
-  and leaves all contacts unchanged.
+  For example, `help 123` shows `The help command does not accept additional parameters.`
 
 * `clear` accepts either no arguments or exactly `confirm`.
   Other parameters are rejected with an error naming the command.
