@@ -1,7 +1,7 @@
 ---
-  layout: default.md
-  title: "Developer Guide"
-  pageNav: 3
+layout: default.md
+title: "Developer Guide"
+pageNav: 3
 ---
 
 # Easy-Insurance Developer Guide
@@ -120,7 +120,7 @@ How the parsing works:
 
 <puml src="diagrams/ModelClassDiagram.puml" width="450" />
 
-`Status.DEFAULT` is `PROSPECT`. Each `Person` stores one status and optionally one follow-up date.
+`Status.DEFAULT` is `PROSPECT`. Each `Person` stores one status, optionally one follow-up date, optionally one last-contact date, and zero or more interaction notes.
 `Name` accepts Unicode letters and common name punctuation after an initial letter; `Phone` accepts
 an optional leading plus sign and separators between at least three digits.
 `Phone` is capped at 30 characters and `Email` at 254. Both lengths are checked before the regex, so
@@ -714,6 +714,7 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `add n/Ann Lee p/94567890 e/ann@example.com a/1 Clementi Ave f/31-02-2026`<br>
       Expected: No contact is added. Error: `31-02-2026 is not a real date.`
+
    1. Test case: `add n/Ann Lee p/94567890 e/ann@example.com a/1 Clementi Ave f/2026-12-25`<br>
       Expected: No contact is added. Error: `Follow-up date must be in DD-MM-YYYY format, e.g. 25-12-2026.`
 
@@ -856,10 +857,10 @@ testers are expected to do more *exploratory* testing.
 
    1. Prerequisites: `data/addressbook.json` holds at least one valid contact. The previous test leaves invalid data and an empty list, so run `add n/Old Format p/92345678 e/old@example.com a/2 Test Road st/CLIENT f/01-01-2030` first.
 
-   1. Close the app. Remove the `"status"` and `"followUp"` fields from one contact in `data/addressbook.json`.
+   1. Close the app. Remove the `"status"`, `"followUp"`, `"lastContact"` and `"interactionNotes"` fields from one contact in `data/addressbook.json`.
 
    1. Relaunch the app.<br>
-      Expected: The contact loads with status `PROSPECT` and no follow-up. Nothing else is lost.
+      Expected: The contact loads with status `PROSPECT`, no follow-up, no last-contact date and no interaction notes. Nothing else is lost.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -891,7 +892,7 @@ The items below are known flaws in the current version. Each item describes the 
 
 1. **Treat an index above 2147483647 as an index outside the list.**
    An index is read as a Java `int`, so a larger number is rejected as if it were not a number at all. `delete 2147483647` gives `There is no contact 2147483647. The list shows 8 contacts.`, but `delete 99999999999` and `done 2147483648` give `Index must be a positive integer.`, which is not true.<br>
-   We plan to give a positive whole number that is too large to store the same message as any other index outside the list. `delete 99999999999` then gives `There is no contact 99999999999. The list shows 8 contacts.` This applies to every command that takes an index: `delete`, `edit`, `done`, `note`, `history` and both indexes of `deletenote`.
+   We plan to give a positive whole number that is too large to store the same message as any other index outside the list. `delete 99999999999` then gives `There is no contact 99999999999. The list shows 8 contacts.` This applies to every command that takes an index: `delete`, `edit`, `done`, `contacted`, `note`, `history` and both indexes of `deletenote`.
 
 1. **Accept only the digits 0 to 9 in an index.**
    Java's number parser also accepts digits from other scripts, so they work as indexes. `delete ١` (the Arabic-Indic digit one) gives `Deleted contact: John Tan`, and `edit ２ n/Bob Wide` (a full-width 2) renames the second contact. Other numbers are stricter: `due ７` is rejected with `Number of days must be a whole number from 0 to 365, e.g. due 7.`<br>

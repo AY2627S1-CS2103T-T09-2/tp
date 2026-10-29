@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
+import seedu.address.logic.commands.ContactedCommand;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.DeleteNoteCommand;
 import seedu.address.logic.commands.DoneCommand;
@@ -30,6 +31,7 @@ import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.NoteCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.InteractionNote;
+import seedu.address.model.person.LastContact;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Status;
@@ -242,6 +244,19 @@ public class CommandInputParserTest {
                 expectedCommand,
                 parser.parseCommand(
                         HistoryCommand.COMMAND_WORD + " 1"));
+    }
+
+    @Test
+    public void parseCommand_contacted() throws ParseException {
+        ContactedCommand expectedCommand =
+                new ContactedCommand(
+                        INDEX_FIRST_PERSON,
+                        new LastContact("27-10-2026"));
+        assertEquals(
+                expectedCommand,
+                parser.parseCommand(
+                        ContactedCommand.COMMAND_WORD
+                                + " 1 d/27-10-2026"));
     }
 
     @Test

@@ -10,6 +10,7 @@ import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.InteractionNote;
+import seedu.address.model.person.LastContact;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -34,6 +35,7 @@ public class PersonBuilder {
     private Status status;
     private Set<Tag> tags;
     private Optional<FollowUp> followUp;
+    private Optional<LastContact> lastContact;
     private List<InteractionNote> interactionNotes;
 
     /**
@@ -47,6 +49,7 @@ public class PersonBuilder {
         status = Status.PROSPECT;
         tags = new HashSet<>();
         followUp = Optional.empty();
+        lastContact = Optional.empty();
         interactionNotes = new ArrayList<>();
     }
 
@@ -61,6 +64,7 @@ public class PersonBuilder {
         status = personToCopy.getStatus();
         tags = new HashSet<>(personToCopy.getTags());
         followUp = personToCopy.getFollowUp();
+        lastContact = personToCopy.getLastContact();
         interactionNotes = new ArrayList<>(personToCopy.getInteractionNotes());
     }
 
@@ -121,6 +125,14 @@ public class PersonBuilder {
     }
 
     /**
+     * Sets the {@code LastContact} of the {@code Person}.
+     */
+    public PersonBuilder withLastContact(String lastContact) {
+        this.lastContact = Optional.of(new LastContact(lastContact));
+        return this;
+    }
+
+    /**
      * Creates and sets interaction notes using the supplied note text.
      */
     public PersonBuilder withInteractionNotes(String... notes) {
@@ -153,6 +165,7 @@ public class PersonBuilder {
                 status,
                 tags,
                 followUp,
+                lastContact,
                 interactionNotes);
     }
 }

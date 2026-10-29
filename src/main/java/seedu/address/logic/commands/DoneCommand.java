@@ -66,10 +66,11 @@ public class DoneCommand extends Command {
                     String.format(MESSAGE_NO_PENDING_FOLLOW_UP, personToComplete.getName()));
         }
 
-        Person completedPerson = new Person(
-                personToComplete.getName(), personToComplete.getPhone(), personToComplete.getEmail(),
-                personToComplete.getAddress(), personToComplete.getStatus(), personToComplete.getTags(),
-                Optional.empty(), personToComplete.getInteractionNotes());
+        Person completedPerson = new Person(personToComplete.getName(), personToComplete.getPhone(),
+                personToComplete.getEmail(), personToComplete.getAddress(), personToComplete.getStatus(),
+                personToComplete.getTags(), Optional.empty(), personToComplete.getLastContact(),
+                personToComplete.getInteractionNotes());
+
         model.setPerson(personToComplete, completedPerson);
         logger.info(() -> "Cleared pending follow-up in model; displayedIndex=" + targetIndex.getOneBased());
 

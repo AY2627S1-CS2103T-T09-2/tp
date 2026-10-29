@@ -38,6 +38,8 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
    * `note 2 nt/Discussed hospital coverage with client` : Adds an interaction note to the 2nd displayed contact.
 
    * `history 2` : Shows the interaction history of the 2nd displayed contact.
+  
+   * `contacted 2 d/27-10-2026` : Updates the last contact date of the 2nd displayed contact.
 
    * `clear confirm` : Deletes all contacts after confirmation.
 
@@ -283,6 +285,31 @@ Examples:
 * `list` followed by `done 2` completes the second displayed contact's follow-up, if it has one.
 * `find John` followed by `done 1` completes the first matching contact's follow-up, if it has one.
 
+### Updating the last contact date: `contacted`
+
+Updates the date on which an existing contact was last contacted.
+
+Format: `contacted INDEX d/DD-MM-YYYY`
+
+* The index refers to the number shown in the displayed contact list.
+* The index must be a positive integer and refer to a displayed contact.
+* `d/DD-MM-YYYY` is required.
+* The date must be a valid calendar date in `DD-MM-YYYY` format. For example, `31-02-2026` is rejected.
+* Year `0000` and signed years are rejected.
+* The last contact date cannot be in the future. Today's date and past dates are accepted.
+* If the contact already has a last contact date, the existing date is replaced.
+* The contact's other details, follow-up and interaction notes remain unchanged.
+* The contact card displays `Last contacted: DD-MM-YYYY`. Contacts without a recorded last contact date display `Last contacted: Never`.
+
+On success, the result is:
+
+`Updated last contact date for <name> to <date>.`
+
+Examples:
+
+* `contacted 1 d/27-10-2026`
+* `find John` followed by `contacted 1 d/27-10-2026` updates the first displayed matching contact.
+
 ### Adding an interaction note: `note`
 
 Adds a note about an interaction with an existing contact.
@@ -313,15 +340,16 @@ Format: `history INDEX`
 
 * The index refers to the number shown in the displayed contact list.
 * The index must be a positive integer and refer to a displayed contact.
-* Notes are shown in the order they were recorded, with the oldest note first.
+* Notes are shown newest first.
+* Each note is displayed with the date and time it was recorded.
 * `history` does not modify the contact or its notes.
 
 If notes have been recorded, the result is shown in this format:
 
 ```text
 Interaction history for John Tan:
-1. Called client
-2. Discussed renewal options
+1. [29-10-2026 07:09] Discussed renewal options
+2. [29-10-2026 07:05] Called client
 ```
 
 If the contact has no interaction notes, the result is:
@@ -332,6 +360,21 @@ Examples:
 
 * `history 1`
 * `find John` followed by `history 1` shows the interaction history of the first displayed matching contact.
+
+### Deleting an interaction note: `deletenote`
+
+Deletes an interaction note from an existing contact.
+
+Format: `deletenote CONTACT_INDEX NOTE_INDEX`
+
+* `CONTACT_INDEX` refers to the contact's index in the currently displayed list.
+* `NOTE_INDEX` refers to the note number shown by the `history` command.
+* Both indices must be positive integers.
+* Deleting a note does not modify the contact's other details.
+
+Example:
+
+* `deletenote 1 2` deletes note 2 from the first displayed contact.
 
 ### Viewing follow-ups that are due: `due`
 
@@ -429,6 +472,7 @@ Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...` <br> e.g., `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT f/25-12-2026 t/referral`
 **Clear**  | `clear` to request confirmation<br>`clear confirm` to clear all contacts
+**Contacted** | `contacted INDEX d/DD-MM-YYYY`<br> e.g., `contacted 2 d/27-10-2026`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Due**    | `due [DAYS]`<br> e.g., `due 7`
@@ -437,5 +481,6 @@ Action     | Format, Examples
 **List**   | `list [st/STATUS] [t/TAG]`<br> e.g., `list st/CLIENT t/referral`
 **History**| `history INDEX`<br> e.g., `history 2`
 **Note**   | `note INDEX nt/NOTE`<br> e.g., `note 2 nt/Discussed hospital coverage`
+**DeleteNote** | `deletenote CONTACT_INDEX NOTE_INDEX`<br> e.g., `deletenote 1 2`
 **Help**   | `help`
 **Exit**   | `exit`
