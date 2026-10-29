@@ -3,7 +3,7 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -59,10 +59,9 @@ public class DeleteNoteCommand extends Command {
                 lastShownList.get(contactIndex.getZeroBased());
 
         List<InteractionNote> displayedNotes =
-                personToUpdate.getInteractionNotes().stream()
-                        .sorted(Comparator.comparing(
-                                InteractionNote::getCreatedAt).reversed())
-                        .toList();
+                new ArrayList<>(personToUpdate.getInteractionNotes());
+
+        Collections.reverse(displayedNotes);
 
         if (noteIndex.getZeroBased() >= displayedNotes.size()) {
             throw new CommandException(
@@ -71,13 +70,12 @@ public class DeleteNoteCommand extends Command {
                             displayedNotes.size()));
         }
 
-        InteractionNote noteToDelete =
-                displayedNotes.get(noteIndex.getZeroBased());
-
         List<InteractionNote> updatedNotes =
                 new ArrayList<>(personToUpdate.getInteractionNotes());
 
-        updatedNotes.remove(noteToDelete);
+        InteractionNote noteToDelete =
+                updatedNotes.remove(
+                        updatedNotes.size() - 1 - noteIndex.getZeroBased());
 
         Person updatedPerson = new Person(
                 personToUpdate.getName(),

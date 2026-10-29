@@ -19,23 +19,22 @@ import seedu.address.testutil.PersonBuilder;
 public class DeleteNoteCommandTest {
 
     @Test
-    public void execute_deleteDisplayedNote_preservesContactAndOtherNotes()
+    public void execute_deleteDisplayedNote_usesInsertionOrder()
             throws CommandException {
 
-        // EP: the selected contact has multiple notes, so deleting one must preserve the others.
-        // Boundary value: contact and note indexes are both 1, the first valid displayed indexes.
-        // The newest note is stored second, so deletion must use history order rather than storage order.
-        InteractionNote olderNote = new InteractionNote(
+        // EP: notes are ordered by insertion rather than their local timestamps.
+        // Simulates a time-zone change where the later-added note has an earlier-looking timestamp.
+        InteractionNote firstNote = new InteractionNote(
                 "Discussed hospital coverage",
-                LocalDateTime.of(2026, 10, 26, 20, 30));
-
-        InteractionNote newerNote = new InteractionNote(
-                "Client requested a quotation",
                 LocalDateTime.of(2026, 10, 26, 21, 10));
+
+        InteractionNote secondNote = new InteractionNote(
+                "Client requested a quotation",
+                LocalDateTime.of(2026, 10, 26, 20, 30));
 
         Person person = new PersonBuilder()
                 .withName("John Tan")
-                .withInteractionNotes(olderNote, newerNote)
+                .withInteractionNotes(firstNote, secondNote)
                 .build();
 
         Model model = new ModelManager();
@@ -63,7 +62,47 @@ public class DeleteNoteCommandTest {
         assertEquals(person.getFollowUp(), updatedPerson.getFollowUp());
 
         assertEquals(
-                List.of(olderNote),
+                List.of(firstNote),
+                updatedPerson.getInteractionNotes());
+    }
+
+    @Test
+    public void execute_equalNotes_deletesDisplayedPosition()
+            throws CommandException {
+
+        // EP: two notes can compare equal but occupy different stored positions.
+        // The newest displayed occurrence must be removed, not the first equal stored note.
+        InteractionNote sameNote = new InteractionNote(
+                "Same",
+                LocalDateTime.of(2026, 10, 26, 20, 30));
+
+        InteractionNote otherNote = new InteractionNote(
+                "Other",
+                LocalDateTime.of(2026, 10, 26, 21, 10));
+
+        Person person = new PersonBuilder()
+                .withName("John Tan")
+                .withInteractionNotes(sameNote, otherNote, sameNote)
+                .build();
+
+        Model model = new ModelManager();
+        model.addPerson(person);
+
+        DeleteNoteCommand command = new DeleteNoteCommand(
+                Index.fromOneBased(1),
+                Index.fromOneBased(1));
+
+        CommandResult result = command.execute(model);
+
+        Person updatedPerson =
+                model.getFilteredPersonList().get(0);
+
+        assertEquals(
+                "Deleted interaction note 1 for John Tan: Same",
+                result.getFeedbackToUser());
+
+        assertEquals(
+                List.of(sameNote, otherNote),
                 updatedPerson.getInteractionNotes());
     }
 
@@ -71,6 +110,8 @@ public class DeleteNoteCommandTest {
     public void execute_invalidNoteIndexWithOneNote_usesSingularNote()
             throws CommandException {
 
+        // EP: the requested note index is outside a one-note history.
+        // Boundary value: one stored note requires the singular noun in the error.
         InteractionNote note = new InteractionNote(
                 "Called client",
                 LocalDateTime.of(2026, 10, 26, 20, 30));
@@ -99,6 +140,8 @@ public class DeleteNoteCommandTest {
     public void execute_invalidNoteIndexWithTwoNotes_usesPluralNotes()
             throws CommandException {
 
+        // EP: the requested note index is outside a multi-note history.
+        // Boundary value: two stored notes require the plural noun in the error.
         InteractionNote firstNote = new InteractionNote(
                 "Called client",
                 LocalDateTime.of(2026, 10, 26, 20, 30));
