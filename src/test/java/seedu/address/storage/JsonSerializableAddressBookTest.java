@@ -15,6 +15,7 @@ import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.AddressBook;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.testutil.PersonBuilder;
 import seedu.address.testutil.TypicalPersons;
@@ -71,6 +72,21 @@ public class JsonSerializableAddressBookTest {
         AddressBook loaded = new JsonSerializableAddressBook(source).toModelType();
 
         assertEquals(source, loaded);
+    }
+
+    @Test
+    public void toModelType_normalizedNameAtLimit_preservesContactAfterJsonRoundTrip() throws Exception {
+        // EP: an accepted name expands under NFC and must still load from its saved canonical form.
+        // Boundary value: the stored name has exactly the maximum permitted length.
+        Person person = new PersonBuilder().withName("\u0958".repeat(Name.MAX_INPUT_LENGTH / 2)).build();
+        assertEquals(Name.MAX_INPUT_LENGTH, person.getName().fullName.length());
+        AddressBook source = new AddressBook();
+        source.addPerson(person);
+
+        String json = JsonUtil.toJsonString(new JsonSerializableAddressBook(source));
+        JsonSerializableAddressBook savedData = JsonUtil.fromJsonString(json, JsonSerializableAddressBook.class);
+
+        assertEquals(source, savedData.toModelType());
     }
 
     @Test

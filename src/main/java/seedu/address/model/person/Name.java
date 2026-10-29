@@ -50,7 +50,8 @@ public class Name {
         if (test.length() > MAX_INPUT_LENGTH) {
             return false;
         }
-        return Normalizer.normalize(test, Form.NFC).matches(VALIDATION_REGEX);
+        String normalized = Normalizer.normalize(test, Form.NFC);
+        return normalized.length() <= MAX_INPUT_LENGTH && normalized.matches(VALIDATION_REGEX);
     }
 
 

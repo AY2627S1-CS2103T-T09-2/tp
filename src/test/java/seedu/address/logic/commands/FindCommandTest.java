@@ -18,7 +18,9 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
+import seedu.address.model.person.Person;
 import seedu.address.model.person.PhoneContainsKeywordPredicate;
+import seedu.address.testutil.PersonBuilder;
 
 /**
  * Contains integration tests (interaction with the Model) for {@code FindCommand}.
@@ -97,6 +99,19 @@ public class FindCommandTest {
 
         assertCommandSuccess(command, model, "1 contact listed.", expectedModel);
         assertEquals(List.of(CARL), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_punctuatedNamePart_findsContact() {
+        // EP: a query starts after a hyphen and includes an apostrophe within the same name part.
+        Person person = new PersonBuilder().withName("Smith-O'Connor").build();
+        model.addPerson(person);
+        expectedModel.addPerson(person);
+        NameContainsKeywordsPredicate predicate = preparePredicate("o'connor");
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(new FindCommand(predicate), model, "1 contact listed.", expectedModel);
+        assertEquals(List.of(person), model.getFilteredPersonList());
     }
 
     @Test
