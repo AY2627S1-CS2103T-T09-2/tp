@@ -28,9 +28,9 @@ public class Tag {
     private static final int MAX_INPUT_LENGTH = 20 * MAX_LENGTH;
 
     public static final String MESSAGE_CONSTRAINTS =
-            "Tags must be a single word of letters and digits, up to " + MAX_LENGTH
-                    + " characters long, with no spaces, symbols or invisible characters, and at most "
-                    + MAX_MARKS_PER_LETTER + " accents or marks on each letter, e.g. referral or lifePolicy2.";
+            "Tags must be a single word of letters and digits, such as referral or lifePolicy2, up to "
+                    + MAX_LENGTH + " characters long, with no spaces, symbols or invisible characters, and at most "
+                    + MAX_MARKS_PER_LETTER + " accents or marks on each letter.";
 
     /*
      * A letter, minus the Hangul filler characters, which are classed as letters but draw nothing.
