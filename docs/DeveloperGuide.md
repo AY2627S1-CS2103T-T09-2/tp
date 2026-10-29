@@ -15,6 +15,9 @@
 
 * This project is based on the [AddressBook-Level3](https://github.com/se-edu/addressbook-level3) project created by the [SE-EDU initiative](https://se-education.org).
 * Libraries used: [JavaFX](https://openjfx.io/), [Jackson](https://github.com/FasterXML/jackson), [JUnit5](https://github.com/junit-team/junit5)
+* Tommy Quak used AI coding assistants (Claude and Codex) to help with parts of his coding, testing and documentation.
+  He reviewed all of the resulting code himself, and every change was also reviewed by a teammate, built and tested
+  before it was merged.
 
 --------------------------------------------------------------------------------------------------------------------
 
