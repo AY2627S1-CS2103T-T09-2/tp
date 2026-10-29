@@ -36,6 +36,12 @@ public class DueCommand extends Command {
             .of(Collator.PRIMARY, Collator.SECONDARY, Collator.TERTIARY)
             .map(DueCommand::rootCollator)
             .toList();
+    // The collators treat letters with a stroke or bar (Đ, Ł, Ħ, Ø) as separate letters after Z. For the
+    // base-letter pass only, each is read as its base letter, so Đặng sorts next to Dang and Łukasz next to Lukas.
+    // The accent and case passes still see the original letters, so the plain letter comes first on a tie.
+    private static final String STROKE_LETTERS = "\u0110\u0111\u0126\u0127\u0141\u0142\u00d8\u00f8"
+            + "\u0166\u0167\u01b5\u01b6\u0197\u0268\u0243\u0180\u01e4\u01e5\u0131";
+    private static final String STROKE_BASE_LETTERS = "DdHhLlOoTtZzIiBbGgi";
     // Only breaks ties between names whose words all match, e.g. "Tan, Ann" and "Tan Ann".
     private static final Collator WHOLE_NAME_COLLATOR = rootCollator(Collator.TERTIARY);
     // Spaces, commas, periods and hyphens end a word; apostrophes and slashes stay inside one (O'Brien, s/o).
@@ -74,7 +80,8 @@ public class DueCommand extends Command {
     /**
      * Compares two names word by word, so "Li Mei" comes before "Lim Bo" and "Tan Wei" before "Tanaka".
      * Spaces, commas, periods and hyphens separate words, so they sort before any letter. Words are compared
-     * with collators, first by base letters only, then by accents, then by case, so an accent or capital
+     * with collators, first by base letters only (reading Đ as D, Ł as L and so on), then by accents, then by
+     * case, so an accent or capital
      * in one word never outranks a different letter in a later word. Names that still tie are compared
      * as a whole and then by their raw text.
      */
@@ -82,7 +89,10 @@ public class DueCommand extends Command {
         String[] firstWords = splitWords(first);
         String[] secondWords = splitWords(second);
         for (Collator collator : NAME_COLLATORS) {
-            int result = compareWords(collator, firstWords, secondWords);
+            boolean isBaseLetterPass = collator.getStrength() == Collator.PRIMARY;
+            int result = isBaseLetterPass
+                    ? compareWords(collator, foldStrokeLetters(firstWords), foldStrokeLetters(secondWords))
+                    : compareWords(collator, firstWords, secondWords);
             if (result != 0) {
                 return result;
             }
@@ -91,6 +101,25 @@ public class DueCommand extends Command {
         // No two different valid names tie on the collator today, but if one ever did (say, after a change
         // to the name rules), comparing the raw text keeps the order total and independent of insertion order.
         return result != 0 ? result : first.compareTo(second);
+    }
+
+    /**
+     * Returns {@code words} with each letter in {@link #STROKE_LETTERS} replaced by its base letter,
+     * e.g. "Đặng" becomes "Dặng".
+     */
+    private static String[] foldStrokeLetters(String[] words) {
+        String[] folded = new String[words.length];
+        for (int i = 0; i < words.length; i++) {
+            char[] letters = words[i].toCharArray();
+            for (int j = 0; j < letters.length; j++) {
+                int strokeIndex = STROKE_LETTERS.indexOf(letters[j]);
+                if (strokeIndex >= 0) {
+                    letters[j] = STROKE_BASE_LETTERS.charAt(strokeIndex);
+                }
+            }
+            folded[i] = new String(letters);
+        }
+        return folded;
     }
 
     private static String[] splitWords(String name) {

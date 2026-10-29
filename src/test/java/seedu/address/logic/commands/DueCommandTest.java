@@ -169,6 +169,27 @@ public class DueCommandTest {
     }
 
     @Test
+    public void execute_sameDate_strokeLettersSortNextToBaseLetter() {
+        // EP: letters with a stroke, which the collator alone puts after Z, sort next to their base letter.
+        assertSameDayOrder(List.of("Dang Mei", "\u0110\u1eb7ng V\u0103n H\u00f9ng", "Zack Lim"),
+                "\u0110\u1eb7ng V\u0103n H\u00f9ng", "Zack Lim", "Dang Mei");
+        assertSameDayOrder(List.of("Lukas Ong", "\u0141ukasz Nowak", "Zack Lim"),
+                "Zack Lim", "\u0141ukasz Nowak", "Lukas Ong");
+        assertSameDayOrder(List.of("Hana Lee", "\u0126elena Vella", "Ian Tan", "\u00d8ystein Berg", "Paul Ng"),
+                "Paul Ng", "\u00d8ystein Berg", "Ian Tan", "\u0126elena Vella", "Hana Lee");
+    }
+
+    @Test
+    public void execute_sameDate_strokeLetterAfterBaseLetterOnTie() {
+        // EP: names that match once strokes are ignored keep a fixed order: the plain letter first.
+        assertSameDayOrder(List.of("Dang Mei", "\u0110ang Mei"), "\u0110ang Mei", "Dang Mei");
+        assertSameDayOrder(List.of("Dang Mei", "\u0110ang Mei"), "Dang Mei", "\u0110ang Mei");
+        assertSameDayOrder(List.of("lukas Ong", "\u0141ukas Ong"), "\u0141ukas Ong", "lukas Ong");
+        // The next word still outranks the stroke.
+        assertSameDayOrder(List.of("\u0141ee Ann", "Lee Bo"), "Lee Bo", "\u0141ee Ann");
+    }
+
+    @Test
     public void execute_sameDate_hyphensSeparateWords() {
         // EP: a hyphen splits a name into words just like a space does.
         assertSameDayOrder(List.of("Mary-Ann Lee", "Mary Tan", "Maryann Lim"),
