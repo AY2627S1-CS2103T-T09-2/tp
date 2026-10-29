@@ -33,7 +33,9 @@ public class ClearCommandParser implements Parser<ClearCommand> {
             return new ClearCommand(true);
         }
 
+        // @@author kaseyho
         throw new ParseException(
                 String.format(MESSAGE_NO_PARAMETERS_EXPECTED, ClearCommand.COMMAND_WORD));
+        // @@author
     }
 }

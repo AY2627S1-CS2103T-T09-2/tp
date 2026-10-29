@@ -27,11 +27,13 @@ We are a team based in the [School of Computing, National University of Singapor
 * Role: Developer
 * Responsibilities: Team lead, documentation, release and integration
 
+<!-- @@author kaseyho -->
 ### Kasey Ho Kei Ching
 
 <img src="images/kaseyho.png" width="200px">
 
 [[github](https://github.com/kaseyho)]
+<!-- @@author -->
 
 * Role: Developer
 * Responsibilities: Git expert, in charge of Model and Storage components
