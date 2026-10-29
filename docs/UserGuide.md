@@ -79,6 +79,8 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 * Command words are case-insensitive.
   For example, `list`, `LIST`, and `LiSt` are treated as the same command.
 
+* Field prefixes are case-sensitive. Type them in lowercase, for example `n/`, `a/` and `st/`.
+
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </box>
 
@@ -150,10 +152,19 @@ A phone number can be at most 30 characters long and an email at most 254 charac
 Phone numbers are saved exactly as entered. If a name is already in the contact list, Easy-Insurance
 shows that contact's name and phone number.
 
+<box type="warning" seamless>
+
+**Names containing A/L or A/P:** Use fully capitalized `A/L` or `A/P`, for example `Ravi A/L Kumar`
+or `Devi A/P Kumar`, to keep these words in the name.
+As a known limitation, a lowercase `a/` after a space starts an address instead, including in
+`a/l`, `a/L`, `a/p` and `a/P`. For example, `n/Ravi a/l Kumar` sets the name to `Ravi` and the address
+to `l Kumar`. Supplying another `a/ADDRESS` in the same command causes a duplicate-address-prefix error.
+</box>
+
 Examples:
 * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
 * `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT t/referral`
-* `add n/Ravi Kumar p/92345678 e/ravi@example.com a/10 Tampines Street 1 st/CLIENT f/25-12-2026`
+* `add n/Ravi A/L Kumar p/92345678 e/ravi@example.com a/10 Tampines Street 1 st/CLIENT f/25-12-2026`
 
 If the current view filters out a new contact, it is still saved. The result tells you it is hidden; enter `list` to show all contacts.
 
@@ -162,8 +173,6 @@ If the current view filters out a new contact, it is still saved. The result tel
 Shows all contacts, or filters contacts by status, tag, or both.
 
 Format: `list [st/STATUS] [t/TAG]`
-
-Known issue: names containing `a/l` are interpreted as an address prefix by the command parser.
 
 * Plain `list` removes the current filter and shows all contacts.
 * `st/STATUS` accepts `PROSPECT`, `CLIENT`, or `INACTIVE`, ignoring case.
@@ -195,6 +204,9 @@ Format: `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] 
 * Edits the contact at the specified `INDEX`. The index refers to the index number shown in the displayed contact list. The index **must be a positive integer** 1, 2, 3, ...
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
+* Use fully capitalized `A/L` or `A/P` within names. Editing only the name preserves the existing address.
+  A lowercase `a/` after a space starts an address, including in `a/l`, `a/L`, `a/p` and `a/P`.
+  For example, `edit 1 n/Ravi a/L Kumar` sets the name to `Ravi` and replaces the address with `L Kumar`.
 * `st/STATUS` changes the contact's status. Status is case-insensitive.
 * A new phone number (at most 30 characters) or email (at most 254 characters) follows the same rules as in `add`.
 * `f/FOLLOW_UP_DATE` changes the follow-up date. The date must be real and in `DD-MM-YYYY` format.
@@ -202,12 +214,15 @@ Format: `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] 
 * To clear an existing follow-up, enter `f/` without a date after it.
 * When editing tags, all of the contact's existing tags are removed; adding tags is not cumulative.
 * To remove all of a contact's tags, enter `t/` without a tag after it.
+* The success message always includes tags and the follow-up date. Empty fields show `Tags: none` or `Follow-up: none`. Multiple tags are separated by spaces, for example `Tags: [a] [b]`, in the same order as on the contact card.
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st contact to be `91234567` and `johndoe@example.com` respectively.
 *  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd contact to be `Betsy Crower` and clears all existing tags.
 *  `edit 1 st/CLIENT f/25-12-2026` Changes the 1st contact's status and follow-up date.
 *  `edit 1 f/` Clears the 1st contact's follow-up date.
+*  `edit 1 n/Ravi A/L Kumar` Changes only the name; the address stays unchanged.
+*  `edit 1 n/Devi A/P Kumar a/20 Tampines Street 2` Changes both the name and the address.
 
 ### Finding contacts by name or phone: `find`
 
@@ -367,6 +382,10 @@ interaction notes. You do not need to save manually. Commands that leave contact
 
 If saving fails, the app shows an error and restores your previous contacts and displayed list. Resolve the
 reported file or folder problem, then enter the command again. The previous saved data remains unchanged.
+
+For a permissions error, check that the reported data file and its parent folder are writable. If the error
+says a path is not a folder, move or rename the file blocking that folder path, restore the data folder if
+needed, then retry the command.
 
 ### Editing the data file
 
