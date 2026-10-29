@@ -42,6 +42,8 @@ import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSucces
 import static seedu.address.testutil.TypicalPersons.AMY;
 import static seedu.address.testutil.TypicalPersons.BOB;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.Messages;
@@ -351,6 +353,32 @@ public class AddCommandParserTest {
         assertParseFailure(parser, PREAMBLE_NON_EMPTY + NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB
                 + ADDRESS_DESC_BOB + TAG_DESC_HUSBAND + TAG_DESC_FRIEND,
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
+    }
+
+    @Test
+    public void parse_prefixFromOtherCommand_failure() {
+        // EP: nt/ after the name would otherwise be saved as part of the name.
+        assertParseFailure(parser, NAME_DESC_BOB + " nt/Met at roadshow" + PHONE_DESC_BOB + EMAIL_DESC_BOB
+                + ADDRESS_DESC_BOB, "nt/ is not used by add. Use note INDEX nt/NOTE to add a note.");
+
+        // EP: d/ after the address would otherwise be saved as part of the address.
+        assertParseFailure(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB
+                + " d/27-10-2026", "d/ is not used by add. Use contacted INDEX d/DD-MM-YYYY to record the "
+                + "last contact date.");
+
+        // EP: the prefix is reported before a missing required field.
+        assertParseFailure(parser, NAME_DESC_BOB + " nt/x",
+                "nt/ is not used by add. Use note INDEX nt/NOTE to add a note.");
+    }
+
+    @Test
+    public void parse_nameWithSlashWord_success() {
+        // EP: s/o and d/o in a name are not prefixes, so the whole name is kept.
+        for (String name : List.of("Raj s/o Kumar", "Aisha d/o Rahman", "Siti D/O Ahmad", "Siti d/o-Kumar")) {
+            Person expectedPerson = new PersonBuilder(BOB).withName(name).withTags().build();
+            assertParseSuccess(parser, " " + PREFIX_NAME + name + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB,
+                    new AddCommand(expectedPerson));
+        }
     }
 
     private static String missingFieldsMessage(String missingFields) {

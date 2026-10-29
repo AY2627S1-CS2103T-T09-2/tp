@@ -1,6 +1,8 @@
 package seedu.address.logic.parser;
 
 import static java.util.Objects.requireNonNull;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_LAST_CONTACT;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_NOTE;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -26,6 +28,11 @@ import seedu.address.model.tag.Tag;
 public class ParserUtil {
 
     public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer.";
+
+    public static final String MESSAGE_UNSUPPORTED_PREFIX = "%1$s is not used by %2$s.";
+    public static final String MESSAGE_USE_NOTE_COMMAND = "Use note INDEX nt/NOTE to add a note.";
+    public static final String MESSAGE_USE_CONTACTED_COMMAND =
+            "Use contacted INDEX d/DD-MM-YYYY to record the last contact date.";
 
     /**
      * Name words that start like a prefix, such as {@code d/o} in "Siti d/o Ahmad" or "Siti D/O-Kumar",
@@ -56,6 +63,30 @@ public class ParserUtil {
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * Checks that {@code args} has no prefix of another command, as found by
+     * {@link #findUnsupportedPrefix(String, Prefix...)}. Without this check, such a prefix and its value
+     * would be saved as part of the field before it, e.g. {@code add n/Bob nt/Met at roadshow ...} would
+     * name the contact "Bob nt/Met at roadshow".
+     *
+     * @throws ParseException naming the prefix, {@code commandWord} and the command that uses the prefix.
+     */
+    public static void verifyNoUnsupportedPrefix(String args, String commandWord, Prefix... supportedPrefixes)
+            throws ParseException {
+        Optional<Prefix> unsupportedPrefix = findUnsupportedPrefix(args, supportedPrefixes);
+        if (unsupportedPrefix.isEmpty()) {
+            return;
+        }
+        Prefix prefix = unsupportedPrefix.get();
+        String message = String.format(MESSAGE_UNSUPPORTED_PREFIX, prefix, commandWord);
+        if (prefix.equals(PREFIX_NOTE)) {
+            message += " " + MESSAGE_USE_NOTE_COMMAND;
+        } else if (prefix.equals(PREFIX_LAST_CONTACT)) {
+            message += " " + MESSAGE_USE_CONTACTED_COMMAND;
+        }
+        throw new ParseException(message);
     }
 
     /**
