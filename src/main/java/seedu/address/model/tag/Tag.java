@@ -17,6 +17,9 @@ public class Tag {
     /** Longest tag allowed, counted in Unicode code points after NFC normalization. */
     public static final int MAX_LENGTH = 50;
 
+    /** Most combining marks, such as accents and vowel signs, that one letter may carry. */
+    public static final int MAX_MARKS_PER_LETTER = 5;
+
     /*
      * Inputs longer than this many UTF-16 chars are rejected before NFC normalization, so very long
      * inputs cost almost nothing. NFC composes at most four code points into one, and a code point takes
@@ -25,8 +28,9 @@ public class Tag {
     private static final int MAX_INPUT_LENGTH = 20 * MAX_LENGTH;
 
     public static final String MESSAGE_CONSTRAINTS =
-            "Tags must be a single word of letters and digits, up to " + MAX_LENGTH
-                    + " characters long, with no spaces or symbols, e.g. referral or lifePolicy2.";
+            "Tags must be a single word of letters and digits, such as referral or lifePolicy2, up to "
+                    + MAX_LENGTH + " characters long, with no spaces, symbols or invisible characters, and at most "
+                    + MAX_MARKS_PER_LETTER + " accents or marks on each letter.";
 
     /*
      * A letter, minus the Hangul filler characters, which are classed as letters but draw nothing.
@@ -36,19 +40,24 @@ public class Tag {
     /*
      * A combining mark that can follow a letter, such as an accent or a vowel sign in Hindi or Tamil.
      * Enclosing marks and variation selectors are left out because they only change how the previous
-     * character is drawn, for example turning "1" into a keycap emoji. The combining grapheme joiner
-     * and the Mongolian variation selectors and vowel separator are left out because they are invisible.
+     * character is drawn, for example turning "1" into a keycap emoji. Marks that Unicode lists as
+     * default ignorable are left out because they draw nothing, so "vip" with one of them added would
+     * look the same as "vip": the combining grapheme joiner, the Khmer inherent vowels and the Mongolian
+     * variation selectors and vowel separator.
      */
-    private static final String MARK =
-            "[\\p{Mn}\\p{Mc}&&[^\\u034F\\u180B-\\u180F\\uFE00-\\uFE0F\\x{E0100}-\\x{E01EF}]]";
+    private static final String MARK = "[\\p{Mn}\\p{Mc}&&[^\\u034F\\u17B4\\u17B5\\u180B-\\u180F"
+            + "\\uFE00-\\uFE0F\\x{E0100}-\\x{E01EF}]]";
 
     /*
      * A tag is one word of letters and decimal digits, such as "referral", "café" or "2026".
-     * Each letter may carry up to two combining marks, which covers accents and vowel signs while
-     * rejecting tall stacks of marks that pile up on one letter. Digits are decimal digits from any
-     * script, so number symbols such as "½", "²" and "①" are rejected.
+     * Each letter may carry up to MAX_MARKS_PER_LETTER combining marks. Real words need up to five:
+     * Hindi "ज़िंदगी" has three on one letter (nukta, vowel sign and anusvara), and Burmese "လျှော့"
+     * has five (two medials, a two-part vowel and a tone mark). Taller stacks are rejected, since they
+     * only pile marks on top of one another. Digits are decimal digits from any script, so number symbols
+     * such as "½", "²" and "①" are rejected.
      */
-    public static final String VALIDATION_REGEX = "(?:" + LETTER + MARK + "{0,2}+|\\p{Nd})++";
+    public static final String VALIDATION_REGEX =
+            "(?:" + LETTER + MARK + "{0," + MAX_MARKS_PER_LETTER + "}+|\\p{Nd})++";
 
     private static final Pattern VALIDATION_PATTERN = Pattern.compile(VALIDATION_REGEX);
 
