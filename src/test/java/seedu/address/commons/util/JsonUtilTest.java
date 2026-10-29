@@ -116,6 +116,15 @@ public class JsonUtilTest {
     }
 
     @Test
+    public void readJsonFile_otherSpaceCharactersAfterValue_throwsDataLoadingException() {
+        // EP: only spaces, tabs and line breaks may follow the value, as the user guide says.
+        assertTrailingContentRejected(VALID_JSON + "\f");
+        assertTrailingContentRejected(VALID_JSON + "\u000B");
+        assertTrailingContentRejected(VALID_JSON + "\u00A0");
+        assertTrailingContentRejected(VALID_JSON + "\u3000");
+    }
+
+    @Test
     public void readJsonFile_scalarAfterValue_throwsDataLoadingException() {
         // EP: valid JSON literals after the value are still extra content.
         assertTrailingContentRejected(VALID_JSON + " 5");
@@ -185,6 +194,16 @@ public class JsonUtilTest {
     }
 
     @Test
+    public void fromJsonString_slashAfterValue_messageGivesLocationOfSlash() {
+        // EP: a comment or a lone slash. Jackson reports these at the closing brace, not at the slash.
+        assertTrailingContentLocation("{\"persons\":[]}\n\n// note", 3, 1);
+        assertTrailingContentLocation("{\"persons\":[]}\n\n/", 3, 1);
+        assertTrailingContentLocation("{\"persons\":[]} /* note */", 1, 16);
+        assertTrailingContentLocation("{}\r\n\t//", 2, 2);
+        assertTrailingContentLocation("{}\r\r/", 3, 1);
+    }
+
+    @Test
     public void fromJsonString_singleValue_success() throws IOException {
         assertTestValues(JsonUtil.fromJsonString(VALID_JSON, SerializableTestClass.class));
         assertEquals(Integer.valueOf(5), JsonUtil.fromJsonString(" 5 \n", Integer.class));
@@ -194,6 +213,11 @@ public class JsonUtilTest {
         Path filePath = testFolder.resolve("data.json");
         Files.writeString(filePath, content);
         return JsonUtil.readJsonFile(filePath, SerializableTestClass.class).get();
+    }
+
+    private static void assertTrailingContentLocation(String json, int line, int column) {
+        IOException e = assertThrows(IOException.class, () -> JsonUtil.fromJsonString(json, Object.class));
+        assertEquals(String.format(JsonUtil.MESSAGE_TRAILING_CONTENT, line, column), e.getMessage());
     }
 
     private void assertTrailingContentRejected(String content) {

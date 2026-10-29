@@ -126,7 +126,7 @@ public class JsonUtil {
         requireValidStructure(json);
         try (JsonParser parser = objectMapper.getFactory().createParser(json)) {
             T instance = objectMapper.readValue(parser, instanceClass);
-            requireNoTrailingContent(parser);
+            requireNoTrailingContent(parser, json);
             return instance;
         }
     }
@@ -137,7 +137,7 @@ public class JsonUtil {
      * recurses once per level, so this streaming pass, which uses no recursion, has to run first.
      * Repeated keys are checked here too because Jackson 2.7 does not say where the repeated key is,
      * which makes it hard to find in a large data file. Only the first value is checked; anything after
-     * it is reported by {@link #requireNoTrailingContent(JsonParser)} instead.
+     * it is reported by {@link #requireNoTrailingContent(JsonParser, String)} instead.
      */
     private static void requireValidStructure(String json) throws IOException {
         try (JsonParser parser = objectMapper.getFactory().createParser(json)) {
@@ -183,29 +183,54 @@ public class JsonUtil {
     }
 
     /**
-     * Throws an {@code IOException} if {@code parser} has anything other than whitespace left after
-     * the JSON value it just read. Jackson stops after the first value, so without this check a
-     * second object or stray text at the end of a data file would be dropped without any error.
+     * Throws an {@code IOException} if {@code parser}, which just read a JSON value from {@code json},
+     * has anything other than whitespace left after that value. Jackson stops after the first value,
+     * so without this check a second object or stray text at the end of a data file would be dropped
+     * without any error.
      */
-    private static void requireNoTrailingContent(JsonParser parser) throws IOException {
+    private static void requireNoTrailingContent(JsonParser parser, String json) throws IOException {
+        int endOfValue = (int) parser.getCurrentLocation().getCharOffset();
         JsonToken trailingToken;
         try {
             trailingToken = parser.nextToken();
         } catch (JsonProcessingException e) {
-            // The leftover text is not even a valid JSON token, e.g. a stray comma or brace.
-            // The token location is usually closer to the stray text than the exception's location,
-            // though for some characters it can still point at the end of the JSON value.
-            throw new IOException(getTrailingContentMessage(parser), e);
+            // The leftover text is not even a valid JSON token, e.g. a stray comma or slash.
+            throw new IOException(getTrailingContentMessage(json, endOfValue), e);
         }
 
         if (trailingToken != null) {
-            throw new IOException(getTrailingContentMessage(parser));
+            throw new IOException(getTrailingContentMessage(json, endOfValue));
         }
     }
 
-    private static String getTrailingContentMessage(JsonParser parser) {
-        JsonLocation location = parser.getTokenLocation();
-        return String.format(MESSAGE_TRAILING_CONTENT, location.getLineNr(), location.getColumnNr());
+    /**
+     * Returns the trailing-content message with the line and column of the first character after
+     * {@code endOfValue} that is not JSON whitespace. Jackson's own locations are not reliable here:
+     * for a {@code //} comment or a lone {@code /}, its token location is still the end of the JSON
+     * value and its error location is past the start of the stray text.
+     */
+    private static String getTrailingContentMessage(String json, int endOfValue) {
+        int line = 1;
+        int lineStart = 0;
+        int index = 0;
+        while (index < json.length() && (index < endOfValue || isJsonWhitespace(json.charAt(index)))) {
+            char c = json.charAt(index);
+            index++;
+            // Like Jackson, count CR LF as one line break and a lone CR as a line break too.
+            boolean isCrBeforeLf = c == '\r' && index < json.length() && json.charAt(index) == '\n';
+            if (c == '\n' || (c == '\r' && !isCrBeforeLf)) {
+                line++;
+                lineStart = index;
+            }
+        }
+        return String.format(MESSAGE_TRAILING_CONTENT, line, index - lineStart + 1);
+    }
+
+    /**
+     * Returns true if {@code c} is one of the four whitespace characters JSON allows between tokens.
+     */
+    private static boolean isJsonWhitespace(char c) {
+        return c == ' ' || c == '\t' || c == '\n' || c == '\r';
     }
 
     /**

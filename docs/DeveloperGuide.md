@@ -99,12 +99,6 @@ The sequence diagram below illustrates how the `find` command filters contacts b
 
 <puml src="diagrams/FindSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `find` Command" />
 
-<box type="info" seamless>
-
-**Note:** The lifeline for `DeleteCommandParser` should end at the destroy marker (X), but due to a limitation of PlantUML, the lifeline continues till the end of diagram.
-</box>
-
-
 How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to a `CommandInputParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
@@ -167,6 +161,74 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Implementation**
+
+### Loading and backing up the data file
+
+Contact data is stored in `data/addressbook.json`, in the folder the app is launched from. `MainApp#initModelManager`
+reads it once at startup by calling `Storage#readAddressBookWithBackup()`, which `StorageManager` passes on to
+`JsonAddressBookStorage`. The activity diagram below shows the possible outcomes.
+
+<puml src="diagrams/DataFileLoadingActivityDiagram.puml" alt="Loading the data file at startup" />
+
+1. If the data file does not exist, `JsonUtil.readJsonFile` returns `Optional.empty()` and `MainApp` loads the
+   sample contacts from `SampleDataUtil`. The file is created the first time a command changes contact data.
+2. Otherwise, `FileUtil.readFromFile` reads the bytes and decodes them as UTF-8 with a decoder that reports invalid
+   bytes instead of replacing them with the character U+FFFD. Replaced characters would be written back on the next
+   save, so the original text would be lost. The error gives the byte offset of the first invalid sequence.
+3. `JsonUtil.fromJsonString` parses the text in three steps:
+   * `requireValidStructure` reads the tokens without recursion. It rejects a key that appears twice in one object,
+     and objects or arrays nested more than 100 levels deep (`MAX_NESTING_DEPTH`), giving the line and column.
+     Without this pass, a repeated key would be reported without its location, and deep nesting would overflow
+     the stack inside Jackson.
+   * Jackson maps the JSON value to a `JsonSerializableAddressBook`. Unknown fields are ignored.
+   * `requireNoTrailingContent` rejects anything other than whitespace after the JSON value, because Jackson stops
+     reading after the first value and would drop the rest without an error.
+
+   `readJsonFile` also rejects a file that contains only `null`.
+4. `JsonSerializableAddressBook#toModelType` converts each `JsonAdaptedPerson`, which checks every field with the
+   same model methods that the commands use, such as `Name#isValidName`. Null entries and duplicate contacts are
+   rejected. A missing or blank `status` becomes `PROSPECT` and a missing `followUp` means no follow-up, so data
+   files from older versions still load.
+5. A failure in any of steps 2 to 4 causes a `DataLoadingException`. `readAddressBookWithBackup` copies the data
+   file to `addressbook.json.bak` in the same folder, replacing any older backup, and rethrows the exception.
+   `MainApp` logs a warning and starts with an empty `AddressBook`.
+6. If the data file is not a regular file, such as a folder, or the copy cannot be made, `readAddressBookWithBackup`
+   throws a `DataBackupException` instead. `MainApp#initModelManager` rethrows it as an `IllegalStateException`, so
+   the app does not open. The message names the data file and the backup path and says that the original file was
+   not changed.
+
+Starting with an empty list does not save anything. The invalid data file stays on disk until the first command
+that changes contact data replaces it, because `LogicManager` skips saving when the data is unchanged.
+From then on, the `.bak` copy is the only copy of the old data.
+
+#### Design considerations
+
+**Aspect: What to do when the data file cannot be loaded**
+
+* **Alternative 1 (current choice):** Back up the file, then start with an empty contact list.
+  * Pros: The app opens whenever the invalid file can be backed up, and the user's data is kept in full in the
+    `.bak` file for recovery.
+  * Cons: The next change replaces the invalid file, so the user must recover from the `.bak` file. A later
+    failed load replaces that backup too.
+* **Alternative 2:** Refuse to start until the file is fixed.
+  * Pros: The invalid file can never be overwritten.
+  * Cons: The agent cannot use the app at all until they find and fix the problem in the JSON by hand. We keep
+    this behaviour only for the case where the backup cannot be made, because starting then would put the only
+    copy of the data at risk.
+
+**Aspect: How strictly to read the file**
+
+* **Alternative 1 (current choice):** Reject invalid UTF-8, repeated keys, deep nesting, trailing content and
+  invalid field values. Accept unknown fields and missing optional fields.
+  * Pros: No contact data is dropped or changed without the user knowing (only unknown fields, which the app does
+    not use, are discarded on the next save), and a rejected file is backed up whole. Files from older versions
+    still load.
+  * Cons: One bad value makes the whole file load as an empty list, instead of skipping only the bad contact.
+* **Alternative 2:** Read leniently, for example by skipping invalid contacts, keeping the last of repeated keys
+  and replacing bad bytes.
+  * Pros: More of the data appears straight away.
+  * Cons: The skipped contacts and replaced text are lost for good on the next save, with no backup and no
+    warning, so the user may not notice until much later.
 
 ### Completing a follow-up
 
@@ -237,11 +299,6 @@ of the current implementation; their preservation tests must be added when those
 The sequence diagram below shows how `due 7` is executed.
 
 <puml src="diagrams/DueSequenceDiagram.puml" alt="Interactions inside the Logic and Model components for the `due 7` command" />
-
-<box type="info" seamless>
-
-**Note:** The lifeline for `DueCommandParser` should end at the destroy marker (X) but due to a limitation of PlantUML, the lifeline continues till the end of diagram.
-</box>
 
 **Design considerations:**
 
@@ -432,6 +489,34 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   * 3b1. System explains that the contact reference is invalid.
   * Use case ends without changing any contacts.
 
+**Use case: Review due follow-ups**
+
+**MSS**
+
+1. Agent requests to see the follow-ups due within a given number of days from today.
+2. System works out the cutoff date, which is today plus that number of days.
+3. System shows only the contacts whose follow-up date is on or before the cutoff date, including overdue ones,
+   earliest date first. Contacts with the same date are sorted by name.
+4. System reports how many follow-ups are due and the cutoff date.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. Agent does not give a number of days.
+  * 1a1. System uses 0 days, so the cutoff date is today.
+  * Use case resumes at step 3.
+* 1b. The number of days is not a whole number from 0 to 365.
+  * 1b1. System shows `Number of days must be a whole number from 0 to 365, e.g. due 7.`
+  * Use case ends without changing the displayed list.
+* 3a. No contact has a follow-up on or before the cutoff date.
+  * 3a1. System shows an empty list and reports that no follow-ups are due by the cutoff date.
+  * Use case ends.
+* 4a. Agent completes one of the listed follow-ups, referring to it by its position in the sorted list.
+  * 4a1. System clears that follow-up as in the use case *Complete a follow-up*, and removes the contact from
+    the list because it no longer has a follow-up.
+  * Use case ends.
+
 **Use case: Delete a contact**
 
 **MSS**
@@ -471,7 +556,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Prospect**: A contact the agent may sell a policy to but who is not yet a client.
 * **Client**: A contact who has bought a policy from the agent.
 * **Inactive**: A contact the agent is no longer actively pursuing but keeps in the app.
-* **Follow-up**: The date on which the agent intends to next contact a prospect or client. It may be in the past, for example when recording a follow-up that already happened.
+* **Follow-up**: The date on which the agent intends to next contact a prospect or client. A past date is accepted with a warning and is treated as an overdue follow-up until it is marked done.
 * **Pending follow-up**: A follow-up date that is still recorded on a contact. Marking it done removes the date.
 * **Duplicate contact**: A contact whose name matches an existing contact's name after ignoring letter case and extra spaces. Easy-Insurance refuses to add a duplicate.
 * **Index**: The number shown next to a contact in the currently displayed list. Commands such as `edit`, `delete` and `done` refer to contacts by index.
@@ -614,13 +699,16 @@ testers are expected to do more *exploratory* testing.
 
 1. Adding a contact with a future follow-up date
 
+   1. Prerequisites: Run `list` so that all contacts are shown. A filter left over from an earlier test, such as `find`, would hide the new contact.
+
    1. Test case: `add n/Sarah Lim p/92345678 e/sarah@example.com a/10 Tampines Street 1 f/25-12-2099`<br>
       Expected: The contact is added and the card shows `Follow-up: 25-12-2099`. No note is shown.
 
 1. Adding a contact with a past follow-up date
 
    1. Test case: `add n/Ben Ong p/93456789 e/ben@example.com a/5 Bishan Road f/01-01-2020`<br>
-      Expected: The contact is added. The result message ends with `Note: 01-01-2020 is in the past; it was saved anyway.`
+      Expected: The contact is added. The result message ends with `Note: 01-01-2020 is in the past; it was saved anyway.`<br>
+      The card shows `Follow-up: 01-01-2020 (overdue)` in red, and `due` lists the contact until its follow-up is marked done.
 
 1. Adding a contact with an impossible or badly formatted date
 
@@ -707,20 +795,21 @@ testers are expected to do more *exploratory* testing.
 
 1. Listing due follow-ups in date order
 
-   1. Prerequisites: Add three contacts with follow-ups, one overdue, one today and one in 3 days. For example, if today is 21-10-2026:<br>
-      `add n/Due Past p/91110001 e/duepast@example.com a/1 Test Road f/01-10-2026`<br>
-      `add n/Due Today p/91110002 e/duetoday@example.com a/2 Test Road f/21-10-2026`<br>
-      `add n/Due Soon p/91110003 e/duesoon@example.com a/3 Test Road f/24-10-2026`
+   1. Prerequisites: Add three contacts with follow-ups: one in the past, one today and one 3 days from today.
+      Replace `TODAY` with today's date and `IN_3_DAYS` with the date 3 days from today, both in `DD-MM-YYYY` format.<br>
+      `add n/Due Past p/91110001 e/duepast@example.com a/1 Test Road f/01-01-2020`<br>
+      `add n/Due Today p/91110002 e/duetoday@example.com a/2 Test Road f/TODAY`<br>
+      `add n/Due Soon p/91110003 e/duesoon@example.com a/3 Test Road f/IN_3_DAYS`
 
    1. Test case: `due`<br>
-      Expected: `Due Past` then `Due Today` are shown, plus any other contact due by today. `Due Soon` is not shown.
-      The result shows `N follow-ups due by 21-10-2026.` The `Due Past` card shows its date in red with `(overdue)`.
+      Expected: `Due Past` and `Due Today` are shown in that order, plus any other contact due by today. `Due Soon` is not shown.
+      The result shows `N follow-ups due by TODAY.`, where `N` is the number of contacts listed. The `Due Past` card shows its date in red with `(overdue)`.
 
    1. Test case: `due 3`<br>
-      Expected: `Due Soon` is now included, after the other two.
+      Expected: `Due Soon` is now included, after `Due Past` and `Due Today`. The result shows `N follow-ups due by IN_3_DAYS.`
 
    1. Test case: `due` followed by `done 1`<br>
-      Expected: The earliest follow-up in the sorted list is completed.
+      Expected: The first contact's follow-up is completed, and that contact leaves the list because it no longer has a follow-up.
 
    1. Other incorrect commands to try: `due -1`, `due 366`, `due abc`, `due 7 days`<br>
       Expected: No change to the list. Error: `Number of days must be a whole number from 0 to 365, e.g. due 7.`
@@ -735,6 +824,8 @@ testers are expected to do more *exploratory* testing.
       Expected: The app starts with the sample contacts. The data file is created again after the next command that changes contact data, such as `add` or `note`. Commands that only show data, such as `list`, do not create it.
 
 1. Dealing with a corrupted data file
+
+   1. Prerequisites: `data/addressbook.json` exists and holds at least one contact. The previous test leaves no data file, so run `add n/Test Person p/91234567 e/test@example.com a/1 Test Road` first.
 
    1. Close the app. Open `data/addressbook.json` and change one contact's `"status"` value to `"lead"`.
 
@@ -762,6 +853,8 @@ testers are expected to do more *exploratory* testing.
       Expected: The invalid data is backed up and the app starts with an empty contact list.
 
 1. Dealing with an older data file
+
+   1. Prerequisites: `data/addressbook.json` holds at least one valid contact. The previous test leaves invalid data and an empty list, so run `add n/Old Format p/92345678 e/old@example.com a/2 Test Road st/CLIENT f/01-01-2030` first.
 
    1. Close the app. Remove the `"status"` and `"followUp"` fields from one contact in `data/addressbook.json`.
 

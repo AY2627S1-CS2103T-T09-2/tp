@@ -127,14 +127,16 @@ public class Tag {
      * the Greek sigma, share one key. {@link Locale#ROOT} keeps the result the same whatever the user's
      * default locale is. Each step is followed by NFC normalization because changing case can turn an
      * NFC string into one that is not NFC.
+     *
+     * @param name A tag name that is already in NFC, as {@link #tagName} is.
      */
     private static String toComparisonKey(String name) {
         if (isAsciiLettersAndDigits(name)) {
             // For ASCII letters and digits, the steps below give the same result as uppercasing alone.
             return name.toUpperCase(Locale.ROOT);
         }
-        String composed = Normalizer.normalize(name, Form.NFC);
-        String lowerCase = Normalizer.normalize(composed.toLowerCase(Locale.ROOT), Form.NFC);
+        assert Normalizer.isNormalized(name, Form.NFC) : "Tag name should already be in NFC";
+        String lowerCase = Normalizer.normalize(name.toLowerCase(Locale.ROOT), Form.NFC);
         return Normalizer.normalize(lowerCase.toUpperCase(Locale.ROOT), Form.NFC);
     }
 
