@@ -247,7 +247,7 @@ Format: `find KEYWORD [MORE_KEYWORDS]...` or `find p/PHONE_DIGITS`
 * Phone searches match contacts whose phone number contains the supplied digits; for example, `find p/9123`.
 * If no keyword is provided, Easy-Insurance shows: `Please enter at least one name keyword to search for. Example: find alice tan`.
 * If no phone digits are provided, Easy-Insurance shows: `Please enter at least one phone digit to search for. Example: find p/9123`.
-* `find` takes no prefix other than `p/`. To filter by status or tag, use `list st/STATUS` or `list t/TAG` instead. For example, `find st/CLIENT` shows: `find does not use st/. It only searches names, or phone numbers with p/, e.g. find John or find p/9123. To filter by status or tag, use list st/STATUS or list t/TAG.`
+* `find` takes no prefix other than `p/`. To filter by status or tag, use `list st/STATUS` or `list t/TAG` instead. For example, `find st/CLIENT` shows: `st/ is not used by find. It only searches names, or phone numbers with p/, e.g. find John or find p/9123. To filter by status or tag, use list st/STATUS or list t/TAG.`
 
 Examples:
 * `find John` returns `John Tan`.

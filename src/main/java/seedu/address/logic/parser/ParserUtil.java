@@ -82,13 +82,19 @@ public class ParserUtil {
             return;
         }
         Prefix prefix = unsupportedPrefix.get();
+        String hint = prefix.equals(PREFIX_NOTE) ? MESSAGE_USE_NOTE_COMMAND
+                : prefix.equals(PREFIX_LAST_CONTACT) ? MESSAGE_USE_CONTACTED_COMMAND
+                : "";
+        throw new ParseException(getUnsupportedPrefixMessage(prefix, commandWord, hint));
+    }
+
+    /**
+     * Returns the error for a {@code prefix} that {@code commandWord} does not take, in the form
+     * {@code "nt/ is not used by add."} followed by {@code hint} if it is not empty.
+     */
+    public static String getUnsupportedPrefixMessage(Prefix prefix, String commandWord, String hint) {
         String message = String.format(MESSAGE_UNSUPPORTED_PREFIX, prefix, commandWord);
-        if (prefix.equals(PREFIX_NOTE)) {
-            message += " " + MESSAGE_USE_NOTE_COMMAND;
-        } else if (prefix.equals(PREFIX_LAST_CONTACT)) {
-            message += " " + MESSAGE_USE_CONTACTED_COMMAND;
-        }
-        throw new ParseException(message);
+        return hint.isEmpty() ? message : message + " " + hint;
     }
 
     /**
