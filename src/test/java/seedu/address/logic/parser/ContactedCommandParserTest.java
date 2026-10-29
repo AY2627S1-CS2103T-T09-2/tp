@@ -15,8 +15,6 @@ import seedu.address.model.person.LastContact;
 
 public class ContactedCommandParserTest {
 
-public class ContactedCommandParserTest {
-
     private final ContactedCommandParser parser =
             new ContactedCommandParser();
 
