@@ -36,14 +36,16 @@ public class DueCommand extends Command {
     public static final String MESSAGE_NONE_DUE = "No follow-ups due by %1$s.";
 
     // Collators put accented names next to their base letter (Emile, Émile, Zack) instead of after Z.
-    // They are only used on single words because they ignore spaces and hyphens (see compareNames).
-    // Base letters, then accents, then case: each level is checked across the whole name before the next.
+    // They ignore spaces and punctuation, so these word collators are only given single words (see
+    // compareNames). Base letters, then accents, then case: each level is checked on every word before the next.
     private static final List<Collator> NAME_COLLATORS = Stream
             .of(Collator.PRIMARY, Collator.SECONDARY, Collator.TERTIARY)
             .map(DueCommand::rootCollator)
             .toList();
+    // Only breaks ties between names whose words all match, e.g. "Tan, Ann" and "Tan Ann".
     private static final Collator WHOLE_NAME_COLLATOR = rootCollator(Collator.TERTIARY);
-    private static final Pattern WORD_SEPARATOR = Pattern.compile("[ -]+");
+    // Spaces, commas, periods and hyphens end a word; apostrophes and slashes stay inside one (O'Brien, s/o).
+    private static final Pattern WORD_SEPARATOR = Pattern.compile("[ ,.-]+");
 
     private static final Comparator<Person> BY_FOLLOW_UP_DATE = Comparator
             .comparing((Person person) -> person.getFollowUp().map(followUp -> followUp.value).orElse(LocalDate.MAX))
@@ -77,14 +79,14 @@ public class DueCommand extends Command {
 
     /**
      * Compares two names word by word, so "Li Mei" comes before "Lim Bo" and "Tan Wei" before "Tanaka".
-     * Spaces and hyphens separate words, which makes them sort before any letter. Words are compared
+     * Spaces, commas, periods and hyphens separate words, so they sort before any letter. Words are compared
      * with collators, first by base letters only, then by accents, then by case, so an accent or capital
      * in one word never outranks a different letter in a later word. Names that still tie are compared
-     * as a whole and then by their raw text, so different names never compare as equal.
+     * as a whole and then by their raw text.
      */
     private static int compareNames(String first, String second) {
-        String[] firstWords = WORD_SEPARATOR.split(first);
-        String[] secondWords = WORD_SEPARATOR.split(second);
+        String[] firstWords = splitWords(first);
+        String[] secondWords = splitWords(second);
         for (Collator collator : NAME_COLLATORS) {
             int result = compareWords(collator, firstWords, secondWords);
             if (result != 0) {
@@ -92,7 +94,13 @@ public class DueCommand extends Command {
             }
         }
         int result = WHOLE_NAME_COLLATOR.compare(first, second);
+        // No two different valid names tie on the collator today, but if one ever did (say, after a change
+        // to the name rules), comparing the raw text keeps the order total and independent of insertion order.
         return result != 0 ? result : first.compareTo(second);
+    }
+
+    private static String[] splitWords(String name) {
+        return WORD_SEPARATOR.splitAsStream(name).filter(word -> !word.isEmpty()).toArray(String[]::new);
     }
 
     /**

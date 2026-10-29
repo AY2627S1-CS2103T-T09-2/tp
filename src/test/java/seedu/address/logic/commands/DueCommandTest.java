@@ -176,6 +176,27 @@ public class DueCommandTest {
     }
 
     @Test
+    public void execute_sameDate_commasSeparateWords() {
+        // EP: a comma, with or without a space after it, splits a name into words.
+        assertSameDayOrder(List.of("Tan,Ann", "Tan, Ann", "Tan Wei Ming", "Tan Zed"),
+                "Tan Wei Ming", "Tan Zed", "Tan, Ann", "Tan,Ann");
+        assertSameDayOrder(List.of("Tan,Ann", "Tan, Ann", "Tan Wei Ming", "Tan Zed"),
+                "Tan,Ann", "Tan Zed", "Tan, Ann", "Tan Wei Ming");
+        assertSameDayOrder(List.of("Tan,Wei", "Tanaka"), "Tanaka", "Tan,Wei");
+    }
+
+    @Test
+    public void execute_sameDate_periodsSeparateWords() {
+        // EP: a period, with or without a space after it, splits a name into words, so initials sort as words.
+        // Names with the same words fall back to the whole-name collator, whatever order they were added in.
+        assertSameDayOrder(List.of("J.Tan", "J. Tan", "J. Zed", "J Zed"),
+                "J Zed", "J. Tan", "J. Zed", "J.Tan");
+        assertSameDayOrder(List.of("J.Tan", "J. Tan", "J. Zed", "J Zed"),
+                "J.Tan", "J. Zed", "J. Tan", "J Zed");
+        assertSameDayOrder(List.of("Tan.Wei", "Tanaka"), "Tanaka", "Tan.Wei");
+    }
+
+    @Test
     public void execute_sameDate_equivalentNamesHaveFixedOrder() {
         // EP: names with the same words, split differently, still get one order whatever order they were added.
         // Fully identical names cannot both be stored, as they are duplicate contacts.
