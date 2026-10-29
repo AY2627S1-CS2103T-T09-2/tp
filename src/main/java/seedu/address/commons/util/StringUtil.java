@@ -38,17 +38,26 @@ public class StringUtil {
                 .anyMatch(preppedWord::equalsIgnoreCase);
     }
 
-    /** Returns true if any word in {@code sentence} starts with {@code word}, ignoring case. */
+    /**
+     * Returns true if a name part in {@code sentence} starts with {@code word}, ignoring case.
+     * Parts begin at the start of the sentence or after whitespace or supported name punctuation.
+     */
     public static boolean containsWordStartingWithIgnoreCase(String sentence, String word) {
         requireNonNull(sentence);
         requireNonNull(word);
         String preppedWord = word.trim();
         checkArgument(!preppedWord.isEmpty(), "Word parameter cannot be empty");
         checkArgument(preppedWord.split("\\s+").length == 1, "Word parameter should be a single word");
-        // Keep the original hyphenated word searchable while also matching each part.
-        return Arrays.stream((sentence + " " + sentence.replace('-', ' ')).split("\\s+"))
-                .anyMatch(sentenceWord -> sentenceWord.regionMatches(true, 0, preppedWord, 0,
-                        preppedWord.length()));
+        // Match the original text so punctuation inside a queried name part is preserved.
+        for (int i = 0; i < sentence.length(); i++) {
+            boolean isNamePartStart = i == 0
+                    || Character.isWhitespace(sentence.charAt(i - 1))
+                    || "-'.,/".indexOf(sentence.charAt(i - 1)) >= 0;
+            if (isNamePartStart && sentence.regionMatches(true, i, preppedWord, 0, preppedWord.length())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

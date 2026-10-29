@@ -33,9 +33,12 @@ public class AddCommandIntegrationTest {
         Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
         expectedModel.addPerson(validPerson);
 
+        int displayedIndex = expectedModel.getFilteredPersonList().indexOf(validPerson);
+        String expectedMessage = String.format(AddCommand.MESSAGE_SUCCESS,
+                validPerson.getName(), validPerson.getStatus())
+                + String.format(AddCommand.MESSAGE_DISPLAYED_INDEX, displayedIndex + 1);
         assertCommandSuccess(new AddCommand(validPerson), model,
-                String.format(AddCommand.MESSAGE_SUCCESS, validPerson.getName(), validPerson.getStatus()),
-                expectedModel);
+                new CommandResult(expectedMessage, displayedIndex), expectedModel);
     }
 
     @Test

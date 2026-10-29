@@ -71,6 +71,30 @@
     -fx-font-size: 14px;
 }
 
+.text-area.command-guide-example {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-border-width: 1;
+    -fx-border-radius: 3;
+    -fx-padding: 3;
+    -fx-highlight-fill: #cbe2f3;
+    -fx-highlight-text-fill: #20364b;
+}
+
+.text-area.command-guide-example:focused {
+    -fx-border-color: #86b6d8;
+}
+
+.text-area.command-guide-example > .scroll-pane,
+.text-area.command-guide-example > .scroll-pane > .viewport,
+.text-area.command-guide-example .content {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+}
+
 .command-guide-caption {
     -fx-font-size: 12px;
     -fx-font-weight: bold;

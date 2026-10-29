@@ -126,11 +126,23 @@ The full URL is shown below the command guide. After copying, a message confirms
 When Help opens, the command guide has keyboard focus:
 
 * Press **Up/Down** or **Page Up/Page Down** to scroll the guide.
-* Press **Tab** to focus **Copy User Guide URL**, and **Space** to activate it.
-  Press **Shift+Tab** to return to the guide.
+* Press **Tab** to move through the examples and **Copy User Guide URL**; **Shift+Tab** moves backwards.
+  Press **Space** when the URL button is focused to copy the link.
 * Press **Esc** to close Help.
 
-![help message](images/helpMessage.png)
+Examples are read-only. Select text with the mouse, or focus an example and use **Shift+Arrow** to select text.
+Use **Ctrl+A** and **Ctrl+C** (**Cmd+A** and **Cmd+C** on macOS) to select and copy a whole example.
+If a box contains multiple example commands, select just the command you want to use.
+While an example is focused, arrow keys move its text cursor. Use **Tab** or **Shift+Tab** to return to the
+command guide for keyboard scrolling.
+
+The top of the command guide:
+
+![Help command guide showing add, clear, contacted, delete, done, due and edit](images/helpMessage.png)
+
+Scroll down to see the remaining commands. The footer below shows confirmation after copying the User Guide URL:
+
+![Help command guide showing interaction notes and the URL-copy confirmation](images/helpMessageNotes.png)
 
 Format: `help`
 
@@ -165,7 +177,11 @@ Tags ignore case, so `t/VIP` and `t/vip` are the same tag and a contact keeps on
 </box>
 
 Names with extra spaces are saved with single spaces. A contact cannot be added if its name matches an existing contact's name after ignoring case and extra spaces.
-Names must start with a letter, including accented letters, and end with a letter or digit. Punctuation cannot
+This also prevents two different people who share a full name from being stored under that same name. Use a fuller
+distinguishing name when available. Reordering a person's name is not recognised as a duplicate, so check the list
+before adding a contact under a different name order.
+Names can be at most 1000 characters long. They must start with a letter, including accented letters, and end with a
+letter or digit, possibly followed by combining marks used in some scripts. Punctuation cannot
 appear at the end of a name. Names may then contain letters, digits, spaces, hyphens (`-`), apostrophes (`'`),
 periods (`.`), commas (`,`), and slashes (`/`), so names such as
 `Anne-Marie`, `O'Connor`, and `Raj s/o Kumar` are accepted. Phone numbers must contain at least three
@@ -189,7 +205,8 @@ Examples:
 * `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT t/referral`
 * `add n/Ravi A/L Kumar p/92345678 e/ravi@example.com a/10 Tampines Street 1 st/CLIENT f/25-12-2026`
 
-If the current view filters out a new contact, it is still saved. The result tells you it is hidden; enter `list` to show all contacts.
+If the new contact is shown in the current view, the result gives its displayed index and the list scrolls to it.
+If the current view filters it out, it is still saved. The result tells you it is hidden; enter `list` to show all contacts.
 
 ### Listing contacts: `list`
 
@@ -239,6 +256,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] 
 * When editing tags, all of the contact's existing tags are removed; adding tags is not cumulative.
 * To remove all of a contact's tags, enter `t/` without a tag after it.
 * The success message always includes tags and the follow-up date. Empty fields show `Tags: none` or `Follow-up: none`. Multiple tags are separated by spaces, for example `Tags: [a] [b]`, in the same order as on the contact card.
+* If the edit makes the contact leave the current filtered view, the result says it is hidden. Enter `list` to show all contacts.
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st contact to be `91234567` and `johndoe@example.com` respectively.

@@ -99,6 +99,40 @@ public class NameTest {
         // EP: normalization must not make otherwise invalid names valid.
         assertFalse(Name.isValidName("José^"));
         assertFalse(Name.isValidName("Jose\u0301^"));
+        assertFalse(Name.isValidName("A½"));
+        assertFalse(Name.isValidName("John²"));
+        assertFalse(Name.isValidName("Alice¼"));
+        assertTrue(Name.isValidName("Ravi2"));
+        assertTrue(Name.isValidName("Ravi٢"));
+        assertTrue(Name.isValidName("கு"));
+        assertTrue(Name.isValidName("குமார்"));
+
+        // Reject pathological input before Unicode normalization or regex matching becomes expensive.
+        assertFalse(Name.isValidName("A" + "\u0315".repeat(50_000) + "\u0300".repeat(50_000)));
+        assertTrue(Name.isValidName("A".repeat(Name.MAX_INPUT_LENGTH)));
+        assertFalse(Name.isValidName("A".repeat(Name.MAX_INPUT_LENGTH + 1)));
+    }
+
+    @Test
+    public void isValidName_normalizationExpandsInput_checksNormalizedLength() {
+        // EP: NFC can expand a valid letter into a letter followed by a combining mark.
+        // Boundary values: normalized lengths of 999 and 1000 are within the limit.
+        String nameAtLimit = "\u0958".repeat(Name.MAX_INPUT_LENGTH / 2);
+        assertTrue(Name.isValidName("\u0958".repeat(Name.MAX_INPUT_LENGTH / 2 - 1) + "A"));
+        assertTrue(Name.isValidName(nameAtLimit));
+
+        // EP: short raw input becomes too long after normalization.
+        // Boundary value: 1001 is the first invalid normalized length; 1002 reproduces the report.
+        assertFalse(Name.isValidName(nameAtLimit + "A"));
+        assertFalse(Name.isValidName(nameAtLimit + "\u0958"));
+    }
+
+    @Test
+    public void constructor_normalizedNameOverLimit_throwsIllegalArgumentException() {
+        // EP: the constructor must reject a name whose stored form would fail validation on reload.
+        String nameOverLimit = "\u0958".repeat(Name.MAX_INPUT_LENGTH / 2) + "A";
+
+        assertThrows(IllegalArgumentException.class, () -> new Name(nameOverLimit));
     }
 
     @Test

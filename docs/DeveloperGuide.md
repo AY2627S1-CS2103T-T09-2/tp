@@ -124,7 +124,8 @@ How the parsing works:
 <puml src="diagrams/ModelClassDiagram.puml" width="450" />
 
 `Status.DEFAULT` is `PROSPECT`. Each `Person` stores one status, optionally one follow-up date, optionally one last-contact date, and zero or more interaction notes.
-`Name` accepts Unicode letters and common name punctuation after an initial letter; `Phone` accepts
+`Name` starts with a Unicode letter, ends with a letter or decimal digit (possibly carrying combining marks), and accepts common name punctuation
+between characters, up to 1000 input characters; `Phone` accepts
 an optional leading plus sign and separators between at least three digits.
 `Phone` is capped at 30 characters and `Email` at 254. Both lengths are checked before the regex, so
 a very long value from a command or the data file is rejected instead of overflowing the stack.
@@ -244,7 +245,8 @@ From then on, the `.bak` copy is the only copy of the old data.
 ### Completing a follow-up
 
 The `done INDEX` command clears the pending follow-up of the contact at the specified index in the currently
-displayed list. It preserves the contact's name, phone, email, address, status and tags.
+displayed list. It preserves the contact's name, phone, email, address, status, tags, last-contact date and
+interaction notes, including their text, stored order and timestamps.
 
 The sequence diagram below shows a successful `done 1` command when the first displayed contact has a pending
 follow-up. Individual field getters and the internal calls within `Model` and `Storage` are omitted for clarity.
@@ -301,8 +303,71 @@ instead of falling back to an operation that could damage the existing file.
 
 Future undo integration must record a change only after saving succeeds. A failed undo save must restore the
 data and view from before that attempt and retain the undo entry for retry. The current rollback tests verify
-that interaction note text, order and timestamps are preserved. Last-contact dates and undo are not part
-of the current implementation; their preservation tests must be added when those features merge.
+that interaction note text, order and timestamps are preserved. Last-contact dates are already stored in
+`Person` and included in the address-book snapshot. Undo is not implemented.
+
+### Managing interaction notes
+
+The `note`, `history` and `deletenote` commands record, display and remove a contact's interaction notes.
+Their contact indexes refer to the currently displayed list, including any active filter or sort order.
+
+#### Model and storage
+
+Each `Person` holds a list of immutable `InteractionNote` values. Each note contains its text and a
+`LocalDateTime` creation timestamp. `Person` copies the supplied list using `List.copyOf`, so commands cannot
+change the stored list through `getInteractionNotes()`. Adding or deleting a note constructs a replacement
+`Person` and calls `Model.setPerson`, preserving all other contact fields, including both dates.
+
+`JsonAdaptedPerson` saves the list in the `interactionNotes` field. `JsonAdaptedInteractionNote` saves each
+note's `text` and `createdAt`, preserving the list order and timestamp when the data is loaded again.
+A missing or null `interactionNotes` field becomes an empty list, allowing files without notes to load.
+A null note entry, invalid note text, or missing or invalid timestamp rejects the data file through the
+[existing loading and backup process](#loading-and-backing-up-the-data-file).
+
+#### Adding a note
+
+For `note INDEX nt/NOTE`:
+
+1. `CommandInputParser` delegates to `NoteCommandParser`. The parser finds the first `nt/` prefix separated
+   from the contact index by whitespace and validates the index with `ParserUtil.parseIndex`.
+2. Everything after that prefix is note text. Further prefix-like text, such as `nt/`, `st/` or `a/`, is
+   part of the note rather than another argument. `InteractionNote.isValidNote` checks the text before
+   the parser constructs the note with the current local timestamp and creates a `NoteCommand`.
+3. `NoteCommand` checks the contact index against `Model.getFilteredPersonList()`. It copies the contact's
+   notes, appends the new note and replaces the contact through `Model.setPerson`.
+4. `LogicManager` saves the changed address book before returning the success result. If saving fails,
+   it restores the pre-command data and view, including the original notes, as described above.
+
+#### Viewing and deleting notes
+
+`history INDEX` is parsed by `HistoryCommandParser`. `HistoryCommand` selects the displayed contact and
+sorts a copy of its notes by stored creation timestamp in descending order. It returns a `CommandResult`
+containing numbered notes with timestamps formatted as `dd-MM-yyyy HH:mm`, or a message that the contact
+has no notes. It does not change the stored note order or contact data, so `LogicManager` skips saving.
+
+`deletenote CONTACT_INDEX NOTE_INDEX` is parsed by `DeleteNoteCommandParser`, which validates both positive
+indexes using `ParserUtil.parseIndex`. `DeleteNoteCommand` selects the displayed contact and uses the same
+timestamp ordering as `HistoryCommand` to resolve `NOTE_INDEX`. It removes that note from a copy of the
+stored list, preserving the relative order of the remaining notes, then replaces the contact and lets
+`LogicManager` save it. The success result identifies the contact, note index and deleted text.
+
+The contact index and note index refer to different lists. For example, after `history 2`, `deletenote 2 1`
+deletes the first note shown for the second displayed contact. Adding or deleting notes can change the
+history indexes, so the user should view the history again before choosing another note to delete.
+
+#### Validation and failure handling
+
+Malformed arguments and invalid note text cause a `ParseException`. Positive indexes outside the displayed
+contact list or the selected contact's history cause a `CommandException`. These failures leave the data
+unchanged. A failed save after adding or deleting a note restores the previous notes and does not return
+a success result. Viewing history remains possible when the data file cannot be written.
+
+#### Design considerations
+
+* **Replace the contact (current choice):** Copying the note list and replacing the immutable `Person`
+  keeps model updates observable and lets the existing address-book snapshot restore notes after a failed save.
+* **Mutate notes in place (alternative):** This would avoid copying the list, but a snapshot sharing the same
+  mutable notes could change too, preventing rollback from restoring the original history.
 
 ### Viewing due follow-ups
 
@@ -409,7 +474,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 1. Agent provides the new prospect's name and contact details.
 2. System validates the details and saves the contact with status `PROSPECT`.
-3. System shows the new prospect in the contact list.
+3. System confirms the new prospect. If the current view filters it out, the agent can run `list` to show it.
 4. Agent sets a follow-up date for the prospect.
 5. System saves the pending follow-up and shows its date with the prospect.
 
@@ -471,7 +536,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1. Agent views the contact to edit.
 2. Agent provides one or more replacement details, including an optional status or follow-up date.
 3. System validates the replacement details.
-4. System updates the contact and shows its updated details.
+4. System updates the contact and confirms its updated details. If the current view filters it out, the agent can run `list` to show it.
 
    Use case ends.
 
@@ -500,7 +565,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1. Agent views a contact with a pending follow-up.
 2. System shows the scheduled follow-up date.
 3. Agent requests to mark that follow-up as done.
-4. System clears the follow-up and shows the updated contact.
+4. System clears the follow-up and confirms the update. If the current view filters it out, the agent can run `list` to show it.
 
    Use case ends.
 
@@ -895,12 +960,19 @@ Team size: 5
 
 The items below are known flaws in the current version. Each item describes the flaw and the exact change we plan to make in a future version.
 
+1. **Distinguish contacts that share a name and flag likely duplicates under reordered names.**
+   Uniqueness currently uses only the name, ignoring case and extra spaces. Two different people named `John Tan`
+   cannot both be stored, while `Tan John` can be added as a second entry for the same person. We plan to give every
+   contact a stable ID, allow the same name on different IDs, and show a confirmation when a new contact shares a
+   phone number or email with an existing contact. The agent can then keep two people who share contact details or
+   cancel a likely duplicate without losing either contact.
+
 1. **Stop a second window or a hand edit of the data file from being overwritten.**
    Easy-Insurance reads `data/addressbook.json` once at startup. After that, every command that changes contact data writes the app's own copy over the file. If two windows are open on the same `data` folder, or the user edits the file while the app is running, the last save wins and the other changes are lost with no warning. For example, window 1 runs `add n/Bob Lim p/92345678 e/bob@example.com a/2 Road` and then window 2 runs `add n/Carol Ng p/93456789 e/carol@example.com a/3 Road`. Both show a success message, but after a restart Bob Lim is gone.<br>
    We plan to make the app remember a hash of the data file's contents when it loads the file and after each of its own successful saves. Before each save, it hashes the file again. If the contents have changed, the app does not save, rolls back the change in this window as it does for other save errors, and shows: `The data file was changed outside this window, so this change was not saved. Restart Easy-Insurance to load the latest data.` In the example above, window 2's `add` then shows this message and Bob Lim is kept.
 
 1. **Reject prefixes typed in capitals instead of saving them into the previous field.**
-   Prefixes are case-sensitive, so a capitalised prefix after another field is kept as part of that field's value. For example, `add n/Ann Lee p/91234567 e/ann@example.com a/1 Road ST/CLIENT F/01-01-2030` gives `New contact added: Ann Lee (PROSPECT)`. The address is saved as `1 Road ST/CLIENT F/01-01-2030`, and the status and follow-up are not set. `edit 1 n/Bob ST/CLIENT` renames the contact to `Bob ST/CLIENT`.<br>
+   Prefixes are case-sensitive, so a capitalised prefix after another field is kept as part of that field's value. For example, `add n/Ann Lee p/91234567 e/ann@example.com a/1 Road ST/CLIENT F/01-01-2030` gives a result starting with `New contact added: Ann Lee (PROSPECT)`, followed by its displayed index. The address is saved as `1 Road ST/CLIENT F/01-01-2030`, and the status and follow-up are not set. `edit 1 n/Bob ST/CLIENT` renames the contact to `Bob ST/CLIENT`.<br>
    We plan to make `add` and `edit` check each value for a known prefix (`n/`, `p/`, `e/`, `a/`, `st/`, `t/` or `f/`) typed with one or more capital letters after a space. If one is found, the command changes nothing and shows: `Prefixes must be typed in lowercase. Use st/ instead of ST/.` `A/L` and `A/P` inside a name stay allowed, so `add n/Ravi A/L Kumar p/92345679 e/ravi@example.com a/10 Tampines St 1` still works.
 
 1. **Keep `a/l` and `a/p` in a name as part of the name.**

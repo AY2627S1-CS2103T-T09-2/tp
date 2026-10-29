@@ -44,8 +44,9 @@ public class AddCommandTest {
 
         CommandResult commandResult = new AddCommand(validPerson).execute(modelStub);
 
-        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, validPerson.getName(), validPerson.getStatus()),
-                commandResult.getFeedbackToUser());
+        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, validPerson.getName(), validPerson.getStatus())
+                + String.format(AddCommand.MESSAGE_DISPLAYED_INDEX, 1), commandResult.getFeedbackToUser());
+        assertEquals(0, commandResult.getIndexToScrollTo().orElseThrow());
         assertEquals(List.of(validPerson), modelStub.personsAdded);
     }
 
@@ -59,6 +60,7 @@ public class AddCommandTest {
 
         assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, personWithPastFollowUp.getName(),
                 personWithPastFollowUp.getStatus())
+                + String.format(AddCommand.MESSAGE_DISPLAYED_INDEX, 1)
                 + personWithPastFollowUp.getFollowUp().get().getPastDateWarning(), commandResult.getFeedbackToUser());
         assertEquals(List.of(personWithPastFollowUp), modelStub.personsAdded);
     }
@@ -72,7 +74,7 @@ public class AddCommandTest {
         CommandResult commandResult = new AddCommand(personWithFutureFollowUp).execute(modelStub);
 
         assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, personWithFutureFollowUp.getName(),
-                personWithFutureFollowUp.getStatus()),
+                personWithFutureFollowUp.getStatus()) + String.format(AddCommand.MESSAGE_DISPLAYED_INDEX, 1),
                 commandResult.getFeedbackToUser());
     }
 
@@ -90,6 +92,22 @@ public class AddCommandTest {
                 + AddCommand.MESSAGE_HIDDEN_CONTACT, result.getFeedbackToUser());
         assertEquals(List.of(client), model.getFilteredPersonList());
         assertEquals(List.of(client, prospect), model.getAddressBook().getPersonList());
+        assertTrue(result.getIndexToScrollTo().isEmpty());
+    }
+
+    @Test
+    public void execute_visibleContactInSortedList_reportsDisplayedIndex() throws Exception {
+        Model model = new ModelManager(new AddressBook(), new UserPrefs());
+        Person later = new PersonBuilder().withName("Zoe Tan").build();
+        Person earlier = new PersonBuilder().withName("Amy Lee").build();
+        model.addPerson(later);
+        model.updateFilteredPersonList(person -> true, Comparator.comparing(person -> person.getName().fullName));
+
+        CommandResult result = new AddCommand(earlier).execute(model);
+
+        assertEquals(List.of(earlier, later), model.getFilteredPersonList());
+        assertEquals(0, result.getIndexToScrollTo().orElseThrow());
+        assertTrue(result.getFeedbackToUser().contains("Shown at index 1."));
     }
 
     @Test
