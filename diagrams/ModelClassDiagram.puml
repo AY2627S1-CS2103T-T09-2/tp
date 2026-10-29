@@ -13,9 +13,7 @@ Class ModelManager
 Class UserPrefs
 
 Class UniquePersonList
-Class Person {
-  - status : Status
-}
+Class Person
 Class Address
 Class Email
 Class Name {
@@ -82,6 +80,11 @@ Phone -[hidden]right-> Address
 Address -[hidden]right-> Email
 
 ModelManager --> "~* filtered" Person
-note bottom of Name : Starts with a Unicode letter; allows digits, spaces, - ' . , /
+note bottom of Name
+  Starts with a Unicode letter.
+  Ends with a letter or decimal digit (optional combining marks).
+  Allows spaces and - ' . , / between characters.
+  At most 1000 input characters.
+end note
 note bottom of Phone : At least three digits; optional leading +; spaces and dashes between digits
 @enduml
