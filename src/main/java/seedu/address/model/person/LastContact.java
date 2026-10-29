@@ -19,6 +19,11 @@ public class LastContact {
     public static final String MESSAGE_CONSTRAINTS =
             "Last contact date must be a valid date in DD-MM-YYYY format.";
 
+    public static final String MESSAGE_FUTURE_DATE =
+            "Last contact date cannot be in the future.";
+
+    private static final String DATE_REGEX = "\\d{2}-\\d{2}-\\d{4}";
+
     private static final DateTimeFormatter FORMATTER =
             DateTimeFormatter.ofPattern("dd-MM-uuuu")
                     .withResolverStyle(ResolverStyle.STRICT);
@@ -43,16 +48,23 @@ public class LastContact {
      * Returns true if the given string is a valid last contact date.
      */
     public static boolean isValidLastContact(String test) {
-        if (test == null) {
+        if (test == null || !test.matches(DATE_REGEX)) {
             return false;
         }
 
         try {
-            LocalDate.parse(test, FORMATTER);
-            return true;
+            return LocalDate.parse(test, FORMATTER).getYear() > 0;
         } catch (DateTimeParseException exception) {
             return false;
         }
+    }
+
+    /**
+     * Returns true if this last contact date is after the given date.
+     */
+    public boolean isAfter(LocalDate otherDate) {
+        requireNonNull(otherDate);
+        return date.isAfter(otherDate);
     }
 
     @Override
