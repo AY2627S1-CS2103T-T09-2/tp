@@ -67,9 +67,11 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* In `add`, `edit` and `find`, a prefix that belongs to another command is rejected with a message naming it.<br>
+* In `add` and `edit`, a prefix belonging to another command is rejected with a message naming it.<br>
   For example, `add n/Bob Lim nt/Met at roadshow p/92345678 e/bob@example.com a/2 Road` shows
-  `nt/ is not used by add. Use note INDEX nt/NOTE to add a note.` and adds nothing.
+  `nt/ is not used by add. Use note INDEX nt/NOTE to add a note.` and adds nothing.<br>
+  In `find`, only `p/` is supported; other app prefixes are rejected, while prefix-like name forms such as `a/l`,
+  `a/p`, and `d/o` remain valid name keywords.
   `s/o` and `d/o` inside a name are not prefixes, so a name such as `Aisha d/o Rahman` is accepted.
 
 * `help` and `exit` accept no parameters.<br>
