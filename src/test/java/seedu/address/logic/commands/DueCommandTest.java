@@ -148,6 +148,62 @@ public class DueCommandTest {
     }
 
     @Test
+    public void execute_sameDate_spacesSeparateWords() {
+        // EP: a shorter first word sorts before a longer word it starts, even when the next word would not.
+        assertSameDayOrder(List.of("Li Mei", "Lim Bo"), "Lim Bo", "Li Mei");
+        assertSameDayOrder(List.of("Tan Wei", "Tanaka"), "Tanaka", "Tan Wei");
+    }
+
+    @Test
+    public void execute_sameDate_accentAndCaseVariantsSortWordByWord() {
+        // EP: accented and lowercase names are still ordered word by word, next to their base letters.
+        assertSameDayOrder(List.of("Émile Tan", "Lé Mei", "li mei", "Lim Bo", "Zack Lim"),
+                "Zack Lim", "Lim Bo", "li mei", "Lé Mei", "Émile Tan");
+    }
+
+    @Test
+    public void execute_sameDate_laterWordOutranksAccentAndCase() {
+        // EP: first words differ only by accent or case, so the next word decides the order.
+        assertSameDayOrder(List.of("Emile Ann", "Émile Bo", "émile Zoe"),
+                "émile Zoe", "Émile Bo", "Emile Ann");
+    }
+
+    @Test
+    public void execute_sameDate_hyphensSeparateWords() {
+        // EP: a hyphen splits a name into words just like a space does.
+        assertSameDayOrder(List.of("Mary-Ann Lee", "Mary Tan", "Maryann Lim"),
+                "Maryann Lim", "Mary Tan", "Mary-Ann Lee");
+    }
+
+    @Test
+    public void execute_sameDate_equivalentNamesHaveFixedOrder() {
+        // EP: names with the same words, split differently, still get one order whatever order they were added.
+        // Fully identical names cannot both be stored, as they are duplicate contacts.
+        assertSameDayOrder(List.of("Mary Ann Tan", "Mary-Ann Tan"), "Mary Ann Tan", "Mary-Ann Tan");
+        assertSameDayOrder(List.of("Mary Ann Tan", "Mary-Ann Tan"), "Mary-Ann Tan", "Mary Ann Tan");
+    }
+
+    /**
+     * Adds contacts with the given names, all due today, and checks that {@code due} lists them in
+     * {@code expectedOrder}.
+     */
+    private static void assertSameDayOrder(List<String> expectedOrder, String... namesInInsertionOrder) {
+        AddressBook addressBook = new AddressBook();
+        for (int i = 0; i < namesInInsertionOrder.length; i++) {
+            addressBook.addPerson(new PersonBuilder().withName(namesInInsertionOrder[i])
+                    .withPhone("9111000" + i).withEmail("person" + i + "@example.com")
+                    .withFollowUp("21-10-2026").build());
+        }
+        Model sameDayModel = new ModelManager(addressBook, new UserPrefs());
+
+        new DueCommand(0, TODAY).execute(sameDayModel);
+
+        List<String> actualOrder = sameDayModel.getFilteredPersonList().stream()
+                .map(person -> person.getName().fullName).toList();
+        assertEquals(expectedOrder, actualOrder);
+    }
+
+    @Test
     public void execute_thenList_restoresOriginalOrder() {
         // EP: list is run after due has applied a filter and sort; the stored order must be restored.
         new DueCommand(365, TODAY).execute(model);
