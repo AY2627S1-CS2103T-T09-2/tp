@@ -17,7 +17,10 @@ public class Tag {
     /** Longest tag allowed, counted in Unicode code points after NFC normalization. */
     public static final int MAX_LENGTH = 50;
 
-    /** Most combining marks, such as accents and vowel signs, that one letter may carry. */
+    /**
+     * Most combining marks, such as accents and vowel signs, that one letter may carry. Accents built into a
+     * precomposed letter count too, so "é" carries one and Vietnamese "ệ" carries two.
+     */
     public static final int MAX_MARKS_PER_LETTER = 5;
 
     /*
@@ -50,7 +53,8 @@ public class Tag {
 
     /*
      * A tag is one word of letters and decimal digits, such as "referral", "café" or "2026".
-     * Each letter may carry up to MAX_MARKS_PER_LETTER combining marks. Real words need up to five:
+     * The pattern is matched against the NFD form, where every accent is a separate mark, so each letter
+     * may carry up to MAX_MARKS_PER_LETTER marks however it was typed. Real words need up to five:
      * Hindi "ज़िंदगी" has three on one letter (nukta, vowel sign and anusvara), and Burmese "လျှော့"
      * has five (two medials, a two-part vowel and a tone mark). Taller stacks are rejected, since they
      * only pile marks on top of one another. Digits are decimal digits from any script, so number symbols
@@ -79,8 +83,10 @@ public class Tag {
     }
 
     /**
-     * Returns true if a given string is a valid tag name after Unicode NFC normalization.
-     * The length is checked first, so an overly long input is rejected without further work.
+     * Returns true if a given string is a valid tag name. The length is counted after Unicode NFC
+     * normalization, and marks are counted after NFD normalization, so an accent counts the same whether it
+     * was typed as part of the letter or separately. The raw length is checked first, so an overly long
+     * input is rejected without further work.
      */
     public static boolean isValidTagName(String test) {
         if (isAsciiLettersAndDigits(test)) {
@@ -94,7 +100,8 @@ public class Tag {
         if (composed.codePointCount(0, composed.length()) > MAX_LENGTH) {
             return false;
         }
-        return VALIDATION_PATTERN.matcher(composed).matches();
+        // Decomposing splits accents out of letters such as "é", so they count towards the mark limit.
+        return VALIDATION_PATTERN.matcher(Normalizer.normalize(composed, Form.NFD)).matches();
     }
 
     /**

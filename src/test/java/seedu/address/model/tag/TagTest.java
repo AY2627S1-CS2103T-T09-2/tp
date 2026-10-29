@@ -109,7 +109,7 @@ public class TagTest {
     @Test
     public void isValidTagName_combiningMarks_atMostFivePerLetter() {
         // Boundary value: five marks on one letter is the most allowed. "x" has no precomposed accented
-        // forms, so NFC normalization keeps every mark separate.
+        // forms, so every mark stays separate.
         assertTrue(Tag.isValidTagName("x\u0301"));
         assertTrue(Tag.isValidTagName("x\u0301\u0302\u0303"));
         assertTrue(Tag.isValidTagName("x\u0301\u0302\u0303\u0304\u0306"));
@@ -118,6 +118,16 @@ public class TagTest {
         // Boundary value: six marks on one letter is one too many.
         assertFalse(Tag.isValidTagName("x\u0301\u0302\u0303\u0304\u0306\u0307"));
         assertFalse(Tag.isValidTagName("ab\u0301\u0302\u0303\u0304\u0306\u0307c"));
+
+        // EP: an accent that NFC builds into the letter, such as the acute in "á", still counts.
+        assertTrue(Tag.isValidTagName("a\u0301\u0302\u0303\u0304\u0306"));
+        assertFalse(Tag.isValidTagName("a\u0301\u0302\u0303\u0304\u0306\u0307"));
+        assertTrue(Tag.isValidTagName("\u00E1\u0302\u0303\u0304\u0306"));
+        assertFalse(Tag.isValidTagName("\u00E1\u0302\u0303\u0304\u0306\u0307"));
+        // Vietnamese "ệ" already carries two marks, a circumflex and a dot below.
+        assertTrue(Tag.isValidTagName("\u1EC7\u0301\u0302\u0303"));
+        assertFalse(Tag.isValidTagName("\u1EC7\u0301\u0302\u0303\u0304"));
+        assertFalse(Tag.isValidTagName("\u1EC7\u0301\u0302\u0303\u0304\u0306"));
 
         // EP: spacing marks count towards the limit too.
         assertTrue(Tag.isValidTagName("\u1000" + "\u102C".repeat(Tag.MAX_MARKS_PER_LETTER)));
