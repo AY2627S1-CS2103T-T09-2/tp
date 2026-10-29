@@ -28,7 +28,7 @@ activate DueCommandParser
 DueCommandParser --> CommandInputParser
 deactivate DueCommandParser
 
-CommandInputParser -> DueCommandParser : parse("7")
+CommandInputParser -> DueCommandParser : parse(" 7")
 activate DueCommandParser
 
 create DueCommand
