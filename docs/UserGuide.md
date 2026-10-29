@@ -126,11 +126,23 @@ The full URL is shown below the command guide. After copying, a message confirms
 When Help opens, the command guide has keyboard focus:
 
 * Press **Up/Down** or **Page Up/Page Down** to scroll the guide.
-* Press **Tab** to focus **Copy User Guide URL**, and **Space** to activate it.
-  Press **Shift+Tab** to return to the guide.
+* Press **Tab** to move through the examples and **Copy User Guide URL**; **Shift+Tab** moves backwards.
+  Press **Space** when the URL button is focused to copy the link.
 * Press **Esc** to close Help.
 
-![help message](images/helpMessage.png)
+Examples are read-only. Select text with the mouse, or focus an example and use **Shift+Arrow** to select text.
+Use **Ctrl+A** and **Ctrl+C** (**Cmd+A** and **Cmd+C** on macOS) to select and copy a whole example.
+If a box contains multiple example commands, select just the command you want to use.
+While an example is focused, arrow keys move its text cursor. Use **Tab** or **Shift+Tab** to return to the
+command guide for keyboard scrolling.
+
+The top of the command guide:
+
+![Help command guide showing add, clear, contacted, delete, done, due and edit](images/helpMessage.png)
+
+Scroll down to see the remaining commands. The footer below shows confirmation after copying the User Guide URL:
+
+![Help command guide showing interaction notes and the URL-copy confirmation](images/helpMessageNotes.png)
 
 Format: `help`
 
