@@ -65,8 +65,24 @@ public class InteractionNote {
      */
     public static boolean isValidNote(String test) {
         return test != null
-                && !test.isBlank()
+                && !isVisuallyBlank(test)
                 && test.trim().length() <= MAX_LENGTH;
+    }
+
+    /**
+     * Returns true if the text contains only whitespace or invisible spacing characters.
+     */
+    private static boolean isVisuallyBlank(String text) {
+        return text.codePoints().allMatch(InteractionNote::isInvisibleSpacing);
+    }
+
+    /**
+     * Returns true if the code point is treated as invisible spacing in an interaction note.
+     */
+    private static boolean isInvisibleSpacing(int codePoint) {
+        return Character.isWhitespace(codePoint)
+                || Character.isSpaceChar(codePoint)
+                || codePoint == 0x200B;
     }
 
     @Override
