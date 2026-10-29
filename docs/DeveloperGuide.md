@@ -184,8 +184,8 @@ reads it once at startup by calling `Storage#readAddressBookWithBackup()`, which
 3. `JsonUtil.fromJsonString` parses the text in three steps:
    * `requireValidStructure` reads the tokens without recursion. It rejects a key that appears twice in one object,
      and objects or arrays nested more than 100 levels deep (`MAX_NESTING_DEPTH`), giving the line and column.
-     A repeated key would otherwise replace the earlier value, and deep nesting would overflow the stack inside
-     Jackson.
+     Without this pass, a repeated key would be reported without its location, and deep nesting would overflow
+     the stack inside Jackson.
    * Jackson maps the JSON value to a `JsonSerializableAddressBook`. Unknown fields are ignored.
    * `requireNoTrailingContent` rejects anything other than whitespace after the JSON value, because Jackson stops
      reading after the first value and would drop the rest without an error.
@@ -198,9 +198,9 @@ reads it once at startup by calling `Storage#readAddressBookWithBackup()`, which
 5. A failure in any of steps 2 to 4 causes a `DataLoadingException`. `readAddressBookWithBackup` copies the data
    file to `addressbook.json.bak` in the same folder, replacing any older backup, and rethrows the exception.
    `MainApp` logs a warning and starts with an empty `AddressBook`.
-6. If the data file is not a regular file, such as a folder, or the copy fails, `readAddressBookWithBackup` throws
-   a `DataBackupException` instead. `MainApp#initModelManager` rethrows it as an `IllegalStateException`, so the
-   app does not open. The message names the data file and the backup path and says that the original file was
+6. If the data file is not a regular file, such as a folder, or the copy cannot be made, `readAddressBookWithBackup`
+   throws a `DataBackupException` instead. `MainApp#initModelManager` rethrows it as an `IllegalStateException`, so
+   the app does not open. The message names the data file and the backup path and says that the original file was
    not changed.
 
 Starting with an empty list does not save anything. The invalid data file stays on disk until the first command
@@ -212,7 +212,8 @@ From then on, the `.bak` copy is the only copy of the old data.
 **Aspect: What to do when the data file cannot be loaded**
 
 * **Alternative 1 (current choice):** Back up the file, then start with an empty contact list.
-  * Pros: The app always opens, and the user's data is kept in full in the `.bak` file for recovery.
+  * Pros: The app opens whenever the invalid file can be backed up, and the user's data is kept in full in the
+    `.bak` file for recovery.
   * Cons: The next change replaces the invalid file, so the user must recover from the `.bak` file. A later
     failed load replaces that backup too.
 * **Alternative 2:** Refuse to start until the file is fixed.
@@ -225,8 +226,9 @@ From then on, the `.bak` copy is the only copy of the old data.
 
 * **Alternative 1 (current choice):** Reject invalid UTF-8, repeated keys, deep nesting, trailing content and
   invalid field values. Accept unknown fields and missing optional fields.
-  * Pros: Nothing in the file is dropped or changed without the user knowing, and a rejected file is backed up
-    whole. Files from older versions still load.
+  * Pros: No contact data is dropped or changed without the user knowing (only unknown fields, which the app does
+    not use, are discarded on the next save), and a rejected file is backed up whole. Files from older versions
+    still load.
   * Cons: One bad value makes the whole file load as an empty list, instead of skipping only the bad contact.
 * **Alternative 2:** Read leniently, for example by skipping invalid contacts, keeping the last of repeated keys
   and replacing bad bytes.
