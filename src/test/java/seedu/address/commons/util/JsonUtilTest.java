@@ -162,11 +162,7 @@ public class JsonUtilTest {
         Path filePath = testFolder.resolve("data.json");
         byte[] prefix = "{\"name\":\"Blk 1".getBytes(StandardCharsets.UTF_8);
         byte[] suffix = " Road\"}".getBytes(StandardCharsets.UTF_8);
-        byte[] content = new byte[prefix.length + 1 + suffix.length];
-        System.arraycopy(prefix, 0, content, 0, prefix.length);
-        content[prefix.length] = (byte) 0xFF;
-        System.arraycopy(suffix, 0, content, prefix.length + 1, suffix.length);
-        Files.write(filePath, content);
+        Files.write(filePath, TestUtil.concat(prefix, TestUtil.bytes(0xFF), suffix));
 
         DataLoadingException e = assertThrows(DataLoadingException.class, () ->
                 JsonUtil.readJsonFile(filePath, SerializableTestClass.class));
