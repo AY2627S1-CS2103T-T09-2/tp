@@ -3,6 +3,7 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.text.Collator;
+import java.text.Normalizer;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Comparator;
@@ -105,12 +106,13 @@ public class DueCommand extends Command {
 
     /**
      * Returns {@code words} with each letter in {@link #STROKE_LETTERS} replaced by its base letter,
-     * e.g. "Đặng" becomes "Dặng".
+     * e.g. "Đặng" becomes "Dặng". Words are decomposed first, so a stroke letter that also carries an
+     * accent as one character, such as Ǿ, is split into Ø and the accent and folded too.
      */
     private static String[] foldStrokeLetters(String[] words) {
         String[] folded = new String[words.length];
         for (int i = 0; i < words.length; i++) {
-            char[] letters = words[i].toCharArray();
+            char[] letters = Normalizer.normalize(words[i], Normalizer.Form.NFD).toCharArray();
             for (int j = 0; j < letters.length; j++) {
                 int strokeIndex = STROKE_LETTERS.indexOf(letters[j]);
                 if (strokeIndex >= 0) {
