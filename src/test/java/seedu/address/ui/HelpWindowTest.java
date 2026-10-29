@@ -1,18 +1,22 @@
 package seedu.address.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import org.junit.jupiter.api.Test;
 
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import seedu.address.testutil.LogCapture;
 
 /**
- * Tests the User Guide link and clipboard outcomes without requiring a graphical environment.
+ * Tests Help keyboard handling, the User Guide link and clipboard outcomes without a graphical environment.
  */
 public class HelpWindowTest {
 
@@ -47,6 +51,64 @@ public class HelpWindowTest {
             });
             assertTrue(logs.getRecords().isEmpty());
         }
+    }
+
+    @Test
+    public void handleCloseKey_plainEscape_closesHelpAndConsumesEvent() {
+        // EP: a plain Escape press closes Help exactly once and must not reach another key handler.
+        AtomicInteger closeCount = new AtomicInteger();
+        KeyEvent event = keyPressed(KeyCode.ESCAPE);
+
+        HelpWindow.handleCloseKey(event, closeCount::incrementAndGet);
+
+        assertEquals(1, closeCount.get());
+        assertTrue(event.isConsumed());
+    }
+
+    @Test
+    public void handleCloseKey_modifiedEscape_preservesPlatformShortcuts() {
+        // EP: each modifier makes Escape a different shortcut; none should trigger Help's close action.
+        List<KeyEvent> events = List.of(
+                new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.ESCAPE, true, false, false, false),
+                new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.ESCAPE, false, true, false, false),
+                new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.ESCAPE, false, false, true, false),
+                new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.ESCAPE, false, false, false, true));
+        for (KeyEvent event : events) {
+            assertCloseKeyIgnored(event);
+        }
+    }
+
+    @Test
+    public void handleCloseKey_otherKeys_preservesScrollingAndFocusTraversal() {
+        // EP: scrolling keys, Tab, button activation and unrelated keys keep their normal control behavior.
+        for (KeyCode code : List.of(KeyCode.UP, KeyCode.DOWN, KeyCode.PAGE_UP, KeyCode.PAGE_DOWN,
+                KeyCode.HOME, KeyCode.END, KeyCode.TAB, KeyCode.SPACE, KeyCode.ENTER, KeyCode.A, KeyCode.F1)) {
+            assertCloseKeyIgnored(keyPressed(code));
+        }
+        assertCloseKeyIgnored(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.TAB,
+                true, false, false, false));
+    }
+
+    @Test
+    public void handleCloseKey_releasedOrTypedEvent_doesNotCloseAgain() {
+        // EP: release and character events do not repeat the action performed by a key press.
+        assertCloseKeyIgnored(new KeyEvent(KeyEvent.KEY_RELEASED, "", "", KeyCode.ESCAPE,
+                false, false, false, false));
+        assertCloseKeyIgnored(new KeyEvent(KeyEvent.KEY_TYPED, "\u001b", "", KeyCode.UNDEFINED,
+                false, false, false, false));
+    }
+
+    private void assertCloseKeyIgnored(KeyEvent event) {
+        AtomicInteger closeCount = new AtomicInteger();
+
+        HelpWindow.handleCloseKey(event, closeCount::incrementAndGet);
+
+        assertEquals(0, closeCount.get());
+        assertFalse(event.isConsumed());
+    }
+
+    private KeyEvent keyPressed(KeyCode code) {
+        return new KeyEvent(KeyEvent.KEY_PRESSED, "", "", code, false, false, false, false);
     }
 
     private void assertClipboardOutcome(boolean copied, Level expectedLevel, String expectedContext) {

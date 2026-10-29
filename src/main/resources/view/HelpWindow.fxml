@@ -49,6 +49,7 @@
               </VBox>
 
               <ScrollPane fx:id="commandGuideScrollPane"
+                          focusTraversable="true" accessibleText="Command guide"
                           fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
                           minHeight="0.0" minWidth="0.0" VBox.vgrow="ALWAYS">
                 <content>

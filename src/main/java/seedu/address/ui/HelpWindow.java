@@ -12,6 +12,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
@@ -57,6 +59,7 @@ public class HelpWindow extends UiPart<Stage> {
         super(FXML, root);
         configureFonts();
         layoutCommandGuide(false);
+        getRoot().getScene().addEventFilter(KeyEvent.KEY_PRESSED, event -> handleCloseKey(event, this::hide));
         commandGuideScrollPane.viewportBoundsProperty().addListener((observable, oldBounds, newBounds) -> {
             boolean compact = newBounds.getWidth() < COMPACT_LAYOUT_WIDTH;
             if (newBounds.getWidth() > 0 && compact != compactLayout) {
@@ -163,6 +166,7 @@ public class HelpWindow extends UiPart<Stage> {
     public void show() {
         fitToScreen();
         getRoot().show();
+        commandGuideScrollPane.requestFocus();
         logger.fine("Showing command guide.");
     }
 
@@ -216,6 +220,18 @@ public class HelpWindow extends UiPart<Stage> {
      */
     public void focus() {
         getRoot().requestFocus();
+        commandGuideScrollPane.requestFocus();
+    }
+
+    /**
+     * Closes Help on a plain Escape press without intercepting scrolling, traversal or platform shortcuts.
+     */
+    static void handleCloseKey(KeyEvent event, Runnable closeWindow) {
+        if (event.getEventType() == KeyEvent.KEY_PRESSED && event.getCode() == KeyCode.ESCAPE
+                && !event.isShiftDown() && !event.isControlDown() && !event.isAltDown() && !event.isMetaDown()) {
+            closeWindow.run();
+            event.consume();
+        }
     }
 
     /**
