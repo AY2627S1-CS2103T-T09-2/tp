@@ -18,23 +18,16 @@ public class NoteCommandParser implements Parser<NoteCommand> {
     public NoteCommand parse(String args) throws ParseException {
         requireNonNull(args);
 
-        String trimmedArgs = args.trim();
-        String notePrefix = PREFIX_NOTE.getPrefix();
+        ArgumentMultimap argMultimap =
+                ArgumentTokenizer.tokenize(args, PREFIX_NOTE);
 
-        int prefixPosition = trimmedArgs.indexOf(notePrefix);
+        argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_NOTE);
 
-        if (prefixPosition < 0) {
-            throw new ParseException(
-                    String.format(
-                            MESSAGE_INVALID_COMMAND_FORMAT,
-                            NoteCommand.MESSAGE_USAGE));
-        }
-
-        String preamble =
-                trimmedArgs.substring(0, prefixPosition).trim();
+        String preamble = argMultimap.getPreamble().trim();
 
         if (preamble.isEmpty()
-                || preamble.matches(".*\\s+.*")) {
+                || preamble.matches(".*\\s+.*")
+                || argMultimap.getValue(PREFIX_NOTE).isEmpty()) {
             throw new ParseException(
                     String.format(
                             MESSAGE_INVALID_COMMAND_FORMAT,
@@ -44,8 +37,7 @@ public class NoteCommandParser implements Parser<NoteCommand> {
         Index index = ParserUtil.parseIndex(preamble);
 
         String noteText =
-                trimmedArgs.substring(
-                        prefixPosition + notePrefix.length());
+                argMultimap.getValue(PREFIX_NOTE).orElse("").trim();
 
         if (!InteractionNote.isValidNote(noteText)) {
             throw new ParseException(
