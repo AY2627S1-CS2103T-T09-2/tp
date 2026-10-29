@@ -698,20 +698,21 @@ testers are expected to do more *exploratory* testing.
 
 1. Listing due follow-ups in date order
 
-   1. Prerequisites: Add three contacts with follow-ups, one overdue, one today and one in 3 days. For example, if today is 21-10-2026:<br>
-      `add n/Due Past p/91110001 e/duepast@example.com a/1 Test Road f/01-10-2026`<br>
-      `add n/Due Today p/91110002 e/duetoday@example.com a/2 Test Road f/21-10-2026`<br>
-      `add n/Due Soon p/91110003 e/duesoon@example.com a/3 Test Road f/24-10-2026`
+   1. Prerequisites: Add three contacts with follow-ups: one in the past, one today and one 3 days from today.
+      Replace `TODAY` with today's date and `IN_3_DAYS` with the date 3 days from today, both in `DD-MM-YYYY` format.<br>
+      `add n/Due Past p/91110001 e/duepast@example.com a/1 Test Road f/01-01-2020`<br>
+      `add n/Due Today p/91110002 e/duetoday@example.com a/2 Test Road f/TODAY`<br>
+      `add n/Due Soon p/91110003 e/duesoon@example.com a/3 Test Road f/IN_3_DAYS`
 
    1. Test case: `due`<br>
-      Expected: `Due Past` then `Due Today` are shown, plus any other contact due by today. `Due Soon` is not shown.
-      The result shows `N follow-ups due by 21-10-2026.` The `Due Past` card shows its date in red with `(overdue)`.
+      Expected: `Due Past` and `Due Today` are shown in that order, plus any other contact due by today. `Due Soon` is not shown.
+      The result shows `N follow-ups due by TODAY.`, where `N` is the number of contacts listed. The `Due Past` card shows its date in red with `(overdue)`.
 
    1. Test case: `due 3`<br>
-      Expected: `Due Soon` is now included, after the other two.
+      Expected: `Due Soon` is now included, after `Due Past` and `Due Today`. The result shows `N follow-ups due by IN_3_DAYS.`
 
    1. Test case: `due` followed by `done 1`<br>
-      Expected: The earliest follow-up in the sorted list is completed.
+      Expected: The first contact's follow-up is completed, and that contact leaves the list because it no longer has a follow-up.
 
    1. Other incorrect commands to try: `due -1`, `due 366`, `due abc`, `due 7 days`<br>
       Expected: No change to the list. Error: `Number of days must be a whole number from 0 to 365, e.g. due 7.`
