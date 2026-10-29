@@ -824,6 +824,8 @@ testers are expected to do more *exploratory* testing.
 
 1. Dealing with a corrupted data file
 
+   1. Prerequisites: `data/addressbook.json` exists and holds at least one contact. The previous test leaves no data file, so run `add n/Test Person p/91234567 e/test@example.com a/1 Test Road` first.
+
    1. Close the app. Open `data/addressbook.json` and change one contact's `"status"` value to `"lead"`.
 
    1. Relaunch the app.<br>
@@ -850,6 +852,8 @@ testers are expected to do more *exploratory* testing.
       Expected: The invalid data is backed up and the app starts with an empty contact list.
 
 1. Dealing with an older data file
+
+   1. Prerequisites: `data/addressbook.json` holds at least one valid contact. The previous test leaves invalid data and an empty list, so run `add n/Old Format p/92345678 e/old@example.com a/2 Test Road st/CLIENT f/01-01-2030` first.
 
    1. Close the app. Remove the `"status"` and `"followUp"` fields from one contact in `data/addressbook.json`.
 
