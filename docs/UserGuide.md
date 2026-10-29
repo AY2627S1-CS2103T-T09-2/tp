@@ -76,8 +76,7 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 
 * `help` and `exit` accept no parameters.<br>
   Extra parameters are rejected with an error naming the command.<br>
-  For example, `clear 123` shows `The clear command does not accept additional parameters.`
-  and leaves all contacts unchanged.
+  For example, `help 123` shows `The help command does not accept additional parameters.`
 
 * `clear` accepts either no arguments or exactly `confirm`.
   Other parameters are rejected with an error naming the command.
@@ -283,8 +282,8 @@ Format: `done INDEX`
 * The contact must have a pending follow-up.
 * The contact's other details remain unchanged. Its card shows `Follow-up: None` after completion.
 
-On success, the result is:
-`Marked follow-up for <name> as completed.`
+On success, the result includes the original scheduled date:
+`Marked follow-up for <name> as completed (scheduled for <DD-MM-YYYY>).`
 
 If the contact has no pending follow-up, the result is:
 `<name> does not have a pending follow-up.`

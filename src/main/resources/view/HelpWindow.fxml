@@ -269,6 +269,7 @@
                         </children>
                       </GridPane>
 
+                      <!-- @@author kaseyho -->
                       <GridPane hgap="20.0" vgap="6.0" styleClass="command-guide-row">
                         <children>
                           <Label text="list"
@@ -288,7 +289,9 @@
                                  visible="false" managed="false" />
                         </children>
                       </GridPane>
+                      <!-- @@author -->
 
+                      <!-- @@author PBez02 -->
                       <GridPane hgap="20.0" vgap="6.0" styleClass="command-guide-row">
                         <children>
                           <Label text="note"
@@ -308,6 +311,7 @@
                                  visible="false" managed="false" />
                         </children>
                       </GridPane>
+                      <!-- @@author -->
 
                       <GridPane hgap="20.0" vgap="6.0" styleClass="command-guide-row">
                         <children>
