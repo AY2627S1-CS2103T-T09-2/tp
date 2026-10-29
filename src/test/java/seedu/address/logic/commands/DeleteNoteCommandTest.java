@@ -51,7 +51,7 @@ public class DeleteNoteCommandTest {
                 model.getFilteredPersonList().get(0);
 
         assertEquals(
-                "Deleted interaction note 1 for John Tan: Client requested a quotation"
+                "Deleted interaction note 1 for John Tan: Client requested a quotation",
                 result.getFeedbackToUser());
 
         assertEquals(person.getName(), updatedPerson.getName());
