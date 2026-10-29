@@ -43,7 +43,12 @@ public class JsonUtil {
     public static final String MESSAGE_TOO_DEEPLY_NESTED =
             "JSON data is nested more than " + MAX_NESTING_DEPTH + " levels deep at line %d, column %d";
 
+    public static final String MESSAGE_EMPTY_FILE = "The file is empty.";
+
     public static final String MESSAGE_DUPLICATE_KEY = "Duplicate field '%s' at line %d, column %d";
+
+    public static final String MESSAGE_UNPAIRED_SURROGATE =
+            "Text contains half of a character (\\u%04X with no matching pair) at line %d, column %d";
 
     private static final Logger logger = LogsCenter.getLogger(JsonUtil.class);
 
@@ -62,7 +67,12 @@ public class JsonUtil {
 
     static <T> T deserializeObjectFromJsonFile(Path jsonFile, Class<T> classOfObjectToDeserialize)
             throws IOException {
-        return fromJsonString(FileUtil.readFromFile(jsonFile), classOfObjectToDeserialize);
+        String json = FileUtil.readFromFile(jsonFile);
+        if (json.chars().allMatch(c -> isJsonWhitespace((char) c))) {
+            // Otherwise Jackson reports this as "No content to map", with a column of 0.
+            throw new IOException(MESSAGE_EMPTY_FILE);
+        }
+        return fromJsonString(json, classOfObjectToDeserialize);
     }
 
     /**
@@ -136,8 +146,10 @@ public class JsonUtil {
      * deeper than {@link #MAX_NESTING_DEPTH} or repeats a key within one object. Jackson's object mapping
      * recurses once per level, so this streaming pass, which uses no recursion, has to run first.
      * Repeated keys are checked here too because Jackson 2.7 does not say where the repeated key is,
-     * which makes it hard to find in a large data file. Only the first value is checked; anything after
-     * it is reported by {@link #requireNoTrailingContent(JsonParser, String)} instead.
+     * which makes it hard to find in a large data file. Strings and field names holding half of a surrogate
+     * pair, which can only come from a Unicode escape in the JSON text, are rejected too: they are not valid text,
+     * and saving them would replace them with {@code ?} for good. Only the first value is checked;
+     * anything after it is reported by {@link #requireNoTrailingContent(JsonParser, String)} instead.
      */
     private static void requireValidStructure(String json) throws IOException {
         try (JsonParser parser = objectMapper.getFactory().createParser(json)) {
@@ -159,13 +171,46 @@ public class JsonUtil {
                     if (token == JsonToken.END_OBJECT) {
                         keysOfOpenObjects.pop();
                     }
-                } else if (token == JsonToken.FIELD_NAME && !keysOfOpenObjects.peek().add(parser.getCurrentName())) {
-                    throw new IOException(formatWithLocation(MESSAGE_DUPLICATE_KEY, parser,
-                            parser.getCurrentName()));
+                } else if (token == JsonToken.FIELD_NAME) {
+                    requireUniqueKey(keysOfOpenObjects, parser);
+                }
+                if (token == JsonToken.FIELD_NAME || token == JsonToken.VALUE_STRING) {
+                    requireNoUnpairedSurrogate(parser);
                 }
                 if (depth == 0) {
                     return;
                 }
+            }
+        }
+    }
+
+    /**
+     * Throws an {@code IOException} if the field name at the current token of {@code parser} was
+     * already used in the innermost open object, whose keys so far are on top of {@code keysOfOpenObjects}.
+     */
+    private static void requireUniqueKey(Deque<Set<String>> keysOfOpenObjects, JsonParser parser)
+            throws IOException {
+        assert !keysOfOpenObjects.isEmpty() : "A field name can only appear inside an object";
+        String key = parser.getCurrentName();
+        if (!keysOfOpenObjects.peek().add(key)) {
+            throw new IOException(formatWithLocation(MESSAGE_DUPLICATE_KEY, parser, key));
+        }
+    }
+
+    /**
+     * Throws an {@code IOException} if the text of the current string or field name token of
+     * {@code parser} has a high surrogate that is not followed by a low surrogate, or a low surrogate
+     * that does not follow a high surrogate.
+     */
+    private static void requireNoUnpairedSurrogate(JsonParser parser) throws IOException {
+        String text = parser.getText();
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (Character.isHighSurrogate(c) && i + 1 < text.length()
+                    && Character.isLowSurrogate(text.charAt(i + 1))) {
+                i++; // A complete pair, such as an escaped emoji.
+            } else if (Character.isSurrogate(c)) {
+                throw new IOException(formatWithLocation(MESSAGE_UNPAIRED_SURROGATE, parser, (int) c));
             }
         }
     }

@@ -120,6 +120,31 @@ public class LogicManagerSaveFailureTest {
     }
 
     @Test
+    public void execute_readOnlyCommands_doesNotRecheckContactUniqueness() throws Exception {
+        // EP: queries and UI commands take snapshots of data whose uniqueness is already guaranteed by the model.
+        List<IdentityCountingPerson> persons = contacts().getPersonList().stream()
+                .map(IdentityCountingPerson::new).toList();
+        AddressBook original = new AddressBook();
+        original.setPersons(List.copyOf(persons));
+        ModelManager model = new ModelManager(original, new UserPrefs());
+        FailingStorage storage = new FailingStorage(temporaryFolder.resolve("snapshot.json"));
+        Logic logic = createLogic(model, storage);
+        for (IdentityCountingPerson person : persons) {
+            person.identityChecks = 0;
+        }
+
+        for (String command : List.of("list", "list st/CLIENT", "find Alice", "due", "history 1", "help", "exit")) {
+            logic.execute(command);
+
+            // Count the expensive operation instead of asserting a machine-dependent running time.
+            assertEquals(0, persons.stream().mapToInt(person -> person.identityChecks).sum(), command);
+            assertEquals(original, model.getAddressBook());
+            assertEquals(0, storage.saveAttempts);
+            assertFalse(Files.exists(storage.getAddressBookFilePath()));
+        }
+    }
+
+    @Test
     public void execute_nonMutatingCommandWithFailingStorage_returnsResultWithoutSaving() throws Exception {
         Map<String, CommandResult> expectedResults = Map.of(
                 "help", new CommandResult(HelpCommand.SHOWING_HELP_MESSAGE, true, false),
@@ -406,6 +431,24 @@ public class LogicManagerSaveFailureTest {
     private Logic createLogic(ModelManager model, JsonAddressBookStorage storage) {
         return new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
+    }
+
+    /**
+     * Counts identity checks while preserving the ordinary contact comparison behavior.
+     */
+    private static class IdentityCountingPerson extends Person {
+        private int identityChecks;
+
+        IdentityCountingPerson(Person person) {
+            super(person.getName(), person.getPhone(), person.getEmail(), person.getAddress(), person.getStatus(),
+                    person.getTags(), person.getFollowUp(), person.getInteractionNotes());
+        }
+
+        @Override
+        public boolean isSamePerson(Person otherPerson) {
+            identityChecks++;
+            return super.isSamePerson(otherPerson);
+        }
     }
 
     /**

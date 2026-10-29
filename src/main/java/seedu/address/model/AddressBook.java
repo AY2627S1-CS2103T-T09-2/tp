@@ -22,11 +22,19 @@ public class AddressBook implements ReadOnlyAddressBook {
     public AddressBook() {}
 
     /**
-     * Creates an AddressBook using the Persons in the {@code toBeCopied}
+     * Creates an independent address book containing the contacts in {@code toBeCopied}.
+     * Copies a concrete AddressBook's validated list in linear time, sharing immutable Person values.
+     * Other implementations and subclasses are validated through their public contact list.
      */
     public AddressBook(ReadOnlyAddressBook toBeCopied) {
         this();
-        resetData(toBeCopied);
+        requireNonNull(toBeCopied);
+        if (toBeCopied.getClass() == AddressBook.class) {
+            AddressBook source = (AddressBook) toBeCopied;
+            persons.setPersons(source.persons);
+        } else {
+            resetData(toBeCopied);
+        }
     }
 
     //// list overwrite operations

@@ -12,8 +12,8 @@ public class Phone {
     public static final int MAX_LENGTH = 30;
 
     public static final String MESSAGE_CONSTRAINTS =
-            "Phone numbers must contain at least 3 digits, with an optional leading +, spaces or dashes "
-                    + "between digits, and be at most " + MAX_LENGTH + " characters long.";
+            "Phone numbers must have at least 3 digits and at most " + MAX_LENGTH + " characters, may start "
+                    + "with +, and may separate digits with a single space or dash, e.g. +65 9123-4567.";
 
     // The lookahead checks for 3 digits; the rest uses a character class, which the regex engine
     // matches in a loop rather than by recursion, so very long input cannot overflow the stack.

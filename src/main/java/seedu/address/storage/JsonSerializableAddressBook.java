@@ -2,6 +2,8 @@ package seedu.address.storage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -12,7 +14,6 @@ import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.model.AddressBook;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.person.Person;
-import seedu.address.model.person.exceptions.DuplicatePersonException;
 
 /**
  * An Immutable AddressBook that is serializable to JSON format.
@@ -22,6 +23,8 @@ class JsonSerializableAddressBook {
 
     public static final String MESSAGE_DUPLICATE_PERSON = "Persons list contains duplicate person(s).";
     public static final String MESSAGE_NULL_PERSON = "Persons list contains a null entry.";
+    /** Prefix that says which contact, counting from 1 in file order, a loading error is about. */
+    public static final String MESSAGE_CONTACT_POSITION = "Contact %d is invalid. %s";
 
     private final List<JsonAdaptedPerson> persons = new ArrayList<>();
 
@@ -45,23 +48,43 @@ class JsonSerializableAddressBook {
     /**
      * Converts this address book into the model's {@code AddressBook} object.
      *
-     * @throws IllegalValueException if there were any data constraints violated.
+     * @throws IllegalValueException if there were any data constraints violated. The message starts with
+     *     the position of the offending contact, e.g. {@code Contact 3 is invalid. ...}.
      */
     public AddressBook toModelType() throws IllegalValueException {
         List<Person> convertedPersons = new ArrayList<>(persons.size());
-        for (JsonAdaptedPerson jsonAdaptedPerson : persons) {
-            if (jsonAdaptedPerson == null) {
-                throw new IllegalValueException(MESSAGE_NULL_PERSON);
-            }
-            convertedPersons.add(jsonAdaptedPerson.toModelType());
+        Set<String> seenNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for (int i = 0; i < persons.size(); i++) {
+            convertedPersons.add(toModelPerson(persons.get(i), i + 1, seenNames));
         }
+
         AddressBook addressBook = new AddressBook();
-        try {
-            addressBook.setPersons(convertedPersons);
-        } catch (DuplicatePersonException e) {
-            throw new IllegalValueException(MESSAGE_DUPLICATE_PERSON);
-        }
+        addressBook.setPersons(convertedPersons);
         return addressBook;
+    }
+
+    /**
+     * Converts the contact at {@code position} (counting from 1) and records its name in {@code seenNames}.
+     * Rejects a name already seen, ignoring case and extra spaces.
+     */
+    private static Person toModelPerson(JsonAdaptedPerson jsonAdaptedPerson, int position,
+            Set<String> seenNames) throws IllegalValueException {
+        if (jsonAdaptedPerson == null) {
+            throw new IllegalValueException(String.format(MESSAGE_CONTACT_POSITION, position, MESSAGE_NULL_PERSON));
+        }
+        Person person;
+        try {
+            person = jsonAdaptedPerson.toModelType();
+        } catch (IllegalValueException | IllegalArgumentException e) {
+            // A model constructor can still reject a value that passed the raw check, e.g. an address of
+            // control characters is blank once trimmed. That is invalid data too, so the file gets backed up.
+            throw new IllegalValueException(String.format(MESSAGE_CONTACT_POSITION, position, e.getMessage()), e);
+        }
+        if (!seenNames.add(person.getName().fullName.replaceAll(" +", " ").trim())) {
+            throw new IllegalValueException(String.format(MESSAGE_CONTACT_POSITION, position,
+                    MESSAGE_DUPLICATE_PERSON));
+        }
+        return person;
     }
 
 }

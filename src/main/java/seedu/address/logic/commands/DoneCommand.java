@@ -20,8 +20,12 @@ import seedu.address.model.person.Person;
 public class DoneCommand extends Command {
 
     public static final String COMMAND_WORD = "done";
-    public static final String MESSAGE_USAGE = COMMAND_WORD + " INDEX";
-    public static final String MESSAGE_SUCCESS = "Marked follow-up for %1$s as completed.";
+    public static final String MESSAGE_USAGE = COMMAND_WORD
+            + ": Marks the pending follow-up of the contact identified by the displayed index as completed.\n"
+            + "Parameters: INDEX (must be a positive integer)\n"
+            + "Example: " + COMMAND_WORD + " 1";
+    public static final String MESSAGE_SUCCESS = "Marked follow-up for %1$s as completed (scheduled for %2$s).";
+
     public static final String MESSAGE_NO_PENDING_FOLLOW_UP = "%1$s does not have a pending follow-up.";
 
     private static final Logger logger = LogsCenter.getLogger(DoneCommand.class);
@@ -42,7 +46,7 @@ public class DoneCommand extends Command {
      * Clears the selected contact's pending follow-up and returns a confirmation message.
      *
      * @param model Model containing the displayed contacts.
-     * @return A result confirming that the follow-up was completed.
+     * @return A result confirming completion with the contact's name and original follow-up date.
      * @throws CommandException If the index is outside the displayed list or the contact has
      *     no pending follow-up.
      * @throws NullPointerException If {@code model} is null.
@@ -74,7 +78,8 @@ public class DoneCommand extends Command {
         model.setPerson(personToComplete, completedPerson);
         logger.info(() -> "Cleared pending follow-up in model; displayedIndex=" + targetIndex.getOneBased());
 
-        return new CommandResult(String.format(MESSAGE_SUCCESS, personToComplete.getName()));
+        return new CommandResult(String.format(MESSAGE_SUCCESS, personToComplete.getName(),
+                personToComplete.getFollowUp().orElseThrow()));
     }
 
     @Override

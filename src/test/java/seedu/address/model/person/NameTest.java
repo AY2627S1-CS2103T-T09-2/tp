@@ -58,7 +58,10 @@ public class NameTest {
         assertThrows(NullPointerException.class, () -> Name.isValidName(null));
 
         // EP: blank input with no starting letter.
-        assertFalse(Name.isValidName("")); // Boundary value: zero characters.
+        // Boundary value: zero characters.
+        // @@author kaseyho-reused
+        assertFalse(Name.isValidName(""));
+        // @@author
         assertFalse(Name.isValidName(" ")); // spaces only
 
         // EP: characters outside the permitted letters, digits, spaces and name punctuation.

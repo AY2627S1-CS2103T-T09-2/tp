@@ -30,6 +30,19 @@ public class InteractionNoteTest {
     }
 
     @Test
+    public void constructor_visuallyBlankNote_throwsIllegalArgumentException() {
+        // EP: invisible spacing characters alone do not contain visible note text.
+        assertThrows(IllegalArgumentException.class, () ->
+                new InteractionNote("\u00A0"));
+
+        assertThrows(IllegalArgumentException.class, () ->
+                new InteractionNote("\u200B"));
+
+        assertThrows(IllegalArgumentException.class, () ->
+                new InteractionNote(" \u00A0\u200B "));
+    }
+
+    @Test
     public void constructor_noteOverMaximumLength_throwsIllegalArgumentException() {
         // EP: note text exceeds the allowed length.
         // Boundary value: MAX_LENGTH + 1 is the first invalid length above the limit.
@@ -76,6 +89,20 @@ public class InteractionNoteTest {
     }
 
     @Test
+    public void isValidNote_visuallyBlankString_returnsFalse() {
+        // EP: NBSP and zero-width spaces are invisible and do not count as note content.
+        assertFalse(InteractionNote.isValidNote("\u00A0"));
+        assertFalse(InteractionNote.isValidNote("\u200B"));
+        assertFalse(InteractionNote.isValidNote(" \u00A0\u200B "));
+    }
+
+    @Test
+    public void isValidNote_visibleTextWithInvisibleSpacing_returnsTrue() {
+        // EP: invisible spacing is allowed when the note still contains visible text.
+        assertTrue(InteractionNote.isValidNote("\u200BMet client\u00A0"));
+    }
+
+    @Test
     public void isValidNote_validNote_returnsTrue() {
         // EP: nonblank text shorter than the maximum length is valid.
         assertTrue(InteractionNote.isValidNote(
@@ -100,6 +127,21 @@ public class InteractionNoteTest {
                 "a".repeat(InteractionNote.MAX_LENGTH + 1);
 
         assertFalse(InteractionNote.isValidNote(noteOverMaximumLength));
+    }
+
+    @Test
+    public void constructor_controlCharacter_throwsIllegalArgumentException() {
+        // EP: control characters are not allowed in interaction note text.
+        assertThrows(IllegalArgumentException.class, () ->
+                new InteractionNote("Called\u0000client"));
+    }
+
+    @Test
+    public void isValidNote_controlCharacters_returnsFalse() {
+        // EP: notes containing ISO control characters are invalid.
+        assertFalse(InteractionNote.isValidNote("Called\u0000client"));
+        assertFalse(InteractionNote.isValidNote("Called\nclient"));
+        assertFalse(InteractionNote.isValidNote("Called\tclient"));
     }
 
     @Test

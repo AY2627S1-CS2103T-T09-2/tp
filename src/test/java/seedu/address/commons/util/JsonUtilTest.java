@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -161,16 +162,42 @@ public class JsonUtilTest {
         Path filePath = testFolder.resolve("data.json");
         byte[] prefix = "{\"name\":\"Blk 1".getBytes(StandardCharsets.UTF_8);
         byte[] suffix = " Road\"}".getBytes(StandardCharsets.UTF_8);
-        byte[] content = new byte[prefix.length + 1 + suffix.length];
-        System.arraycopy(prefix, 0, content, 0, prefix.length);
-        content[prefix.length] = (byte) 0xFF;
-        System.arraycopy(suffix, 0, content, prefix.length + 1, suffix.length);
-        Files.write(filePath, content);
+        Files.write(filePath, TestUtil.concat(prefix, TestUtil.bytes(0xFF), suffix));
 
         DataLoadingException e = assertThrows(DataLoadingException.class, () ->
                 JsonUtil.readJsonFile(filePath, SerializableTestClass.class));
         assertEquals(String.format(FileUtil.MESSAGE_INVALID_UTF8, filePath, prefix.length),
                 e.getCause().getMessage());
+    }
+
+    @Test
+    public void fromJsonString_escapedUnpairedSurrogate_throwsIoException() {
+        // EP: half of an emoji pair written as an escape, which valid UTF-8 bytes can never hold.
+        IOException e = assertThrows(IOException.class, () ->
+                JsonUtil.fromJsonString("{\"name\":\"Blk 5 \\ud83c Road\"}", SerializableTestClass.class));
+        assertEquals(String.format(JsonUtil.MESSAGE_UNPAIRED_SURROGATE, 0xD83C, 1, 9), e.getMessage());
+
+        // A lone low half, a high half at the very end, two high halves and a pair in the wrong order.
+        for (String text : List.of("Met \\udc00 client", "end \\ud83c", "\\ud83c\\ud83c\\udfe0",
+                "\\udfe0\\ud83c")) {
+            assertThrows(IOException.class, () ->
+                    JsonUtil.fromJsonString("{\"name\":\"" + text + "\"}", SerializableTestClass.class));
+        }
+
+        // A field name and a string inside an array are checked too.
+        e = assertThrows(IOException.class, () ->
+                JsonUtil.fromJsonString("{\n\"a\\udc00\":1}", Object.class));
+        assertEquals(String.format(JsonUtil.MESSAGE_UNPAIRED_SURROGATE, 0xDC00, 2, 1), e.getMessage());
+        assertThrows(IOException.class, () -> JsonUtil.fromJsonString("[\"ok\", \"\\ud800\"]", Object.class));
+        assertThrows(IOException.class, () -> JsonUtil.fromJsonString("\"\\ud800\"", Object.class));
+    }
+
+    @Test
+    public void fromJsonString_escapedSurrogatePair_success() throws IOException {
+        // EP: an emoji written as an escaped pair is valid text and still loads.
+        SerializableTestClass result = JsonUtil.fromJsonString("{\"name\":\"Blk 5 \\ud83c\\udfe0 Road\"}",
+                SerializableTestClass.class);
+        assertEquals("Blk 5 \uD83C\uDFE0 Road", result.getName());
     }
 
     @Test

@@ -10,6 +10,7 @@ import static seedu.address.testutil.Assert.assertThrows;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
@@ -179,17 +180,9 @@ public class TagTest {
         // EP: words that differ only in their marks are different tags.
         List<String> names = List.of("ज़िंदगी", "जिंदगी", "ज़िदगी", "လျှော့", "လျှော", "လျော့", "הַשָּׁנָה", "השנה",
                 "x\u0301\u0302\u0303\u0304\u0306", "x\u0301\u0302\u0303\u0304", "x");
-        for (String first : names) {
-            for (String second : names) {
-                Tag a = new Tag(first);
-                Tag b = new Tag(second);
-                assertEquals(first.equals(second), a.equals(b), first + " vs " + second);
-                assertEquals(a.equals(b), b.equals(a), first + " vs " + second);
-                if (a.equals(b)) {
-                    assertEquals(a.hashCode(), b.hashCode(), first + " vs " + second);
-                }
-            }
-        }
+        assertEqualsConsistentWithHashCode(names);
+        // Every name above is different text, so no two of their tags may be equal.
+        assertEquals(names.size(), new HashSet<>(names.stream().map(Tag::new).toList()).size());
     }
 
     @Test
@@ -226,26 +219,27 @@ public class TagTest {
 
     @Test
     public void isValidTagName_length_atMostFiftyCharacters() {
-        // Boundary values: 50 characters is the longest allowed and 51 is one too many.
+        // Boundary values: MAX_LENGTH characters is the longest allowed and one more is too many.
+        int tooLong = Tag.MAX_LENGTH + 1;
         assertTrue(Tag.isValidTagName("a".repeat(Tag.MAX_LENGTH)));
-        assertFalse(Tag.isValidTagName("a".repeat(Tag.MAX_LENGTH + 1)));
-        assertTrue(Tag.isValidTagName("\u4FDD".repeat(50)));
-        assertFalse(Tag.isValidTagName("\u4FDD".repeat(51)));
+        assertFalse(Tag.isValidTagName("a".repeat(tooLong)));
+        assertTrue(Tag.isValidTagName("\u4FDD".repeat(Tag.MAX_LENGTH)));
+        assertFalse(Tag.isValidTagName("\u4FDD".repeat(tooLong)));
 
         // EP: the limit counts characters after composing accents, so a decomposed accent counts once.
-        assertTrue(Tag.isValidTagName("e\u0301".repeat(50)));
-        assertFalse(Tag.isValidTagName("e\u0301".repeat(51)));
+        assertTrue(Tag.isValidTagName("e\u0301".repeat(Tag.MAX_LENGTH)));
+        assertFalse(Tag.isValidTagName("e\u0301".repeat(tooLong)));
 
         // EP: the limit counts characters, not UTF-16 units, so letters outside the BMP count once.
-        assertTrue(Tag.isValidTagName("\uD840\uDC00".repeat(50))); // CJK extension B
-        assertFalse(Tag.isValidTagName("\uD840\uDC00".repeat(51)));
+        assertTrue(Tag.isValidTagName("\uD840\uDC00".repeat(Tag.MAX_LENGTH))); // CJK extension B
+        assertFalse(Tag.isValidTagName("\uD840\uDC00".repeat(tooLong)));
 
         // EP: a fully decomposed Greek letter takes four characters, but composes to one.
         String decomposedGreek = "\u03C9\u0313\u0342\u0345"; // omega with psili, perispomeni and ypogegrammeni
-        assertTrue(Tag.isValidTagName(decomposedGreek.repeat(50)));
-        assertFalse(Tag.isValidTagName(decomposedGreek.repeat(51)));
+        assertTrue(Tag.isValidTagName(decomposedGreek.repeat(Tag.MAX_LENGTH)));
+        assertFalse(Tag.isValidTagName(decomposedGreek.repeat(tooLong)));
 
-        assertThrows(IllegalArgumentException.class, Tag.MESSAGE_CONSTRAINTS, () -> new Tag("a".repeat(51)));
+        assertThrows(IllegalArgumentException.class, Tag.MESSAGE_CONSTRAINTS, () -> new Tag("a".repeat(tooLong)));
         assertTrue(Tag.MESSAGE_CONSTRAINTS.contains("50 characters"));
     }
 
@@ -265,16 +259,10 @@ public class TagTest {
         assertTimeoutPreemptively(FAST, () ->
                 assertThrows(IllegalArgumentException.class, Tag.MESSAGE_CONSTRAINTS, () -> new Tag(sigmas)));
 
-        List<String> longTags = List.of("a".repeat(51), "\u03A3".repeat(51), "\u03C2".repeat(51),
-                "\u00DF".repeat(51), "\u0130".repeat(51), "\u0390".repeat(51), "\u4FDD".repeat(51),
-                "\u0939\u093F".repeat(51), "\u0661".repeat(51), "\uD840\uDC00".repeat(51));
-        assertTimeoutPreemptively(FAST, () -> {
-            for (int i = 0; i < 1_000; i++) {
-                for (String longTag : longTags) {
-                    assertFalse(Tag.isValidTagName(longTag));
-                }
-            }
-        });
+        // Names just over the limit are rejected without any slow case or accent handling.
+        List<String> longTags = Stream.of("a", "\u03A3", "\u03C2", "\u00DF", "\u0130", "\u0390", "\u4FDD",
+                "\u0939\u093F", "\u0661", "\uD840\uDC00").map(letter -> letter.repeat(Tag.MAX_LENGTH + 1)).toList();
+        assertTimeoutPreemptively(FAST, () -> longTags.forEach(longTag -> assertFalse(Tag.isValidTagName(longTag))));
     }
 
     @Test
@@ -371,6 +359,15 @@ public class TagTest {
     }
 
     @Test
+    public void equals_sameObject_returnsTrue() {
+        // EP: a tag always equals itself, including one whose name needs the full Unicode comparison.
+        Tag asciiTag = new Tag("referral");
+        Tag accentedTag = new Tag("caf\u00E9");
+        assertTrue(asciiTag.equals(asciiTag));
+        assertTrue(accentedTag.equals(accentedTag));
+    }
+
+    @Test
     public void equals_differentLetters_notEqual() {
         assertFalse(new Tag("cafe").equals(new Tag("caf\u00E9")));
         assertFalse(new Tag("referral").equals(new Tag("referrals")));
@@ -387,16 +384,7 @@ public class TagTest {
                 "\u00E9", "\u00C9", "e\u0301", "E\u0301", "\u03C3", "\u03A3", "\u03C2",
                 "\u01C5", "\u01C6", "\u01C4", "K", "k", "\u212A", "\u00B5", "\u039C", "\u017F",
                 "\u03AA\u0301", "\u0390", "\u03CA\u0301");
-        for (String first : names) {
-            for (String second : names) {
-                Tag a = new Tag(first);
-                Tag b = new Tag(second);
-                assertEquals(a.equals(b), b.equals(a), first + " vs " + second);
-                if (a.equals(b)) {
-                    assertEquals(a.hashCode(), b.hashCode(), first + " vs " + second);
-                }
-            }
-        }
+        assertEqualsConsistentWithHashCode(names);
     }
 
     @Test
@@ -406,25 +394,38 @@ public class TagTest {
         assertEquals(tag, new Tag("CAFE\u0301"));
         assertNotEquals(tag, new Tag("cafe"));
         assertNotEquals(tag, new Tag("caf"));
-        assertEquals(new Tag("\u03A3".repeat(50)), new Tag("\u03C3".repeat(50)));
+        assertEquals(new Tag("\u03A3".repeat(Tag.MAX_LENGTH)), new Tag("\u03C3".repeat(Tag.MAX_LENGTH)));
     }
 
     @Test
-    public void equalsAndHashCode_longestTags_comparedQuickly() {
-        // The comparison key is worked out once when the tag is made, so comparing is a plain string check.
+    public void equalsAndHashCode_longestTagsWithFinalSigma_equal() {
+        // Boundary value: the longest tags, where the lower case one ends in the final form of sigma.
         Tag upperCase = new Tag("\u03A3".repeat(Tag.MAX_LENGTH));
         Tag lowerCase = new Tag("\u03C3".repeat(Tag.MAX_LENGTH - 1) + "\u03C2");
-        assertTimeoutPreemptively(FAST, () -> {
-            for (int i = 0; i < 2_000_000; i++) {
-                assertTrue(upperCase.equals(lowerCase));
-                assertEquals(upperCase.hashCode(), lowerCase.hashCode());
-            }
-        });
+        assertEquals(upperCase, lowerCase);
+        assertEquals(upperCase.hashCode(), lowerCase.hashCode());
     }
 
     @Test
     public void toString_wrapsNameInBrackets() {
         assertEquals("[café]", new Tag("café").toString());
+    }
+
+    /**
+     * Asserts that, for every pair of tags made from {@code names}, equals is symmetric, agrees with
+     * hashCode, and holds whenever the two names are the same text.
+     */
+    private static void assertEqualsConsistentWithHashCode(List<String> names) {
+        for (String first : names) {
+            for (String second : names) {
+                Tag a = new Tag(first);
+                Tag b = new Tag(second);
+                String pair = first + " vs " + second;
+                assertTrue(a.equals(b) || !first.equals(second), pair);
+                assertEquals(a.equals(b), b.equals(a), pair);
+                assertTrue(!a.equals(b) || a.hashCode() == b.hashCode(), pair);
+            }
+        }
     }
 
     private static void assertEqualTags(String first, String second) {

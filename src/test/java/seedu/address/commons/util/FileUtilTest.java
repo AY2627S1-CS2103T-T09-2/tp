@@ -4,8 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
+import static seedu.address.testutil.TestUtil.bytes;
+import static seedu.address.testutil.TestUtil.concat;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -139,22 +140,5 @@ public class FileUtilTest {
         Files.write(file, content);
         assertTrue(Files.exists(file));
         return file;
-    }
-
-    private static byte[] bytes(int... values) {
-        byte[] result = new byte[values.length];
-        for (int i = 0; i < values.length; i++) {
-            result[i] = (byte) values[i];
-        }
-        return result;
-    }
-
-    private static byte[] concat(Object... parts) {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        for (Object part : parts) {
-            byte[] partBytes = part instanceof String text ? text.getBytes(StandardCharsets.UTF_8) : (byte[]) part;
-            out.writeBytes(partBytes);
-        }
-        return out.toByteArray();
     }
 }

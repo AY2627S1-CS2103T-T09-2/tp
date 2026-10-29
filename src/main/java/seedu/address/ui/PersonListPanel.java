@@ -1,5 +1,6 @@
 package seedu.address.ui;
 
+import java.time.Clock;
 import java.util.logging.Logger;
 
 import javafx.collections.ObservableList;
@@ -20,13 +21,26 @@ public class PersonListPanel extends UiPart<Region> {
     @FXML
     private ListView<Person> personListView;
 
+    private final MidnightRefresher midnightRefresher;
+
     /**
      * Creates a {@code PersonListPanel} with the given {@code ObservableList}.
+     * The cards are redrawn just after each local midnight, so overdue follow-ups are marked
+     * even if no command is run.
      */
     public PersonListPanel(ObservableList<Person> personList) {
         super(FXML);
         personListView.setItems(personList);
         personListView.setCellFactory(listView -> new PersonListViewCell());
+        midnightRefresher = new MidnightRefresher(Clock.systemDefaultZone(), personListView::refresh);
+        midnightRefresher.start();
+    }
+
+    /**
+     * Stops redrawing the cards at midnight. Called when the main window closes.
+     */
+    public void stopMidnightRefresh() {
+        midnightRefresher.stop();
     }
 
     /** Scrolls the list to the contact at the given zero-based displayed index. */

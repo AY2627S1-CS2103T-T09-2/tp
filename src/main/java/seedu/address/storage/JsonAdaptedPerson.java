@@ -278,10 +278,15 @@ class JsonAdaptedPerson {
 
         final Set<Tag> modelTags = new HashSet<>(personTags);
 
-        if (followUp != null
-                && !followUp.isBlank()
-                && !FollowUp.isValidFollowUp(followUp)) {
-            throw new IllegalValueException(FollowUp.MESSAGE_CONSTRAINTS);
+        if (followUp != null && !followUp.isBlank()) {
+            if (!FollowUp.hasValidFormat(followUp)) {
+                throw new IllegalValueException(FollowUp.MESSAGE_CONSTRAINTS);
+            }
+
+            if (!FollowUp.isRealDate(followUp)) {
+                throw new IllegalValueException(
+                        String.format(FollowUp.MESSAGE_NOT_A_REAL_DATE, followUp));
+            }
         }
 
         final Optional<FollowUp> modelFollowUp =

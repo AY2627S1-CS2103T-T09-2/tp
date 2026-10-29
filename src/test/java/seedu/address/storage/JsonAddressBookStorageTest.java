@@ -10,6 +10,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static seedu.address.testutil.Assert.assertThrows;
+import static seedu.address.testutil.TestUtil.bytes;
+import static seedu.address.testutil.TestUtil.concat;
+import static seedu.address.testutil.TestUtil.insertAfter;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.HOON;
 import static seedu.address.testutil.TypicalPersons.IDA;
@@ -128,6 +131,17 @@ public class JsonAddressBookStorageTest {
 
         assertThrows(DataLoadingException.class, storage::readAddressBookWithBackup);
         assertEquals(json, Files.readString(filePath));
+        assertEquals(-1L, Files.mismatch(filePath, JsonAddressBookStorage.getBackupFilePath(filePath)));
+    }
+
+    @Test
+    public void readAddressBookWithBackup_addressOfControlCharacters_backsUpFile() throws Exception {
+        // EP: a value that a model constructor rejects after trimming is invalid data, so the file is backed up.
+        Path filePath = testFolder.resolve("addressbook.json");
+        Files.writeString(filePath, JsonSerializableAddressBookTest.CONTROL_CHARACTER_ADDRESS_JSON);
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        assertThrows(DataLoadingException.class, storage::readAddressBookWithBackup);
         assertEquals(-1L, Files.mismatch(filePath, JsonAddressBookStorage.getBackupFilePath(filePath)));
     }
 
@@ -672,13 +686,32 @@ public class JsonAddressBookStorageTest {
         JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
 
         // EP: invalid byte, overlong encoding, encoded surrogate and cut-off character inside an address.
-        for (byte[] badBytes : List.of(new byte[] {(byte) 0xFF}, new byte[] {(byte) 0xC0, (byte) 0xAF},
-                new byte[] {(byte) 0xED, (byte) 0xA0, (byte) 0x80}, new byte[] {(byte) 0xE4, (byte) 0xB8})) {
+        for (byte[] badBytes : List.of(bytes(0xFF), bytes(0xC0, 0xAF), bytes(0xED, 0xA0, 0x80), bytes(0xE4, 0xB8))) {
             storage.saveAddressBook(getTypicalAddressBook());
             byte[] corruptedBytes = insertAfter(Files.readAllBytes(filePath), "Jurong", badBytes);
             Files.write(filePath, corruptedBytes);
 
             // Without strict decoding the file loaded and the next save kept U+FFFD for good.
+            assertThrows(DataLoadingException.class, storage::readAddressBookWithBackup);
+
+            assertArrayEquals(corruptedBytes, Files.readAllBytes(filePath));
+            assertArrayEquals(corruptedBytes, Files.readAllBytes(JsonAddressBookStorage.getBackupFilePath(filePath)));
+        }
+    }
+
+    @Test
+    public void readAddressBookWithBackup_escapedUnpairedSurrogate_backupCreatedWithSameBytes() throws Exception {
+        Path filePath = testFolder.resolve("addressbook.json");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        // EP: half of an emoji pair written as a JSON escape. The bytes are valid UTF-8, but the text is not,
+        // and saving it would have replaced it with '?' for good.
+        for (String escape : List.of("\\ud83c", "\\udc00")) {
+            storage.saveAddressBook(getTypicalAddressBook());
+            byte[] escapeBytes = (" " + escape).getBytes(StandardCharsets.UTF_8);
+            byte[] corruptedBytes = insertAfter(Files.readAllBytes(filePath), "Jurong", escapeBytes);
+            Files.write(filePath, corruptedBytes);
+
             assertThrows(DataLoadingException.class, storage::readAddressBookWithBackup);
 
             assertArrayEquals(corruptedBytes, Files.readAllBytes(filePath));
@@ -714,12 +747,7 @@ public class JsonAddressBookStorageTest {
         JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
         storage.saveAddressBook(getTypicalAddressBook());
         byte[] savedBytes = Files.readAllBytes(filePath);
-        byte[] withMark = new byte[savedBytes.length + 3];
-        withMark[0] = (byte) 0xEF;
-        withMark[1] = (byte) 0xBB;
-        withMark[2] = (byte) 0xBF;
-        System.arraycopy(savedBytes, 0, withMark, 3, savedBytes.length);
-        Files.write(filePath, withMark);
+        Files.write(filePath, concat(bytes(0xEF, 0xBB, 0xBF), savedBytes));
 
         ReadOnlyAddressBook readBack = storage.readAddressBookWithBackup().get();
         assertEquals(getTypicalAddressBook(), new AddressBook(readBack));
@@ -884,21 +912,6 @@ public class JsonAddressBookStorageTest {
 
         assertArrayEquals(original, Files.readAllBytes(filePath));
         assertArrayEquals(original, Files.readAllBytes(JsonAddressBookStorage.getBackupFilePath(filePath)));
-    }
-
-    /**
-     * Returns a copy of {@code original} with {@code inserted} placed right after the first {@code marker}.
-     */
-    private static byte[] insertAfter(byte[] original, String marker, byte[] inserted) {
-        // ISO-8859-1 maps each byte to one char, so the index found is also the byte offset.
-        int markerIndex = new String(original, StandardCharsets.ISO_8859_1).indexOf(marker);
-        assertTrue(markerIndex >= 0, "Marker not found: " + marker);
-        int splitAt = markerIndex + marker.length();
-        byte[] result = new byte[original.length + inserted.length];
-        System.arraycopy(original, 0, result, 0, splitAt);
-        System.arraycopy(inserted, 0, result, splitAt, inserted.length);
-        System.arraycopy(original, splitAt, result, splitAt + inserted.length, original.length - splitAt);
-        return result;
     }
 
     /**

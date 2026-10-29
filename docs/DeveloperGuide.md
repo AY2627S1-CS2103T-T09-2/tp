@@ -15,6 +15,9 @@ pageNav: 3
 
 * This project is based on the [AddressBook-Level3](https://github.com/se-edu/addressbook-level3) project created by the [SE-EDU initiative](https://se-education.org).
 * Libraries used: [JavaFX](https://openjfx.io/), [Jackson](https://github.com/FasterXML/jackson), [JUnit5](https://github.com/junit-team/junit5)
+* Tommy Quak used AI coding assistants (Claude and Codex) to help with parts of his coding, testing and documentation.
+  He reviewed all of the resulting code himself, and every change was also reviewed by a teammate, built and tested
+  before it was merged.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -95,7 +98,7 @@ The sequence diagram below illustrates the interactions within the `Logic` compo
 
 <puml src="diagrams/DeleteSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `delete 1` Command" />
 
-The sequence diagram below illustrates how the `find` command filters contacts by name keywords.
+The sequence diagram below illustrates how the `find` command filters contacts by name keywords or phone digits.
 
 <puml src="diagrams/FindSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `find` Command" />
 
@@ -180,19 +183,27 @@ reads it once at startup by calling `Storage#readAddressBookWithBackup()`, which
    * `requireValidStructure` reads the tokens without recursion. It rejects a key that appears twice in one object,
      and objects or arrays nested more than 100 levels deep (`MAX_NESTING_DEPTH`), giving the line and column.
      Without this pass, a repeated key would be reported without its location, and deep nesting would overflow
-     the stack inside Jackson.
+     the stack inside Jackson. It also rejects text holding half of a surrogate pair, such as an escaped
+     `\ud83c` with no low half, which valid UTF-8 cannot hold and which would be saved as `?`.
    * Jackson maps the JSON value to a `JsonSerializableAddressBook`. Unknown fields are ignored.
    * `requireNoTrailingContent` rejects anything other than whitespace after the JSON value, because Jackson stops
      reading after the first value and would drop the rest without an error.
 
-   `readJsonFile` also rejects a file that contains only `null`.
+   `readJsonFile` also rejects a file that contains only `null`, and an empty file, which Jackson would report
+   without a useful message.
 4. `JsonSerializableAddressBook#toModelType` converts each `JsonAdaptedPerson`, which checks every field with the
    same model methods that the commands use, such as `Name#isValidName`. Null entries and duplicate contacts are
-   rejected. A missing or blank `status` becomes `PROSPECT` and a missing `followUp` means no follow-up, so data
-   files from older versions still load.
+   rejected. A missing or blank `status` becomes `PROSPECT` and a missing `followUp` means no follow-up, so files
+   without the `status` and `followUp` fields still load. Values that later versions made stricter, such as v1.4
+   phones with repeated separators, are rejected like any other invalid value.
 5. A failure in any of steps 2 to 4 causes a `DataLoadingException`. `readAddressBookWithBackup` copies the data
    file to `addressbook.json.bak` in the same folder, replacing any older backup, and rethrows the exception.
-   `MainApp` logs a warning and starts with an empty `AddressBook`.
+   `MainApp` logs a warning and starts with an empty `AddressBook`. It also keeps a notice from
+   `StartupNotice#forUnloadableDataFile`, which `UiManager` shows in the result box once the window opens. The
+   notice names the data file, the `.bak` copy and the reason. `JsonSerializableAddressBook` starts the reason with
+   the position of the invalid contact, e.g. `Contact 3 is invalid.`, so the user knows where to look. Jackson's
+   own messages name internal classes and quote the file, so `StartupNotice` replaces them with a plain reason and
+   the line number only, because Jackson's column is not always right.
 6. If the data file is not a regular file, such as a folder, or the copy cannot be made, `readAddressBookWithBackup`
    throws a `DataBackupException` instead. `MainApp#initModelManager` rethrows it as an `IllegalStateException`, so
    the app does not open. The message names the data file and the backup path and says that the original file was
@@ -219,11 +230,11 @@ From then on, the `.bak` copy is the only copy of the old data.
 
 **Aspect: How strictly to read the file**
 
-* **Alternative 1 (current choice):** Reject invalid UTF-8, repeated keys, deep nesting, trailing content and
-  invalid field values. Accept unknown fields and missing optional fields.
+* **Alternative 1 (current choice):** Reject invalid UTF-8, unpaired surrogate escapes, repeated keys, deep
+  nesting, trailing content and invalid field values. Accept unknown fields and missing optional fields.
   * Pros: No contact data is dropped or changed without the user knowing (only unknown fields, which the app does
-    not use, are discarded on the next save), and a rejected file is backed up whole. Files from older versions
-    still load.
+    not use, are discarded on the next save), and a rejected file is backed up whole. Files without the `status`
+    and `followUp` fields still load.
   * Cons: One bad value makes the whole file load as an empty list, instead of skipping only the bad contact.
 * **Alternative 2:** Read leniently, for example by skipping invalid contacts, keeping the last of repeated keys
   and replacing bad bytes.
@@ -234,7 +245,8 @@ From then on, the `.bak` copy is the only copy of the old data.
 ### Completing a follow-up
 
 The `done INDEX` command clears the pending follow-up of the contact at the specified index in the currently
-displayed list. It preserves the contact's name, phone, email, address, status and tags.
+displayed list. It preserves the contact's name, phone, email, address, status, tags, last-contact date and
+interaction notes, including their text, stored order and timestamps.
 
 The sequence diagram below shows a successful `done 1` command when the first displayed contact has a pending
 follow-up. Individual field getters and the internal calls within `Model` and `Storage` are omitted for clarity.
@@ -249,7 +261,8 @@ follow-up. Individual field getters and the internal calls within `Model` and `S
    contact. It then checks that the selected contact has a pending follow-up.
 4. The command constructs a replacement `Person`, copying the other contact details and setting the
    follow-up to `Optional.empty()`. It calls `Model.setPerson` to replace the original contact in memory.
-5. The command returns a `CommandResult` containing `Marked follow-up for <name> as completed.`.
+5. The command returns a `CommandResult` with the original contact's name and scheduled date:
+   `Marked follow-up for <name> as completed (scheduled for <DD-MM-YYYY>).`
    `LogicManager` obtains the updated address book from `Model` and passes it to `Storage.saveAddressBook`.
    After the save succeeds, `LogicManager` returns the result to its caller.
 
@@ -265,6 +278,12 @@ through the `Storage` interface; the model does not call storage directly.
 
 These validation failures leave the contact unchanged. Execution stops before `Model.setPerson` and
 `Storage.saveAddressBook` are called.
+
+Before executing a command, `LogicManager` snapshots the current `AddressBook`. Copying a concrete
+`AddressBook` takes linear time: it copies the already-validated list and shares its immutable `Person`
+values, without repeating pairwise duplicate checks. The snapshot has its own list, so later additions,
+edits and deletions do not change it. Other read-only implementations and subclasses still undergo
+duplicate validation when copied.
 
 If saving fails with an `IOException` (including `AccessDeniedException`), `LogicManager` restores the
 pre-command address book, filter and sort order, then throws a `CommandException` with a save-error message.
@@ -284,8 +303,71 @@ instead of falling back to an operation that could damage the existing file.
 
 Future undo integration must record a change only after saving succeeds. A failed undo save must restore the
 data and view from before that attempt and retain the undo entry for retry. The current rollback tests verify
-that interaction note text, order and timestamps are preserved. Last-contact dates and undo are not part
-of the current implementation; their preservation tests must be added when those features merge.
+that interaction note text, order and timestamps are preserved. Last-contact dates are already stored in
+`Person` and included in the address-book snapshot. Undo is not implemented.
+
+### Managing interaction notes
+
+The `note`, `history` and `deletenote` commands record, display and remove a contact's interaction notes.
+Their contact indexes refer to the currently displayed list, including any active filter or sort order.
+
+#### Model and storage
+
+Each `Person` holds a list of immutable `InteractionNote` values. Each note contains its text and a
+`LocalDateTime` creation timestamp. `Person` copies the supplied list using `List.copyOf`, so commands cannot
+change the stored list through `getInteractionNotes()`. Adding or deleting a note constructs a replacement
+`Person` and calls `Model.setPerson`, preserving all other contact fields, including both dates.
+
+`JsonAdaptedPerson` saves the list in the `interactionNotes` field. `JsonAdaptedInteractionNote` saves each
+note's `text` and `createdAt`, preserving the list order and timestamp when the data is loaded again.
+A missing or null `interactionNotes` field becomes an empty list, allowing files without notes to load.
+A null note entry, invalid note text, or missing or invalid timestamp rejects the data file through the
+[existing loading and backup process](#loading-and-backing-up-the-data-file).
+
+#### Adding a note
+
+For `note INDEX nt/NOTE`:
+
+1. `CommandInputParser` delegates to `NoteCommandParser`. The parser finds the first `nt/` prefix separated
+   from the contact index by whitespace and validates the index with `ParserUtil.parseIndex`.
+2. Everything after that prefix is note text. Further prefix-like text, such as `nt/`, `st/` or `a/`, is
+   part of the note rather than another argument. `InteractionNote.isValidNote` checks the text before
+   the parser constructs the note with the current local timestamp and creates a `NoteCommand`.
+3. `NoteCommand` checks the contact index against `Model.getFilteredPersonList()`. It copies the contact's
+   notes, appends the new note and replaces the contact through `Model.setPerson`.
+4. `LogicManager` saves the changed address book before returning the success result. If saving fails,
+   it restores the pre-command data and view, including the original notes, as described above.
+
+#### Viewing and deleting notes
+
+`history INDEX` is parsed by `HistoryCommandParser`. `HistoryCommand` selects the displayed contact and
+sorts a copy of its notes by stored creation timestamp in descending order. It returns a `CommandResult`
+containing numbered notes with timestamps formatted as `dd-MM-yyyy HH:mm`, or a message that the contact
+has no notes. It does not change the stored note order or contact data, so `LogicManager` skips saving.
+
+`deletenote CONTACT_INDEX NOTE_INDEX` is parsed by `DeleteNoteCommandParser`, which validates both positive
+indexes using `ParserUtil.parseIndex`. `DeleteNoteCommand` selects the displayed contact and uses the same
+timestamp ordering as `HistoryCommand` to resolve `NOTE_INDEX`. It removes that note from a copy of the
+stored list, preserving the relative order of the remaining notes, then replaces the contact and lets
+`LogicManager` save it. The success result identifies the contact, note index and deleted text.
+
+The contact index and note index refer to different lists. For example, after `history 2`, `deletenote 2 1`
+deletes the first note shown for the second displayed contact. Adding or deleting notes can change the
+history indexes, so the user should view the history again before choosing another note to delete.
+
+#### Validation and failure handling
+
+Malformed arguments and invalid note text cause a `ParseException`. Positive indexes outside the displayed
+contact list or the selected contact's history cause a `CommandException`. These failures leave the data
+unchanged. A failed save after adding or deleting a note restores the previous notes and does not return
+a success result. Viewing history remains possible when the data file cannot be written.
+
+#### Design considerations
+
+* **Replace the contact (current choice):** Copying the note list and replacing the immutable `Person`
+  keeps model updates observable and lets the existing address-book snapshot restore notes after a failed save.
+* **Mutate notes in place (alternative):** This would avoid copying the list, but a snapshot sharing the same
+  mutable notes could change too, preventing rollback from restoring the original history.
 
 ### Viewing due follow-ups
 
@@ -418,7 +500,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. Agent enters `find KEYWORD [MORE_KEYWORDS]` or `find p/PHONE_DIGITS`.
+1. Agent enters `find KEYWORD [MORE_KEYWORDS]...` or `find p/PHONE_DIGITS`.
 2. System ignores leading and trailing spaces and checks that the search value is present.
    A phone search must contain digits only.
 3. For a name search, the system matches the start of any word in a contact's name against any supplied keyword,
@@ -439,6 +521,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   * Use case ends without changing the contact list.
 * 2c. A phone search contains non-digit characters.
   * 2c1. System explains that the phone search must contain digits only.
+  * Use case ends without changing the contact list.
+* 2d. The search contains a prefix other than `p/`, such as `n/`, `st/` or `t/`.
+  * 2d1. System names the prefix, explains that `find` only searches names or phone numbers, and points to `list st/STATUS` or `list t/TAG` for filtering.
   * Use case ends without changing the contact list.
 * 3a. No contact matches the name keywords or phone digits.
   * 3a1. System shows an empty result list and reports `0 contacts listed.`
@@ -466,6 +551,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 3b. The follow-up date is in the past.
   * 3b1. System saves the date and warns the agent that it is in the past.
   * Use case resumes at step 4.
+* 3c. The new name matches another contact's name, ignoring case and extra spaces.
+  * 3c1. System shows `This contact already exists: NAME (PHONE).` with that contact's name and phone number, and does not change the contact.
+  * Use case ends.
 * 4a. The selected contact is not in the displayed list.
   * 4a1. System explains that the contact reference is invalid.
   * Use case ends without changing any contacts.
@@ -559,7 +647,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Inactive**: A contact the agent is no longer actively pursuing but keeps in the app.
 * **Follow-up**: The date on which the agent intends to next contact a prospect or client. A past date is accepted with a warning and is treated as an overdue follow-up until it is marked done.
 * **Pending follow-up**: A follow-up date that is still recorded on a contact. Marking it done removes the date.
-* **Duplicate contact**: A contact whose name matches an existing contact's name after ignoring letter case and extra spaces. Easy-Insurance refuses to add a duplicate.
+* **Duplicate contact**: A contact whose name matches an existing contact's name after ignoring letter case and extra spaces. Easy-Insurance refuses to add a duplicate or to rename a contact to another contact's name.
 * **Index**: The number shown next to a contact in the currently displayed list. Commands such as `edit`, `delete` and `done` refer to contacts by index.
 * **Name keyword**: Non-empty text used by `find` to match the start of any word in a contact's name, ignoring letter case.
 * **Phone search digits**: A non-empty sequence of digits used by `find p/PHONE_DIGITS` to match consecutive digits in a phone number, ignoring stored formatting.
@@ -773,7 +861,7 @@ testers are expected to do more *exploratory* testing.
       Run `find Followup` and check that only this contact is shown.
 
    1. Test case: `done 1`<br>
-      Expected: The result shows `Marked follow-up for Followup Test as completed.`
+      Expected: The result shows `Marked follow-up for Followup Test as completed (scheduled for 25-12-2099).`
       The card shows `Follow-up: None`. The contact's name, phone, email, address, status and tags remain unchanged.
 
    1. Test case: Run `done 1` again.<br>
@@ -783,8 +871,9 @@ testers are expected to do more *exploratory* testing.
       Expected: The result shows `There is no contact 2. The list shows 1 contact.` No contact details change.
 
    1. Other incorrect commands to try: `done`, `done 0`, `done x`, `done 1 extra`<br>
-      Expected: `done 0` and `done x` show `Index must be a positive integer.` Other malformed forms show the
-      invalid-command-format error with `done INDEX`. No contact details change.
+      Expected: `done 0` and `done x` show `Index must be a positive integer.` Commands such as `done`
+      and `done 1 extra` show the invalid-command-format error followed by the full `done` usage:
+      a description, index parameter guidance and an example. No contact details change.
 
 1. Saving a completed follow-up
 
@@ -832,7 +921,7 @@ testers are expected to do more *exploratory* testing.
    1. Close the app. Open `data/addressbook.json` and change one contact's `"status"` value to `"lead"`.
 
    1. Relaunch the app.<br>
-      Expected: The app starts with an empty contact list, because the file could not be read. A copy of the invalid file is saved as `data/addressbook.json.bak`. Restoring the original value and relaunching brings the contacts back.
+      Expected: The app starts with an empty contact list, because the file could not be read. A copy of the invalid file is saved as `data/addressbook.json.bak`. The result box says so and gives the reason, starting with the position of the changed contact. Restoring the original value and relaunching brings the contacts back.
 
    1. Repeat with one contact's `"phone"` changed to 31 or more digits.<br>
       Expected: The same as above. The app still opens.
@@ -912,4 +1001,8 @@ The items below are known flaws in the current version. Each item describes the 
 
 1. **Say that `find` cannot search by name and phone at the same time.**
    `find alice p/9123` and `find p/9123 alice` give `Phone search keywords must contain digits only. Example: find p/9123`, although `9123` is all digits. The real problem is that a name keyword and a phone search are mixed.<br>
-   We plan to give this case its own message when there is a name keyword before `p/` or a word after the phone digits: `Search by name or by phone, not both. Use find KEYWORD [MORE_KEYWORDS] or find p/PHONE_DIGITS.` A phone search with a non-digit value, such as `find p/9a23`, keeps the current message.
+   We plan to give this case its own message when there is a name keyword before `p/` or a word after the phone digits: `Search by name or by phone, not both. Use find KEYWORD [MORE_KEYWORDS]... or find p/PHONE_DIGITS.` A phone search with a non-digit value, such as `find p/9a23`, keeps the current message.
+
+1. **Make email and address optional when adding a contact.**
+   `add` requires `e/` and `a/`, so a prospect known only by name and phone cannot be added. For example, `add n/Jane Doe p/98765432` gives `Missing required field(s): e/EMAIL, a/ADDRESS`. The only workaround is a made-up email and address, which then appear on the contact card and in the data file as if they were real.<br>
+   We plan to make `e/EMAIL` and `a/ADDRESS` optional in `add`, like `st/`, `f/` and `t/`. A contact added without them has no email or address: the contact card leaves out those lines and the data file stores no value for them. `add n/Jane Doe p/98765432` then gives `New contact added: Jane Doe (PROSPECT)`. Name and phone stay required, and a given `e/` or `a/` value must still be valid, so `add n/Jane Doe p/98765432 e/jane` still shows the email format error.

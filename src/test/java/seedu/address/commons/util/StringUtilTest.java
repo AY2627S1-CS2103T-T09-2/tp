@@ -16,7 +16,10 @@ public class StringUtilTest {
     public void isNonZeroUnsignedInteger() {
 
         // EP: no digits (empty or whitespace-only input).
-        assertFalse(StringUtil.isNonZeroUnsignedInteger("")); // Boundary: zero characters.
+        // Boundary: zero characters.
+        // @@author kaseyho-reused
+        assertFalse(StringUtil.isNonZeroUnsignedInteger(""));
+        // @@author
         assertFalse(StringUtil.isNonZeroUnsignedInteger("  "));
 
         // EP: non-numeric text, represented by single and multiple letters.
@@ -44,7 +47,10 @@ public class StringUtilTest {
         assertFalse(StringUtil.isNonZeroUnsignedInteger(Long.toString((long) Integer.MAX_VALUE + 1)));
 
         // EP: unsigned positive integers within the int range.
-        assertTrue(StringUtil.isNonZeroUnsignedInteger("1")); // Boundary: minimum accepted value.
+        // Boundary: minimum accepted value.
+        // @@author kaseyho-reused
+        assertTrue(StringUtil.isNonZeroUnsignedInteger("1"));
+        // @@author
         assertTrue(StringUtil.isNonZeroUnsignedInteger("10"));
     }
 
@@ -108,7 +114,9 @@ public class StringUtilTest {
     public void containsWordIgnoreCase_validInputs_correctResult() {
 
         // EP: sentences containing no words, including the zero-character boundary.
+        // @@author kaseyho-reused
         assertFalse(StringUtil.containsWordIgnoreCase("", "abc"));
+        // @@author
         assertFalse(StringUtil.containsWordIgnoreCase("    ", "123"));
 
         // EP: only a partial overlap; full-word matching must reject shorter and longer queries.
@@ -116,7 +124,10 @@ public class StringUtilTest {
         assertFalse(StringUtil.containsWordIgnoreCase("aaa bbb ccc", "bbbb")); // Query word bigger than sentence word
 
         // EP: a complete word matches, regardless of case or surrounding whitespace.
-        assertTrue(StringUtil.containsWordIgnoreCase("aaa bBb ccc", "Bbb")); // Middle word.
+        // Middle word.
+        // @@author kaseyho-reused
+        assertTrue(StringUtil.containsWordIgnoreCase("aaa bBb ccc", "Bbb"));
+        // @@author
         assertTrue(StringUtil.containsWordIgnoreCase("aaa bBb ccc@1", "CCc@1")); // Last word (boundary case)
         assertTrue(StringUtil.containsWordIgnoreCase("  AAA   bBb   ccc  ", "aaa")); // Sentence has extra spaces
         assertTrue(StringUtil.containsWordIgnoreCase("Aaa", "aaa")); // Only one word in sentence (boundary case)

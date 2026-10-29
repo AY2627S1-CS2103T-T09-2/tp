@@ -67,10 +67,16 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
+* In `add` and `edit`, a prefix belonging to another command is rejected with a message naming it.<br>
+  For example, `add n/Bob Lim nt/Met at roadshow p/92345678 e/bob@example.com a/2 Road` shows
+  `nt/ is not used by add. Use note INDEX nt/NOTE to add a note.` and adds nothing.<br>
+  In `find`, only `p/` is supported; other app prefixes are rejected, while prefix-like name forms such as `a/l`,
+  `a/p`, and `d/o` remain valid name keywords.
+  `s/o` and `d/o` inside a name are not prefixes, so a name such as `Aisha d/o Rahman` is accepted.
+
 * `help` and `exit` accept no parameters.<br>
   Extra parameters are rejected with an error naming the command.<br>
-  For example, `clear 123` shows `The clear command does not accept additional parameters.`
-  and leaves all contacts unchanged.
+  For example, `help 123` shows `The help command does not accept additional parameters.`
 
 * `clear` accepts either no arguments or exactly `confirm`.
   Other parameters are rejected with an error naming the command.
@@ -111,7 +117,18 @@ Up and Down navigate the list instead.
 
 Opens the Easy-Insurance Command Guide, which shows the available commands together with their formats and examples.
 
+Help opens beside the main window when there is enough space. You can move and resize it;
+its position and size are kept when you reopen it during the same app session.
+
 The help window also provides a **Copy User Guide URL** button for copying the full User Guide link.
+The full URL is shown below the command guide. After copying, a message confirms success or asks you to retry.
+
+When Help opens, the command guide has keyboard focus:
+
+* Press **Up/Down** or **Page Up/Page Down** to scroll the guide.
+* Press **Tab** to focus **Copy User Guide URL**, and **Space** to activate it.
+  Press **Shift+Tab** to return to the guide.
+* Press **Esc** to close Help.
 
 ![help message](images/helpMessage.png)
 
@@ -140,9 +157,10 @@ The contact list shows blue, green, and grey badges respectively for these statu
 up to 50 characters long, such as `t/referral` or `t/lifePolicy2`. Accented and non-English letters are accepted
 (`t/café`, `t/ज़िंदगी`), but spaces, symbols and invisible characters are not, so `t/high value` and `t/high-value`
 are rejected; write `t/highValue` instead. Each letter can carry up to 5 accents or marks, which is enough for words
-in scripts such as Hindi, Burmese and Hebrew, so only piled-up stacks of marks are rejected. Accents and marks count
-toward the 50 characters. Digits must be decimal digits (0 to 9, or the same digits in another script, such as `٣`),
-so number symbols like `½`, `²` and `①` are rejected.
+in scripts such as Hindi, Burmese and Hebrew, so only piled-up stacks of marks are rejected. The 50 characters are
+counted after letters and accents are combined, so an accent that merges into its letter, such as the one in `é`,
+does not count separately, while other marks do. Digits must be decimal digits (0 to 9, or the same digits in
+another script, such as `٣`), so number symbols like `½`, `²` and `①` are rejected.
 Tags ignore case, so `t/VIP` and `t/vip` are the same tag and a contact keeps only one of them.
 </box>
 
@@ -155,7 +173,8 @@ letter or digit, possibly followed by combining marks used in some scripts. Punc
 appear at the end of a name. Names may then contain letters, digits, spaces, hyphens (`-`), apostrophes (`'`),
 periods (`.`), commas (`,`), and slashes (`/`), so names such as
 `Anne-Marie`, `O'Connor`, and `Raj s/o Kumar` are accepted. Phone numbers must contain at least three
-digits. They may start with `+` and include spaces or dashes between digits, for example `+65 9123-4567`.
+digits. They may start with `+` and use a single space or dash between digits, for example `+65 9123-4567`.
+Two in a row, as in `9123--4567` or `9123 - 4567`, are rejected.
 A phone number can be at most 30 characters long and an email at most 254 characters long.
 Phone numbers are saved exactly as entered. If a name is already in the contact list, Easy-Insurance
 shows that contact's name and phone number.
@@ -221,6 +240,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] 
 * `f/FOLLOW_UP_DATE` changes the follow-up date. The date must be real and in `DD-MM-YYYY` format.
 * Past follow-up dates are accepted with a warning.
 * To clear an existing follow-up, enter `f/` without a date after it.
+* A contact cannot be renamed to another contact's name, ignoring case and extra spaces. For example, with the sample data, `edit 2 n/john tan` shows `This contact already exists: John Tan (91234567).` and changes nothing.
 * When editing tags, all of the contact's existing tags are removed; adding tags is not cumulative.
 * To remove all of a contact's tags, enter `t/` without a tag after it.
 * The success message always includes tags and the follow-up date. Empty fields show `Tags: none` or `Follow-up: none`. Multiple tags are separated by spaces, for example `Tags: [a] [b]`, in the same order as on the contact card.
@@ -236,19 +256,21 @@ Examples:
 
 ### Finding contacts by name or phone: `find`
 
-Finds contacts whose names start with any of the given keywords, or whose phone numbers contain the given digits.
+Finds contacts whose names contain a word starting with any of the given keywords, or whose phone numbers contain the given digits.
 
-Format: `find KEYWORD [MORE_KEYWORDS]` or `find p/PHONE_DIGITS`
+Format: `find KEYWORD [MORE_KEYWORDS]...` or `find p/PHONE_DIGITS`
 
-* Name searches are case-insensitive and match the start of any word; for example, `han` matches `Hans`.
-* Any keyword may match; for example, `find Hans Bo` returns contacts whose names contain either `Hans` or `Bo`.
+* Name searches are case-insensitive and match the start of any word; for example, `wo` matches `Mei Ling Wong`.
+* Any keyword may match; for example, `find John Priya` returns contacts whose names have a word starting with `John` or `Priya`.
 * Phone searches match contacts whose phone number contains the supplied digits; for example, `find p/9123`.
 * If no keyword is provided, Easy-Insurance shows: `Please enter at least one name keyword to search for. Example: find alice tan`.
 * If no phone digits are provided, Easy-Insurance shows: `Please enter at least one phone digit to search for. Example: find p/9123`.
+* `find` takes no prefix other than `p/`. To filter by status or tag, use `list st/STATUS` or `list t/TAG` instead. For example, `find st/CLIENT` shows: `st/ is not used by find. It only searches names, or phone numbers with p/, e.g. find John or find p/9123. To filter by status or tag, use list st/STATUS or list t/TAG.`
 
 Examples:
-* `find John` returns `john` and `John Doe`
-* `find alex david` returns contacts matching either `alex` or `david`.
+* `find John` returns `John Tan`.
+* `find mei priya` returns `Mei Ling Wong` and `Priya Nair`.
+* `find p/9123` returns `John Tan`, whose phone number is `91234567`.
 
 ### Deleting a contact: `delete`
 
@@ -277,8 +299,8 @@ Format: `done INDEX`
 * The contact must have a pending follow-up.
 * The contact's other details remain unchanged. Its card shows `Follow-up: None` after completion.
 
-On success, the result is:
-`Marked follow-up for <name> as completed.`
+On success, the result includes the original scheduled date:
+`Marked follow-up for <name> as completed (scheduled for <DD-MM-YYYY>).`
 
 If the contact has no pending follow-up, the result is:
 `<name> does not have a pending follow-up.`
@@ -400,7 +422,7 @@ Format: `due [DAYS]`
 * `list` shows all contacts again in their usual order.
 
 On the contact cards, a follow-up date that has already passed is shown in red with `(overdue)` after it.
-The marker and the `due` list are worked out when they are shown. If you leave Easy-Insurance open past midnight, a follow-up that has just become overdue may not be marked, and an open `due` list keeps its old date, until you next run `list`, `find` or `due`.
+If you leave Easy-Insurance open past midnight, the cards update by themselves just after midnight (or within a minute of your computer waking from sleep), so a follow-up that has just become overdue is marked without running a command. An open `due` list keeps the date shown in its result and does not add follow-ups that come into range on the new day. Run `due` again to update it.
 
 Examples:
 
@@ -449,7 +471,7 @@ Easy-Insurance data is saved automatically as a JSON file `data/addressbook.json
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid (including anything other than spaces, tabs or line breaks after its final closing `}`, or saving it in an encoding other than UTF-8; UTF-8 with or without a byte order mark is fine), Easy-Insurance copies it to `addressbook.json.bak` in the same `data` folder and then starts with an empty contact list. The invalid `addressbook.json` is overwritten after your next successful command that changes contact data, but the `.bak` copy is kept. To recover, close the app, fix the `.bak` file and rename it back to `addressbook.json`. A later backup replaces the previous `.bak` file, so we still recommend keeping your own copy before editing.<br>
+If your changes make the data file invalid (including anything other than spaces, tabs or line breaks after its final closing `}`, or saving it in an encoding other than UTF-8; UTF-8 with or without a byte order mark is fine), Easy-Insurance copies it to `addressbook.json.bak` in the same `data` folder and then starts with an empty contact list. The result box tells you this, names the `.bak` copy and gives the reason, such as `Contact 3 is invalid.` followed by the rule that contact breaks (contacts are counted from the top of the file). The invalid `addressbook.json` is overwritten after your next successful command that changes contact data, but the `.bak` copy is kept. To recover, close the app, fix the `.bak` file and rename it back to `addressbook.json`. A later backup replaces the previous `.bak` file, so we still recommend keeping your own copy before editing.<br>
 If Easy-Insurance cannot make the backup, it stops starting and leaves `addressbook.json` unchanged. Check that `addressbook.json` is a readable file and not a folder, that the `data` folder is writable, that `addressbook.json.bak` is not a folder and that `addressbook.json` is not a link to `addressbook.json.bak`, then try again.<br>
 Two contacts whose names differ only in case or extra spaces also make the data file invalid and cause it to load as an empty contact list.<br>
 Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
@@ -469,6 +491,7 @@ Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
 2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
 3. **If you run two copies of Easy-Insurance from the same folder at once**, or edit `data/addressbook.json` while the app is open, whichever copy saves last overwrites the other's changes. The remedy is to run only one copy at a time and to close the app before editing the data file.
+4. **Some data files saved by v1.4 do not load in v1.5**, because these values are no longer accepted: names ending in `.` or another punctuation mark, phone numbers with two or more spaces or dashes in a row (e.g., `6123 - 4567`), phone numbers over 30 characters, email addresses over 254 characters, tags over 50 characters and follow-up dates in the year `0000`. The whole file is then copied to `data/addressbook.json.bak` and the app starts with an empty contact list, as described in [Editing the data file](#editing-the-data-file). The remedy is to close the app, fix those values in the `.bak` file and rename it back to `addressbook.json`.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -483,7 +506,7 @@ Action     | Format, Examples
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Due**    | `due [DAYS]`<br> e.g., `due 7`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...`<br> e.g., `edit 2 n/James Lee st/CLIENT f/25-12-2026`
-**Find**   | `find KEYWORD [MORE_KEYWORDS]` or `find p/PHONE_DIGITS`<br> e.g., `find James Jake` or `find p/9123`
+**Find**   | `find KEYWORD [MORE_KEYWORDS]...` or `find p/PHONE_DIGITS`<br> e.g., `find John Priya` or `find p/9123`
 **List**   | `list [st/STATUS] [t/TAG]`<br> e.g., `list st/CLIENT t/referral`
 **History**| `history INDEX`<br> e.g., `history 2`
 **Note**   | `note INDEX nt/NOTE`<br> e.g., `note 2 nt/Discussed hospital coverage`

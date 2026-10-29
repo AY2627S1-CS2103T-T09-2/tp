@@ -90,22 +90,26 @@ public class LogicManagerIntegrationTest {
         assertState(originalPersons, List.of(oldestOverdue, amyOverdue, zaraOverdue, nextWeek));
 
         // Boundary: the first displayed index differs from the first stored index.
+        // EP: completion removes the selected contact from the due view; feedback must retain its original date.
         CommandResult result = logic.execute("done 1");
-        assertEquals(new CommandResult(String.format(DoneCommand.MESSAGE_SUCCESS, oldestOverdue.getName())), result);
+        assertEquals(new CommandResult(String.format(DoneCommand.MESSAGE_SUCCESS, oldestOverdue.getName(),
+                oldestOverdue.getFollowUp().orElseThrow())), result);
         assertState(replace(originalPersons, oldestOverdue, complete(oldestOverdue)),
                 List.of(amyOverdue, zaraOverdue, nextWeek));
     }
 
     @Test
     public void execute_repeatedDoneInDueView_reindexesRemainingContacts() throws Exception {
-        // EP: equal dates use case-insensitive name order, rather than insertion order.
+        // EP: equal dates use case-insensitive name order; each completion reports the newly selected contact's date.
         logic.execute("due 7");
         List<Person> remainingPersons = new ArrayList<>(List.of(oldestOverdue, amyOverdue, zaraOverdue, nextWeek));
         List<Person> expectedPersons = originalPersons;
         assertState(expectedPersons, remainingPersons);
 
         for (Person person : List.copyOf(remainingPersons)) {
-            logic.execute("done 1");
+            CommandResult result = logic.execute("done 1");
+            assertEquals(new CommandResult(String.format(DoneCommand.MESSAGE_SUCCESS, person.getName(),
+                    person.getFollowUp().orElseThrow())), result);
             expectedPersons = replace(expectedPersons, person, complete(person));
             remainingPersons.remove(0);
             assertState(expectedPersons, remainingPersons);
@@ -202,7 +206,7 @@ public class LogicManagerIntegrationTest {
 
     @Test
     public void execute_doneAfterListFilters_preservesOtherFieldsAndMatches() throws Exception {
-        // EP: completing a follow-up does not remove a status/tag match from the display.
+        // EP: completion retains status/tag matches and reports the selected contact's original date.
         assertFilteredDone("list st/CLIENT", List.of(nextMonth, nextWeek, zaraOverdue));
         assertFilteredDone("list t/ReFeRrAl", List.of(nextMonth, nextWeek, amyOverdue));
         assertFilteredDone("list st/client t/referral", List.of(nextMonth, nextWeek));
@@ -648,7 +652,9 @@ public class LogicManagerIntegrationTest {
             Person selectedPerson = displayedPersons.get(index - 1);
             Person completedPerson = complete(selectedPerson);
 
-            logic.execute("done " + index);
+            CommandResult result = logic.execute("done " + index);
+            assertEquals(new CommandResult(String.format(DoneCommand.MESSAGE_SUCCESS, selectedPerson.getName(),
+                    selectedPerson.getFollowUp().orElseThrow())), result);
             assertState(replace(originalPersons, selectedPerson, completedPerson),
                     replace(displayedPersons, selectedPerson, completedPerson));
         }

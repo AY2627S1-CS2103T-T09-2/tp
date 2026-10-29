@@ -13,6 +13,12 @@ import seedu.address.logic.parser.exceptions.ParseException;
 public class DeleteNoteCommandParser
         implements Parser<DeleteNoteCommand> {
 
+    public static final String MESSAGE_INVALID_CONTACT_INDEX =
+            "Contact index must be a positive integer.";
+
+    public static final String MESSAGE_INVALID_NOTE_INDEX =
+            "Note index must be a positive integer.";
+
     @Override
     public DeleteNoteCommand parse(String args)
             throws ParseException {
@@ -28,11 +34,19 @@ public class DeleteNoteCommandParser
                             DeleteNoteCommand.MESSAGE_USAGE));
         }
 
-        Index contactIndex =
-                ParserUtil.parseIndex(arguments[0]);
+        Index contactIndex;
+        try {
+            contactIndex = ParserUtil.parseIndex(arguments[0]);
+        } catch (ParseException e) {
+            throw new ParseException(MESSAGE_INVALID_CONTACT_INDEX);
+        }
 
-        Index noteIndex =
-                ParserUtil.parseIndex(arguments[1]);
+        Index noteIndex;
+        try {
+            noteIndex = ParserUtil.parseIndex(arguments[1]);
+        } catch (ParseException e) {
+            throw new ParseException(MESSAGE_INVALID_NOTE_INDEX);
+        }
 
         return new DeleteNoteCommand(
                 contactIndex,
