@@ -132,6 +132,17 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
+    public void readAddressBookWithBackup_addressOfControlCharacters_backsUpFile() throws Exception {
+        // EP: a value that a model constructor rejects after trimming is invalid data, so the file is backed up.
+        Path filePath = testFolder.resolve("addressbook.json");
+        Files.writeString(filePath, JsonSerializableAddressBookTest.CONTROL_CHARACTER_ADDRESS_JSON);
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        assertThrows(DataLoadingException.class, storage::readAddressBookWithBackup);
+        assertEquals(-1L, Files.mismatch(filePath, JsonAddressBookStorage.getBackupFilePath(filePath)));
+    }
+
+    @Test
     public void readAndSaveAddressBook_allInOrder_success() throws Exception {
         Path filePath = testFolder.resolve("TempAddressBook.json");
         AddressBook original = getTypicalAddressBook();
