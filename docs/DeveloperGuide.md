@@ -244,7 +244,8 @@ From then on, the `.bak` copy is the only copy of the old data.
 ### Completing a follow-up
 
 The `done INDEX` command clears the pending follow-up of the contact at the specified index in the currently
-displayed list. It preserves the contact's name, phone, email, address, status and tags.
+displayed list. It preserves the contact's name, phone, email, address, status, tags, last-contact date and
+interaction notes, including their text, stored order and timestamps.
 
 The sequence diagram below shows a successful `done 1` command when the first displayed contact has a pending
 follow-up. Individual field getters and the internal calls within `Model` and `Storage` are omitted for clarity.
@@ -301,8 +302,71 @@ instead of falling back to an operation that could damage the existing file.
 
 Future undo integration must record a change only after saving succeeds. A failed undo save must restore the
 data and view from before that attempt and retain the undo entry for retry. The current rollback tests verify
-that interaction note text, order and timestamps are preserved. Last-contact dates and undo are not part
-of the current implementation; their preservation tests must be added when those features merge.
+that interaction note text, order and timestamps are preserved. Last-contact dates are already stored in
+`Person` and included in the address-book snapshot. Undo is not implemented.
+
+### Managing interaction notes
+
+The `note`, `history` and `deletenote` commands record, display and remove a contact's interaction notes.
+Their contact indexes refer to the currently displayed list, including any active filter or sort order.
+
+#### Model and storage
+
+Each `Person` holds a list of immutable `InteractionNote` values. Each note contains its text and a
+`LocalDateTime` creation timestamp. `Person` copies the supplied list using `List.copyOf`, so commands cannot
+change the stored list through `getInteractionNotes()`. Adding or deleting a note constructs a replacement
+`Person` and calls `Model.setPerson`, preserving all other contact fields, including both dates.
+
+`JsonAdaptedPerson` saves the list in the `interactionNotes` field. `JsonAdaptedInteractionNote` saves each
+note's `text` and `createdAt`, preserving the list order and timestamp when the data is loaded again.
+A missing or null `interactionNotes` field becomes an empty list, allowing files without notes to load.
+A null note entry, invalid note text, or missing or invalid timestamp rejects the data file through the
+[existing loading and backup process](#loading-and-backing-up-the-data-file).
+
+#### Adding a note
+
+For `note INDEX nt/NOTE`:
+
+1. `CommandInputParser` delegates to `NoteCommandParser`. The parser finds the first `nt/` prefix separated
+   from the contact index by whitespace and validates the index with `ParserUtil.parseIndex`.
+2. Everything after that prefix is note text. Further prefix-like text, such as `nt/`, `st/` or `a/`, is
+   part of the note rather than another argument. `InteractionNote.isValidNote` checks the text before
+   the parser constructs the note with the current local timestamp and creates a `NoteCommand`.
+3. `NoteCommand` checks the contact index against `Model.getFilteredPersonList()`. It copies the contact's
+   notes, appends the new note and replaces the contact through `Model.setPerson`.
+4. `LogicManager` saves the changed address book before returning the success result. If saving fails,
+   it restores the pre-command data and view, including the original notes, as described above.
+
+#### Viewing and deleting notes
+
+`history INDEX` is parsed by `HistoryCommandParser`. `HistoryCommand` selects the displayed contact and
+sorts a copy of its notes by stored creation timestamp in descending order. It returns a `CommandResult`
+containing numbered notes with timestamps formatted as `dd-MM-yyyy HH:mm`, or a message that the contact
+has no notes. It does not change the stored note order or contact data, so `LogicManager` skips saving.
+
+`deletenote CONTACT_INDEX NOTE_INDEX` is parsed by `DeleteNoteCommandParser`, which validates both positive
+indexes using `ParserUtil.parseIndex`. `DeleteNoteCommand` selects the displayed contact and uses the same
+timestamp ordering as `HistoryCommand` to resolve `NOTE_INDEX`. It removes that note from a copy of the
+stored list, preserving the relative order of the remaining notes, then replaces the contact and lets
+`LogicManager` save it. The success result identifies the contact, note index and deleted text.
+
+The contact index and note index refer to different lists. For example, after `history 2`, `deletenote 2 1`
+deletes the first note shown for the second displayed contact. Adding or deleting notes can change the
+history indexes, so the user should view the history again before choosing another note to delete.
+
+#### Validation and failure handling
+
+Malformed arguments and invalid note text cause a `ParseException`. Positive indexes outside the displayed
+contact list or the selected contact's history cause a `CommandException`. These failures leave the data
+unchanged. A failed save after adding or deleting a note restores the previous notes and does not return
+a success result. Viewing history remains possible when the data file cannot be written.
+
+#### Design considerations
+
+* **Replace the contact (current choice):** Copying the note list and replacing the immutable `Person`
+  keeps model updates observable and lets the existing address-book snapshot restore notes after a failed save.
+* **Mutate notes in place (alternative):** This would avoid copying the list, but a snapshot sharing the same
+  mutable notes could change too, preventing rollback from restoring the original history.
 
 ### Viewing due follow-ups
 
