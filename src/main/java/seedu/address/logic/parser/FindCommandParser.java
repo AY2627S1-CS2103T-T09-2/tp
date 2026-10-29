@@ -3,9 +3,11 @@ package seedu.address.logic.parser;
 import static seedu.address.logic.commands.FindCommand.MESSAGE_EMPTY_KEYWORD;
 import static seedu.address.logic.commands.FindCommand.MESSAGE_EMPTY_PHONE_KEYWORD;
 import static seedu.address.logic.commands.FindCommand.MESSAGE_INVALID_PHONE_KEYWORD;
+import static seedu.address.logic.commands.FindCommand.MESSAGE_UNSUPPORTED_PREFIX;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
 
 import java.util.List;
+import java.util.Optional;
 
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -26,6 +28,12 @@ public class FindCommandParser implements Parser<FindCommand> {
         String trimmedArgs = args.trim();
         if (trimmedArgs.isEmpty()) {
             throw new ParseException(MESSAGE_EMPTY_KEYWORD);
+        }
+
+        // Another command's prefix, such as st/ or t/, would otherwise be searched as part of a name.
+        Optional<Prefix> unsupportedPrefix = ParserUtil.findUnsupportedPrefix(args, PREFIX_PHONE);
+        if (unsupportedPrefix.isPresent()) {
+            throw new ParseException(String.format(MESSAGE_UNSUPPORTED_PREFIX, unsupportedPrefix.get()));
         }
 
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(" " + args, PREFIX_PHONE);

@@ -27,6 +27,9 @@ public class FindCommand extends Command {
             "Please enter at least one phone digit to search for. Example: find p/9123";
     public static final String MESSAGE_INVALID_PHONE_KEYWORD =
             "Phone search keywords must contain digits only. Example: find p/9123";
+    public static final String MESSAGE_UNSUPPORTED_PREFIX = "find does not use %1$s. It only searches names, "
+            + "or phone numbers with p/, e.g. find John or find p/9123. "
+            + "To filter by status or tag, use list st/STATUS or list t/TAG.";
 
     private final Predicate<Person> predicate;
 

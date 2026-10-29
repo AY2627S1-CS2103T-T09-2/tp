@@ -4,7 +4,10 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.StringUtil;
@@ -23,6 +26,37 @@ import seedu.address.model.tag.Tag;
 public class ParserUtil {
 
     public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer.";
+
+    /**
+     * Name words that start like a prefix, such as {@code d/o} in "Siti d/o Ahmad" or "Siti D/O-Kumar",
+     * in any case and not followed by another letter or digit.
+     */
+    private static final Pattern NAME_WORD_LIKE_PREFIX = Pattern.compile("(?i)(?:a/[lp]|d/o)(?![\\p{L}\\p{N}]).*");
+
+    /**
+     * Returns the first prefix in {@code args} that is one of {@link CliSyntax#ALL_PREFIXES} but not one of
+     * {@code supportedPrefixes}, or an empty {@code Optional} if there is none.
+     * As in {@link ArgumentTokenizer}, a prefix counts only in lowercase at the start of a word, so
+     * {@code data/x} and {@code NT/x} do not count. The name words {@code a/l}, {@code a/p} and {@code d/o}
+     * (in any case, alone or joined by punctuation such as {@code d/o-Kumar}) do not count either, so names
+     * such as "Siti d/o Ahmad" are left alone.
+     */
+    public static Optional<Prefix> findUnsupportedPrefix(String args, Prefix... supportedPrefixes) {
+        requireNonNull(args);
+        List<Prefix> supported = List.of(supportedPrefixes);
+        for (String word : args.strip().split("\\s+")) {
+            if (NAME_WORD_LIKE_PREFIX.matcher(word).matches()) {
+                continue;
+            }
+            Optional<Prefix> unsupportedPrefix = CliSyntax.ALL_PREFIXES.stream()
+                    .filter(prefix -> !supported.contains(prefix) && word.startsWith(prefix.getPrefix()))
+                    .findFirst();
+            if (unsupportedPrefix.isPresent()) {
+                return unsupportedPrefix;
+            }
+        }
+        return Optional.empty();
+    }
 
     /**
      * Parses {@code oneBasedIndex} into an {@code Index} and returns it. Leading and trailing whitespaces will be

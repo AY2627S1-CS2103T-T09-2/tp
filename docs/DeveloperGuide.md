@@ -444,6 +444,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 2c. A phone search contains non-digit characters.
   * 2c1. System explains that the phone search must contain digits only.
   * Use case ends without changing the contact list.
+* 2d. The search contains a prefix other than `p/`, such as `n/`, `st/` or `t/`.
+  * 2d1. System names the prefix, explains that `find` only searches names or phone numbers, and points to `list st/STATUS` or `list t/TAG` for filtering.
+  * Use case ends without changing the contact list.
 * 3a. No contact matches the name keywords or phone digits.
   * 3a1. System shows an empty result list and reports `0 contacts listed.`
   * Use case ends.
