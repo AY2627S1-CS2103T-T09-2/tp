@@ -40,6 +40,7 @@ Class FollowUp {
   + isPast() : boolean
 }
 Class Tag
+Class InteractionNote
 
 Class I #FFFFFF
 }
@@ -65,6 +66,7 @@ Person *--> Address
 Person *--> Status
 Person *--> "0..1" FollowUp
 Person *--> "*" Tag
+Person *--> "*" InteractionNote
 
 Person -[hidden]up--> I
 UniquePersonList -[hidden]right-> I
