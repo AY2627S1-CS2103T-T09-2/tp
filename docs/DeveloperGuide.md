@@ -15,6 +15,9 @@ pageNav: 3
 
 * This project is based on the [AddressBook-Level3](https://github.com/se-edu/addressbook-level3) project created by the [SE-EDU initiative](https://se-education.org).
 * Libraries used: [JavaFX](https://openjfx.io/), [Jackson](https://github.com/FasterXML/jackson), [JUnit5](https://github.com/junit-team/junit5)
+* Tommy Quak used AI coding assistants (Claude and Codex) to help with parts of his coding, testing and documentation.
+  He reviewed all of the resulting code himself, and every change was also reviewed by a teammate, built and tested
+  before it was merged.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -272,6 +275,12 @@ through the `Storage` interface; the model does not call storage directly.
 
 These validation failures leave the contact unchanged. Execution stops before `Model.setPerson` and
 `Storage.saveAddressBook` are called.
+
+Before executing a command, `LogicManager` snapshots the current `AddressBook`. Copying a concrete
+`AddressBook` takes linear time: it copies the already-validated list and shares its immutable `Person`
+values, without repeating pairwise duplicate checks. The snapshot has its own list, so later additions,
+edits and deletions do not change it. Other read-only implementations and subclasses still undergo
+duplicate validation when copied.
 
 If saving fails with an `IOException` (including `AccessDeniedException`), `LogicManager` restores the
 pre-command address book, filter and sort order, then throws a `CommandException` with a save-error message.

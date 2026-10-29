@@ -404,7 +404,7 @@ Format: `due [DAYS]`
 * `list` shows all contacts again in their usual order.
 
 On the contact cards, a follow-up date that has already passed is shown in red with `(overdue)` after it.
-The marker and the `due` list are worked out when they are shown. If you leave Easy-Insurance open past midnight, a follow-up that has just become overdue may not be marked, and an open `due` list keeps its old date, until you next run `list`, `find` or `due`.
+If you leave Easy-Insurance open past midnight, the cards update by themselves just after midnight (or within a minute of your computer waking from sleep), so a follow-up that has just become overdue is marked without running a command. An open `due` list keeps the date shown in its result and does not add follow-ups that come into range on the new day. Run `due` again to update it.
 
 Examples:
 
