@@ -18,16 +18,23 @@ public class NoteCommandParser implements Parser<NoteCommand> {
     public NoteCommand parse(String args) throws ParseException {
         requireNonNull(args);
 
-        ArgumentMultimap argMultimap =
-                ArgumentTokenizer.tokenize(args, PREFIX_NOTE);
+        String trimmedArgs = args.trim();
+        String notePrefix = PREFIX_NOTE.getPrefix();
 
-        argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_NOTE);
+        int prefixPosition = findNotePrefixPosition(trimmedArgs, notePrefix);
 
-        String preamble = argMultimap.getPreamble().trim();
+        if (prefixPosition < 0) {
+            throw new ParseException(
+                    String.format(
+                            MESSAGE_INVALID_COMMAND_FORMAT,
+                            NoteCommand.MESSAGE_USAGE));
+        }
+
+        String preamble =
+                trimmedArgs.substring(0, prefixPosition).trim();
 
         if (preamble.isEmpty()
-                || preamble.matches(".*\\s+.*")
-                || argMultimap.getValue(PREFIX_NOTE).isEmpty()) {
+                || preamble.matches(".*\\s+.*")) {
             throw new ParseException(
                     String.format(
                             MESSAGE_INVALID_COMMAND_FORMAT,
@@ -37,7 +44,8 @@ public class NoteCommandParser implements Parser<NoteCommand> {
         Index index = ParserUtil.parseIndex(preamble);
 
         String noteText =
-                argMultimap.getValue(PREFIX_NOTE).orElse("").trim();
+                trimmedArgs.substring(
+                        prefixPosition + notePrefix.length());
 
         if (!InteractionNote.isValidNote(noteText)) {
             throw new ParseException(
@@ -47,5 +55,30 @@ public class NoteCommandParser implements Parser<NoteCommand> {
         return new NoteCommand(
                 index,
                 new InteractionNote(noteText));
+    }
+
+    /**
+     * Returns the position of the first note prefix that is separated from
+     * the contact index by whitespace.
+     */
+    private static int findNotePrefixPosition(String args, String notePrefix) {
+        int searchFrom = 0;
+
+        while (searchFrom < args.length()) {
+            int position = args.indexOf(notePrefix, searchFrom);
+
+            if (position < 0) {
+                return -1;
+            }
+
+            if (position > 0
+                    && Character.isWhitespace(args.charAt(position - 1))) {
+                return position;
+            }
+
+            searchFrom = position + notePrefix.length();
+        }
+
+        return -1;
     }
 }
