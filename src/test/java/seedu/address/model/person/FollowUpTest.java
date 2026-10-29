@@ -6,14 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import org.junit.jupiter.api.Test;
 
 public class FollowUpTest {
 
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    private static final ZoneId ZONE = ZoneId.of("Asia/Singapore");
 
     @Test
     public void constructor_null_throwsNullPointerException() {
@@ -131,17 +134,60 @@ public class FollowUpTest {
     }
 
     @Test
-    public void isPast() {
-        LocalDate today = LocalDate.now();
+    public void isPast_clockAtEndOfDay() {
+        FollowUp followUp = new FollowUp("20-09-2026");
 
-        // EP: dates before today. Boundary value: yesterday.
-        assertTrue(new FollowUp(today.minusDays(1).format(DATE_FORMAT)).isPast());
+        // EP: the follow-up day itself. Boundary value: its last second is still not in the past.
+        assertFalse(followUp.isPast(clockAt(LocalDateTime.of(2026, 9, 20, 23, 59, 59))));
 
-        // EP: today, which is not yet in the past.
-        assertFalse(new FollowUp(today.format(DATE_FORMAT)).isPast());
+        // EP: the day before the follow-up. Boundary value: its last second.
+        assertFalse(followUp.isPast(clockAt(LocalDateTime.of(2026, 9, 19, 23, 59, 59))));
+    }
 
-        // EP: dates after today. Boundary value: tomorrow.
-        assertFalse(new FollowUp(today.plusDays(1).format(DATE_FORMAT)).isPast());
+    @Test
+    public void isPast_clockAtStartOfDay() {
+        FollowUp followUp = new FollowUp("20-09-2026");
+
+        // EP: the day after the follow-up. Boundary value: midnight, the first instant it becomes past.
+        assertTrue(followUp.isPast(clockAt(LocalDateTime.of(2026, 9, 21, 0, 0, 0))));
+
+        // EP: the follow-up day itself. Boundary value: its first instant.
+        assertFalse(followUp.isPast(clockAt(LocalDateTime.of(2026, 9, 20, 0, 0, 0))));
+    }
+
+    @Test
+    public void isPast_clockAcrossYearEnd() {
+        FollowUp followUp = new FollowUp("31-12-2026");
+
+        // EP: the date changes and so does the year. Boundary values: one second either side of midnight.
+        assertFalse(followUp.isPast(clockAt(LocalDateTime.of(2026, 12, 31, 23, 59, 59))));
+        assertTrue(followUp.isPast(clockAt(LocalDateTime.of(2027, 1, 1, 0, 0, 0))));
+    }
+
+    @Test
+    public void isPast_clockTimeZone_usesClockDate() {
+        // EP: the same instant falls on different dates in different time zones.
+        Instant instant = LocalDateTime.of(2026, 9, 20, 23, 0).atZone(ZONE).toInstant();
+        FollowUp followUp = new FollowUp("20-09-2026");
+
+        assertFalse(followUp.isPast(Clock.fixed(instant, ZONE))); // still 20-09-2026 in Singapore
+        assertTrue(followUp.isPast(Clock.fixed(instant, ZoneId.of("Pacific/Kiritimati")))); // already 21-09-2026
+    }
+
+    @Test
+    public void isPast_nullClock_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new FollowUp("20-09-2026").isPast(null));
+    }
+
+    @Test
+    public void isPast_systemClock() {
+        // EP: dates far enough from today that the result cannot change while the test runs.
+        assertTrue(new FollowUp("01-01-2020").isPast());
+        assertFalse(new FollowUp("31-12-9999").isPast());
+    }
+
+    private static Clock clockAt(LocalDateTime dateTime) {
+        return Clock.fixed(dateTime.atZone(ZONE).toInstant(), ZONE);
     }
 
     @Test
