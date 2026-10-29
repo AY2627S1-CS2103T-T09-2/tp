@@ -29,7 +29,7 @@ public class DeleteNoteCommand extends Command {
             + "Example: " + COMMAND_WORD + " 1 2";
 
     public static final String MESSAGE_SUCCESS =
-            "Deleted interaction note %2$d for %1$s.";
+            "Deleted interaction note %2$d for %1$s: %3$s";
 
     private final Index contactIndex;
     private final Index noteIndex;
@@ -73,8 +73,9 @@ public class DeleteNoteCommand extends Command {
         List<InteractionNote> updatedNotes =
                 new ArrayList<>(personToUpdate.getInteractionNotes());
 
-        updatedNotes.remove(
-                updatedNotes.size() - 1 - noteIndex.getZeroBased());
+        InteractionNote noteToDelete =
+                updatedNotes.remove(
+                        updatedNotes.size() - 1 - noteIndex.getZeroBased());
 
         Person updatedPerson = new Person(
                 personToUpdate.getName(),
@@ -93,7 +94,8 @@ public class DeleteNoteCommand extends Command {
                 String.format(
                         MESSAGE_SUCCESS,
                         personToUpdate.getName(),
-                        noteIndex.getOneBased()));
+                        noteIndex.getOneBased(),
+                        noteToDelete.getValue()));
     }
 
     /**
