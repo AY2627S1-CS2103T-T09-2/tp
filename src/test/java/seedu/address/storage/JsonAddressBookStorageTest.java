@@ -687,6 +687,26 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
+    public void readAddressBookWithBackup_escapedUnpairedSurrogate_backupCreatedWithSameBytes() throws Exception {
+        Path filePath = testFolder.resolve("addressbook.json");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        // EP: half of an emoji pair written as a JSON escape. The bytes are valid UTF-8, but the text is not,
+        // and saving it would have replaced it with '?' for good.
+        for (String escape : List.of("\\ud83c", "\\udc00")) {
+            storage.saveAddressBook(getTypicalAddressBook());
+            byte[] escapeBytes = (" " + escape).getBytes(StandardCharsets.UTF_8);
+            byte[] corruptedBytes = insertAfter(Files.readAllBytes(filePath), "Jurong", escapeBytes);
+            Files.write(filePath, corruptedBytes);
+
+            assertThrows(DataLoadingException.class, storage::readAddressBookWithBackup);
+
+            assertArrayEquals(corruptedBytes, Files.readAllBytes(filePath));
+            assertArrayEquals(corruptedBytes, Files.readAllBytes(JsonAddressBookStorage.getBackupFilePath(filePath)));
+        }
+    }
+
+    @Test
     public void readAndSaveAddressBook_nonAsciiText_bytesUnchanged() throws Exception {
         // EP: valid UTF-8 with emoji, CJK, Tamil and a combining accent must keep loading and saving as is.
         Path filePath = testFolder.resolve("addressbook.json");

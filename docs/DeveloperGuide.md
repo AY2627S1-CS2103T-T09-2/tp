@@ -182,19 +182,27 @@ reads it once at startup by calling `Storage#readAddressBookWithBackup()`, which
    * `requireValidStructure` reads the tokens without recursion. It rejects a key that appears twice in one object,
      and objects or arrays nested more than 100 levels deep (`MAX_NESTING_DEPTH`), giving the line and column.
      Without this pass, a repeated key would be reported without its location, and deep nesting would overflow
-     the stack inside Jackson.
+     the stack inside Jackson. It also rejects text holding half of a surrogate pair, such as an escaped
+     `\ud83c` with no low half, which valid UTF-8 cannot hold and which would be saved as `?`.
    * Jackson maps the JSON value to a `JsonSerializableAddressBook`. Unknown fields are ignored.
    * `requireNoTrailingContent` rejects anything other than whitespace after the JSON value, because Jackson stops
      reading after the first value and would drop the rest without an error.
 
-   `readJsonFile` also rejects a file that contains only `null`.
+   `readJsonFile` also rejects a file that contains only `null`, and an empty file, which Jackson would report
+   without a useful message.
 4. `JsonSerializableAddressBook#toModelType` converts each `JsonAdaptedPerson`, which checks every field with the
    same model methods that the commands use, such as `Name#isValidName`. Null entries and duplicate contacts are
-   rejected. A missing or blank `status` becomes `PROSPECT` and a missing `followUp` means no follow-up, so data
-   files from older versions still load.
+   rejected. A missing or blank `status` becomes `PROSPECT` and a missing `followUp` means no follow-up, so files
+   without the `status` and `followUp` fields still load. Values that later versions made stricter, such as v1.4
+   phones with repeated separators, are rejected like any other invalid value.
 5. A failure in any of steps 2 to 4 causes a `DataLoadingException`. `readAddressBookWithBackup` copies the data
    file to `addressbook.json.bak` in the same folder, replacing any older backup, and rethrows the exception.
-   `MainApp` logs a warning and starts with an empty `AddressBook`.
+   `MainApp` logs a warning and starts with an empty `AddressBook`. It also keeps a notice from
+   `StartupNotice#forUnloadableDataFile`, which `UiManager` shows in the result box once the window opens. The
+   notice names the data file, the `.bak` copy and the reason. `JsonSerializableAddressBook` starts the reason with
+   the position of the invalid contact, e.g. `Contact 3 is invalid.`, so the user knows where to look. Jackson's
+   own messages name internal classes and quote the file, so `StartupNotice` replaces them with a plain reason and
+   the line number only, because Jackson's column is not always right.
 6. If the data file is not a regular file, such as a folder, or the copy cannot be made, `readAddressBookWithBackup`
    throws a `DataBackupException` instead. `MainApp#initModelManager` rethrows it as an `IllegalStateException`, so
    the app does not open. The message names the data file and the backup path and says that the original file was
@@ -221,11 +229,11 @@ From then on, the `.bak` copy is the only copy of the old data.
 
 **Aspect: How strictly to read the file**
 
-* **Alternative 1 (current choice):** Reject invalid UTF-8, repeated keys, deep nesting, trailing content and
-  invalid field values. Accept unknown fields and missing optional fields.
+* **Alternative 1 (current choice):** Reject invalid UTF-8, unpaired surrogate escapes, repeated keys, deep
+  nesting, trailing content and invalid field values. Accept unknown fields and missing optional fields.
   * Pros: No contact data is dropped or changed without the user knowing (only unknown fields, which the app does
-    not use, are discarded on the next save), and a rejected file is backed up whole. Files from older versions
-    still load.
+    not use, are discarded on the next save), and a rejected file is backed up whole. Files without the `status`
+    and `followUp` fields still load.
   * Cons: One bad value makes the whole file load as an empty list, instead of skipping only the bad contact.
 * **Alternative 2:** Read leniently, for example by skipping invalid contacts, keeping the last of repeated keys
   and replacing bad bytes.
@@ -834,7 +842,7 @@ testers are expected to do more *exploratory* testing.
    1. Close the app. Open `data/addressbook.json` and change one contact's `"status"` value to `"lead"`.
 
    1. Relaunch the app.<br>
-      Expected: The app starts with an empty contact list, because the file could not be read. A copy of the invalid file is saved as `data/addressbook.json.bak`. Restoring the original value and relaunching brings the contacts back.
+      Expected: The app starts with an empty contact list, because the file could not be read. A copy of the invalid file is saved as `data/addressbook.json.bak`. The result box says so and gives the reason, starting with the position of the changed contact. Restoring the original value and relaunching brings the contacts back.
 
    1. Repeat with one contact's `"phone"` changed to 31 or more digits.<br>
       Expected: The same as above. The app still opens.
@@ -908,3 +916,7 @@ The items below are known flaws in the current version. Each item describes the 
 1. **Say that `find` cannot search by name and phone at the same time.**
    `find alice p/9123` and `find p/9123 alice` give `Phone search keywords must contain digits only. Example: find p/9123`, although `9123` is all digits. The real problem is that a name keyword and a phone search are mixed.<br>
    We plan to give this case its own message when there is a name keyword before `p/` or a word after the phone digits: `Search by name or by phone, not both. Use find KEYWORD [MORE_KEYWORDS] or find p/PHONE_DIGITS.` A phone search with a non-digit value, such as `find p/9a23`, keeps the current message.
+
+1. **Make email and address optional when adding a contact.**
+   `add` requires `e/` and `a/`, so a prospect known only by name and phone cannot be added. For example, `add n/Jane Doe p/98765432` gives `Missing required field(s): e/EMAIL, a/ADDRESS`. The only workaround is a made-up email and address, which then appear on the contact card and in the data file as if they were real.<br>
+   We plan to make `e/EMAIL` and `a/ADDRESS` optional in `add`, like `st/`, `f/` and `t/`. A contact added without them has no email or address: the contact card leaves out those lines and the data file stores no value for them. `add n/Jane Doe p/98765432` then gives `New contact added: Jane Doe (PROSPECT)`. Name and phone stay required, and a given `e/` or `a/` value must still be valid, so `add n/Jane Doe p/98765432 e/jane` still shows the email format error.

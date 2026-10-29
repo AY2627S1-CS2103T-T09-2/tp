@@ -140,9 +140,10 @@ The contact list shows blue, green, and grey badges respectively for these statu
 up to 50 characters long, such as `t/referral` or `t/lifePolicy2`. Accented and non-English letters are accepted
 (`t/café`, `t/ज़िंदगी`), but spaces, symbols and invisible characters are not, so `t/high value` and `t/high-value`
 are rejected; write `t/highValue` instead. Each letter can carry up to 5 accents or marks, which is enough for words
-in scripts such as Hindi, Burmese and Hebrew, so only piled-up stacks of marks are rejected. Accents and marks count
-toward the 50 characters. Digits must be decimal digits (0 to 9, or the same digits in another script, such as `٣`),
-so number symbols like `½`, `²` and `①` are rejected.
+in scripts such as Hindi, Burmese and Hebrew, so only piled-up stacks of marks are rejected. The 50 characters are
+counted after letters and accents are combined, so an accent that merges into its letter, such as the one in `é`,
+does not count separately, while other marks do. Digits must be decimal digits (0 to 9, or the same digits in
+another script, such as `٣`), so number symbols like `½`, `²` and `①` are rejected.
 Tags ignore case, so `t/VIP` and `t/vip` are the same tag and a contact keeps only one of them.
 </box>
 
@@ -443,7 +444,7 @@ Easy-Insurance data is saved automatically as a JSON file `data/addressbook.json
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid (including anything other than spaces, tabs or line breaks after its final closing `}`, or saving it in an encoding other than UTF-8; UTF-8 with or without a byte order mark is fine), Easy-Insurance copies it to `addressbook.json.bak` in the same `data` folder and then starts with an empty contact list. The invalid `addressbook.json` is overwritten after your next successful command that changes contact data, but the `.bak` copy is kept. To recover, close the app, fix the `.bak` file and rename it back to `addressbook.json`. A later backup replaces the previous `.bak` file, so we still recommend keeping your own copy before editing.<br>
+If your changes make the data file invalid (including anything other than spaces, tabs or line breaks after its final closing `}`, or saving it in an encoding other than UTF-8; UTF-8 with or without a byte order mark is fine), Easy-Insurance copies it to `addressbook.json.bak` in the same `data` folder and then starts with an empty contact list. The result box tells you this, names the `.bak` copy and gives the reason, such as `Contact 3 is invalid.` followed by the rule that contact breaks (contacts are counted from the top of the file). The invalid `addressbook.json` is overwritten after your next successful command that changes contact data, but the `.bak` copy is kept. To recover, close the app, fix the `.bak` file and rename it back to `addressbook.json`. A later backup replaces the previous `.bak` file, so we still recommend keeping your own copy before editing.<br>
 If Easy-Insurance cannot make the backup, it stops starting and leaves `addressbook.json` unchanged. Check that `addressbook.json` is a readable file and not a folder, that the `data` folder is writable, that `addressbook.json.bak` is not a folder and that `addressbook.json` is not a link to `addressbook.json.bak`, then try again.<br>
 Two contacts whose names differ only in case or extra spaces also make the data file invalid and cause it to load as an empty contact list.<br>
 Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
@@ -463,6 +464,7 @@ Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
 2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
 3. **If you run two copies of Easy-Insurance from the same folder at once**, or edit `data/addressbook.json` while the app is open, whichever copy saves last overwrites the other's changes. The remedy is to run only one copy at a time and to close the app before editing the data file.
+4. **Some data files saved by v1.4 do not load in v1.5**, because these values are no longer accepted: names ending in `.` or another punctuation mark, phone numbers with two or more spaces or dashes in a row (e.g., `6123 - 4567`), phone numbers over 30 characters, email addresses over 254 characters, tags over 50 characters and follow-up dates in the year `0000`. The whole file is then copied to `data/addressbook.json.bak` and the app starts with an empty contact list, as described in [Editing the data file](#editing-the-data-file). The remedy is to close the app, fix those values in the `.bak` file and rename it back to `addressbook.json`.
 
 --------------------------------------------------------------------------------------------------------------------
 

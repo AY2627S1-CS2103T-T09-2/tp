@@ -44,6 +44,9 @@ public class MainApp extends Application {
     protected Storage storage;
     protected Model model;
 
+    /** Message to show in the result box once the window opens, or null if there is nothing to report. */
+    private String startupNotice;
+
     @Override
     public void init() throws Exception {
         logger.info("=============================[ Initializing Easy-Insurance ]===========================");
@@ -58,13 +61,14 @@ public class MainApp extends Application {
 
         logic = new LogicManager(model, storage);
 
-        ui = new UiManager(logic, storage.getAddressBookFilePath());
+        ui = new UiManager(logic, storage.getAddressBookFilePath(), startupNotice);
     }
 
     /**
      * Returns a {@code ModelManager} with the data from {@code storage}'s address book and {@code userPrefs}. <br>
      * The data from the sample address book will be used instead if {@code storage}'s address book is not found,
      * or an empty address book will be used instead if errors occur when reading {@code storage}'s address book.
+     * In that case a notice naming the cause and the backup copy is kept for the UI to show.
      */
     private Model initModelManager(Storage storage, ReadOnlyUserPrefs userPrefs) {
         logger.info("Using data file : " + storage.getAddressBookFilePath());
@@ -83,6 +87,7 @@ public class MainApp extends Application {
         } catch (DataLoadingException e) {
             logger.warning("Data file at " + storage.getAddressBookFilePath() + " could not be loaded."
                     + " Will be starting with an empty Easy-Insurance contact list.");
+            startupNotice = StartupNotice.forUnloadableDataFile(storage.getAddressBookFilePath(), e);
             initialData = new AddressBook();
         }
 
