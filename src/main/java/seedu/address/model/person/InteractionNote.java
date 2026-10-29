@@ -72,7 +72,7 @@ public class InteractionNote {
         return trimmedNote.codePointCount(0, trimmedNote.length()) <= MAX_LENGTH
                 && test.chars().noneMatch(Character::isISOControl);
     }
-  
+
     /**
      * Returns true if the text contains only whitespace or invisible spacing characters.
      */
