@@ -191,7 +191,10 @@ reads it once at startup by calling `Storage#readAddressBookWithBackup()`, which
    files from older versions still load.
 5. A failure in any of steps 2 to 4 causes a `DataLoadingException`. `readAddressBookWithBackup` copies the data
    file to `addressbook.json.bak` in the same folder, replacing any older backup, and rethrows the exception.
-   `MainApp` logs a warning and starts with an empty `AddressBook`.
+   `MainApp` logs a warning and starts with an empty `AddressBook`. It also keeps a notice from
+   `StartupNotice#forUnloadableDataFile`, which `UiManager` shows in the result box once the window opens. The
+   notice names the data file, the `.bak` copy and the reason. `JsonSerializableAddressBook` starts the reason with
+   the position of the invalid contact, e.g. `Contact 3 is invalid.`, so the user knows where to look.
 6. If the data file is not a regular file, such as a folder, or the copy cannot be made, `readAddressBookWithBackup`
    throws a `DataBackupException` instead. `MainApp#initModelManager` rethrows it as an `IllegalStateException`, so
    the app does not open. The message names the data file and the backup path and says that the original file was
@@ -831,7 +834,7 @@ testers are expected to do more *exploratory* testing.
    1. Close the app. Open `data/addressbook.json` and change one contact's `"status"` value to `"lead"`.
 
    1. Relaunch the app.<br>
-      Expected: The app starts with an empty contact list, because the file could not be read. A copy of the invalid file is saved as `data/addressbook.json.bak`. Restoring the original value and relaunching brings the contacts back.
+      Expected: The app starts with an empty contact list, because the file could not be read. A copy of the invalid file is saved as `data/addressbook.json.bak`. The result box says so and gives the reason, starting with the position of the changed contact. Restoring the original value and relaunching brings the contacts back.
 
    1. Repeat with one contact's `"phone"` changed to 31 or more digits.<br>
       Expected: The same as above. The app still opens.

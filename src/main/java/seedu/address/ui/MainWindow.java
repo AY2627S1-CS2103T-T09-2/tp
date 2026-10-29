@@ -128,6 +128,13 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     /**
+     * Shows {@code feedback} in the result box. Must be called after {@link #fillInnerParts()}.
+     */
+    void showFeedback(String feedback) {
+        resultDisplay.setFeedbackToUser(feedback);
+    }
+
+    /**
      * Sets the default size based on {@code guiSettings}.
      */
     private void setWindowDefaultSize(GuiSettings guiSettings) {

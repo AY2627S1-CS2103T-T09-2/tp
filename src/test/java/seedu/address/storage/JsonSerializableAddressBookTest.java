@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.AddressBook;
+import seedu.address.model.person.Email;
 import seedu.address.testutil.TypicalPersons;
 
 public class JsonSerializableAddressBookTest {
@@ -44,8 +45,8 @@ public class JsonSerializableAddressBookTest {
         // EP: contacts are individually valid but have duplicate identities.
         JsonSerializableAddressBook dataFromFile = JsonUtil.readJsonFile(DUPLICATE_PERSON_FILE,
                 JsonSerializableAddressBook.class).get();
-        assertThrows(IllegalValueException.class, JsonSerializableAddressBook.MESSAGE_DUPLICATE_PERSON,
-                dataFromFile::toModelType);
+        assertThrows(IllegalValueException.class, String.format(JsonSerializableAddressBook.MESSAGE_CONTACT_POSITION,
+                2, JsonSerializableAddressBook.MESSAGE_DUPLICATE_PERSON), dataFromFile::toModelType);
     }
 
     @Test
@@ -53,8 +54,23 @@ public class JsonSerializableAddressBookTest {
         // EP: the contact list contains a null entry instead of a contact object.
         JsonSerializableAddressBook dataFromFile = JsonUtil.readJsonFile(NULL_PERSON_FILE,
                 JsonSerializableAddressBook.class).get();
-        assertThrows(IllegalValueException.class, JsonSerializableAddressBook.MESSAGE_NULL_PERSON,
-                dataFromFile::toModelType);
+        assertThrows(IllegalValueException.class, String.format(JsonSerializableAddressBook.MESSAGE_CONTACT_POSITION,
+                1, JsonSerializableAddressBook.MESSAGE_NULL_PERSON), dataFromFile::toModelType);
+    }
+
+    @Test
+    public void toModelType_invalidThirdContact_messageNamesPosition() throws Exception {
+        // EP: the first two contacts are valid and the third has an invalid email.
+        String json = "{\"persons\":[" + contactJson("Alice Tan", "alice@example.com") + ","
+                + contactJson("Bob Lim", "bob@example.com") + "," + contactJson("Carl Ong", "carl@") + "]}";
+        JsonSerializableAddressBook dataFromFile = JsonUtil.fromJsonString(json, JsonSerializableAddressBook.class);
+        assertThrows(IllegalValueException.class, String.format(JsonSerializableAddressBook.MESSAGE_CONTACT_POSITION,
+                3, Email.MESSAGE_CONSTRAINTS), dataFromFile::toModelType);
+    }
+
+    private static String contactJson(String name, String email) {
+        return "{\"name\":\"" + name + "\",\"phone\":\"91234567\",\"email\":\"" + email
+                + "\",\"address\":\"1 Test Road\"}";
     }
 
 }
