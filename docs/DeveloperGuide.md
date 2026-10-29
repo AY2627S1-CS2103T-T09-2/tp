@@ -259,7 +259,8 @@ follow-up. Individual field getters and the internal calls within `Model` and `S
    contact. It then checks that the selected contact has a pending follow-up.
 4. The command constructs a replacement `Person`, copying the other contact details and setting the
    follow-up to `Optional.empty()`. It calls `Model.setPerson` to replace the original contact in memory.
-5. The command returns a `CommandResult` containing `Marked follow-up for <name> as completed.`.
+5. The command returns a `CommandResult` with the original contact's name and scheduled date:
+   `Marked follow-up for <name> as completed (scheduled for <DD-MM-YYYY>).`
    `LogicManager` obtains the updated address book from `Model` and passes it to `Storage.saveAddressBook`.
    After the save succeeds, `LogicManager` returns the result to its caller.
 
@@ -789,7 +790,7 @@ testers are expected to do more *exploratory* testing.
       Run `find Followup` and check that only this contact is shown.
 
    1. Test case: `done 1`<br>
-      Expected: The result shows `Marked follow-up for Followup Test as completed.`
+      Expected: The result shows `Marked follow-up for Followup Test as completed (scheduled for 25-12-2099).`
       The card shows `Follow-up: None`. The contact's name, phone, email, address, status and tags remain unchanged.
 
    1. Test case: Run `done 1` again.<br>

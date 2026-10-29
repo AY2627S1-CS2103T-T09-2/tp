@@ -271,8 +271,8 @@ Format: `done INDEX`
 * The contact must have a pending follow-up.
 * The contact's other details remain unchanged. Its card shows `Follow-up: None` after completion.
 
-On success, the result is:
-`Marked follow-up for <name> as completed.`
+On success, the result includes the original scheduled date:
+`Marked follow-up for <name> as completed (scheduled for <DD-MM-YYYY>).`
 
 If the contact has no pending follow-up, the result is:
 `<name> does not have a pending follow-up.`
