@@ -371,6 +371,15 @@ public class TagTest {
     }
 
     @Test
+    public void equals_sameObject_returnsTrue() {
+        // EP: a tag always equals itself, including one whose name needs the full Unicode comparison.
+        Tag asciiTag = new Tag("referral");
+        Tag accentedTag = new Tag("caf\u00E9");
+        assertTrue(asciiTag.equals(asciiTag));
+        assertTrue(accentedTag.equals(accentedTag));
+    }
+
+    @Test
     public void equals_differentLetters_notEqual() {
         assertFalse(new Tag("cafe").equals(new Tag("caf\u00E9")));
         assertFalse(new Tag("referral").equals(new Tag("referrals")));
