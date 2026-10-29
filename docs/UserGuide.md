@@ -129,7 +129,7 @@ The contact list shows blue, green, and grey badges respectively for these statu
 
 <box type="tip" seamless>
 
-**Follow-up date:** `f/FOLLOW_UP_DATE` is optional. Use the `DD-MM-YYYY` format, e.g. `f/25-12-2026`. The date must be a real calendar date (`31-02-2026` is rejected). A date in the past is accepted, so you can record a follow-up you already did, but Easy-Insurance shows a note reminding you that it is in the past. The follow-up date appears on the contact's card.
+**Follow-up date:** `f/FOLLOW_UP_DATE` is optional. Use the `DD-MM-YYYY` format, e.g. `f/25-12-2026`. The date must be a real calendar date (`31-02-2026` is rejected). The follow-up date appears on the contact's card. A date in the past is accepted, but Easy-Insurance shows a note reminding you that it is in the past. It is still saved as a pending follow-up, so the card shows it in red with `(overdue)` and `due` lists it until you mark it done with `done`.
 </box>
 
 <box type="tip" seamless>
@@ -335,6 +335,8 @@ Examples:
 
 ### Viewing follow-ups that are due: `due`
 
+Shows contacts whose follow-up date is today or earlier, or within the next `DAYS` days if given, earliest first.
+
 Format: `due [DAYS]`
 
 * `due` shows follow-ups due today, plus any overdue ones.
@@ -345,6 +347,7 @@ Format: `due [DAYS]`
 * The result reports how many follow-ups are due, for example `3 follow-ups due by 28-10-2026.`
   If none are due, the result is `No follow-ups due by 28-10-2026.` and the displayed list is empty.
 * The index numbers follow this sorted list, so `done 1` after `due` completes the earliest follow-up.
+* After `done`, the contact leaves the due list because it no longer has a follow-up. Use `list` to see it again.
 * `list` shows all contacts again in their usual order.
 
 On the contact cards, a follow-up date that has already passed is shown in red with `(overdue)` after it.

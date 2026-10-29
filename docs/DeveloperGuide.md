@@ -99,12 +99,6 @@ The sequence diagram below illustrates how the `find` command filters contacts b
 
 <puml src="diagrams/FindSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `find` Command" />
 
-<box type="info" seamless>
-
-**Note:** The lifeline for `DeleteCommandParser` should end at the destroy marker (X), but due to a limitation of PlantUML, the lifeline continues till the end of diagram.
-</box>
-
-
 How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to a `CommandInputParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
@@ -305,11 +299,6 @@ of the current implementation; their preservation tests must be added when those
 The sequence diagram below shows how `due 7` is executed.
 
 <puml src="diagrams/DueSequenceDiagram.puml" alt="Interactions inside the Logic and Model components for the `due 7` command" />
-
-<box type="info" seamless>
-
-**Note:** The lifeline for `DueCommandParser` should end at the destroy marker (X) but due to a limitation of PlantUML, the lifeline continues till the end of diagram.
-</box>
 
 **Design considerations:**
 
@@ -567,7 +556,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Prospect**: A contact the agent may sell a policy to but who is not yet a client.
 * **Client**: A contact who has bought a policy from the agent.
 * **Inactive**: A contact the agent is no longer actively pursuing but keeps in the app.
-* **Follow-up**: The date on which the agent intends to next contact a prospect or client. It may be in the past, for example when recording a follow-up that already happened.
+* **Follow-up**: The date on which the agent intends to next contact a prospect or client. A past date is accepted with a warning and is treated as an overdue follow-up until it is marked done.
 * **Pending follow-up**: A follow-up date that is still recorded on a contact. Marking it done removes the date.
 * **Duplicate contact**: A contact whose name matches an existing contact's name after ignoring letter case and extra spaces. Easy-Insurance refuses to add a duplicate.
 * **Index**: The number shown next to a contact in the currently displayed list. Commands such as `edit`, `delete` and `done` refer to contacts by index.
@@ -709,13 +698,16 @@ testers are expected to do more *exploratory* testing.
 
 1. Adding a contact with a future follow-up date
 
+   1. Prerequisites: Run `list` so that all contacts are shown. A filter left over from an earlier test, such as `find`, would hide the new contact.
+
    1. Test case: `add n/Sarah Lim p/92345678 e/sarah@example.com a/10 Tampines Street 1 f/25-12-2099`<br>
       Expected: The contact is added and the card shows `Follow-up: 25-12-2099`. No note is shown.
 
 1. Adding a contact with a past follow-up date
 
    1. Test case: `add n/Ben Ong p/93456789 e/ben@example.com a/5 Bishan Road f/01-01-2020`<br>
-      Expected: The contact is added. The result message ends with `Note: 01-01-2020 is in the past; it was saved anyway.`
+      Expected: The contact is added. The result message ends with `Note: 01-01-2020 is in the past; it was saved anyway.`<br>
+      The card shows `Follow-up: 01-01-2020 (overdue)` in red, and `due` lists the contact until its follow-up is marked done.
 
 1. Adding a contact with an impossible or badly formatted date
 
@@ -802,20 +794,21 @@ testers are expected to do more *exploratory* testing.
 
 1. Listing due follow-ups in date order
 
-   1. Prerequisites: Add three contacts with follow-ups, one overdue, one today and one in 3 days. For example, if today is 21-10-2026:<br>
-      `add n/Due Past p/91110001 e/duepast@example.com a/1 Test Road f/01-10-2026`<br>
-      `add n/Due Today p/91110002 e/duetoday@example.com a/2 Test Road f/21-10-2026`<br>
-      `add n/Due Soon p/91110003 e/duesoon@example.com a/3 Test Road f/24-10-2026`
+   1. Prerequisites: Add three contacts with follow-ups: one in the past, one today and one 3 days from today.
+      Replace `TODAY` with today's date and `IN_3_DAYS` with the date 3 days from today, both in `DD-MM-YYYY` format.<br>
+      `add n/Due Past p/91110001 e/duepast@example.com a/1 Test Road f/01-01-2020`<br>
+      `add n/Due Today p/91110002 e/duetoday@example.com a/2 Test Road f/TODAY`<br>
+      `add n/Due Soon p/91110003 e/duesoon@example.com a/3 Test Road f/IN_3_DAYS`
 
    1. Test case: `due`<br>
-      Expected: `Due Past` then `Due Today` are shown, plus any other contact due by today. `Due Soon` is not shown.
-      The result shows `N follow-ups due by 21-10-2026.` The `Due Past` card shows its date in red with `(overdue)`.
+      Expected: `Due Past` and `Due Today` are shown in that order, plus any other contact due by today. `Due Soon` is not shown.
+      The result shows `N follow-ups due by TODAY.`, where `N` is the number of contacts listed. The `Due Past` card shows its date in red with `(overdue)`.
 
    1. Test case: `due 3`<br>
-      Expected: `Due Soon` is now included, after the other two.
+      Expected: `Due Soon` is now included, after `Due Past` and `Due Today`. The result shows `N follow-ups due by IN_3_DAYS.`
 
    1. Test case: `due` followed by `done 1`<br>
-      Expected: The earliest follow-up in the sorted list is completed.
+      Expected: The first contact's follow-up is completed, and that contact leaves the list because it no longer has a follow-up.
 
    1. Other incorrect commands to try: `due -1`, `due 366`, `due abc`, `due 7 days`<br>
       Expected: No change to the list. Error: `Number of days must be a whole number from 0 to 365, e.g. due 7.`
