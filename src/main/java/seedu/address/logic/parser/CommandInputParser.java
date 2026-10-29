@@ -32,7 +32,7 @@ import seedu.address.logic.parser.exceptions.ParseException;
 public class CommandInputParser {
 
     private static final Pattern BASIC_COMMAND_FORMAT =
-            Pattern.compile("(?<commandWord>[^\\s\\u00A0]+)(?<arguments>.*)");
+            Pattern.compile("(?<commandWord>\\S+)(?<arguments>.*)");
 
     private static final Logger logger =
             LogsCenter.getLogger(CommandInputParser.class);
@@ -45,8 +45,11 @@ public class CommandInputParser {
      * @throws ParseException If the user input does not conform to the expected format.
      */
     public Command parseCommand(String userInput) throws ParseException {
+        String normalizedInput =
+                userInput.replaceAll("[\\h\\v]", " ").trim();
+
         final Matcher matcher =
-                BASIC_COMMAND_FORMAT.matcher(userInput.trim());
+                BASIC_COMMAND_FORMAT.matcher(normalizedInput);
 
         if (!matcher.matches()) {
             throw new ParseException(
@@ -58,8 +61,8 @@ public class CommandInputParser {
         final String commandWord =
                 matcher.group("commandWord").toLowerCase(Locale.ROOT);
 
-        final String arguments = matcher.group("arguments")
-                .replaceFirst("^[\\s\\u00A0]+", " ");
+        final String arguments =
+                matcher.group("arguments");
 
         logger.fine(
                 "Command word: " + commandWord
