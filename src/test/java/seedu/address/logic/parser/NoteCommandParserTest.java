@@ -26,13 +26,21 @@ public class NoteCommandParserTest {
     }
 
     @Test
-    public void parse_missingSpaceBeforePrefix_throwsParseException() {
-        assertThrows(ParseException.class, () -> parser.parse("1nt/nospace"));
+    public void parse_noteContainsNotePrefix_success() throws ParseException {
+        String noteText = "Client asked what nt/ means";
+
+        NoteCommand expectedCommand = new NoteCommand(
+                Index.fromOneBased(1),
+                new InteractionNote(noteText));
+
+        assertEquals(
+                expectedCommand,
+                parser.parse("1 nt/" + noteText));
     }
 
     @Test
-    public void parse_duplicateNotePrefix_throwsParseException() {
-        assertThrows(ParseException.class, () -> parser.parse("1 nt/a nt/b"));
+    public void parse_missingSpaceBeforePrefix_throwsParseException() {
+        assertThrows(ParseException.class, () -> parser.parse("1nt/nospace"));
     }
 
     @Test
