@@ -88,8 +88,21 @@ public class ListCommandTest {
         // EP: only a tag is supplied; tag case and contact status must not affect matching.
         ListCommand command = new ListCommand(Optional.empty(), Optional.of(new Tag("REFERRAL")));
 
-        assertListResult(command, "Listed 2 contacts with tag referral.",
+        assertListResult(command, "Listed 2 contacts with tag REFERRAL.",
                 List.of(CLIENT_REFERRAL, PROSPECT_REFERRAL));
+    }
+
+    @Test
+    public void execute_mixedCaseTagFilter_showsTagAsTyped() {
+        // EP: a mixed-case tag; it matches ignoring case, but the message keeps the case the user typed.
+        ListCommand command = new ListCommand(Optional.empty(), Optional.of(new Tag("reFerral")));
+        assertListResult(command, "Listed 2 contacts with tag reFerral.",
+                List.of(CLIENT_REFERRAL, PROSPECT_REFERRAL));
+
+        // EP: the same tag combined with a status filter.
+        ListCommand withStatus = new ListCommand(Optional.of(Status.CLIENT), Optional.of(new Tag("reFerral")));
+        assertListResult(withStatus, "Listed 1 contact with status CLIENT and tag reFerral.",
+                List.of(CLIENT_REFERRAL));
     }
 
     @Test

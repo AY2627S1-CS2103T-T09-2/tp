@@ -78,6 +78,17 @@ public class PersonMatchesFiltersPredicateTest {
     }
 
     @Test
+    public void getTagName_mixedCaseTag_keepsTagSpelling() {
+        // EP: the tag name is shown to the user, so it keeps the case it was typed in.
+        assertEquals(Optional.of("hotLead"),
+                new PersonMatchesFiltersPredicate(Optional.empty(), Optional.of(new Tag("hotLead"))).getTagName());
+
+        // EP: no tag filter.
+        assertEquals(Optional.empty(),
+                new PersonMatchesFiltersPredicate(Optional.empty(), Optional.empty()).getTagName());
+    }
+
+    @Test
     public void test_partialTag_returnsFalse() {
         // EP: only a tag prefix matches; filtering requires the entire tag.
         PersonMatchesFiltersPredicate predicate =
