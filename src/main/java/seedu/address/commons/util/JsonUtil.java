@@ -43,6 +43,8 @@ public class JsonUtil {
     public static final String MESSAGE_TOO_DEEPLY_NESTED =
             "JSON data is nested more than " + MAX_NESTING_DEPTH + " levels deep at line %d, column %d";
 
+    public static final String MESSAGE_EMPTY_FILE = "The file is empty.";
+
     public static final String MESSAGE_DUPLICATE_KEY = "Duplicate field '%s' at line %d, column %d";
 
     public static final String MESSAGE_UNPAIRED_SURROGATE =
@@ -65,7 +67,12 @@ public class JsonUtil {
 
     static <T> T deserializeObjectFromJsonFile(Path jsonFile, Class<T> classOfObjectToDeserialize)
             throws IOException {
-        return fromJsonString(FileUtil.readFromFile(jsonFile), classOfObjectToDeserialize);
+        String json = FileUtil.readFromFile(jsonFile);
+        if (json.chars().allMatch(c -> isJsonWhitespace((char) c))) {
+            // Otherwise Jackson reports this as "No content to map", with a column of 0.
+            throw new IOException(MESSAGE_EMPTY_FILE);
+        }
+        return fromJsonString(json, classOfObjectToDeserialize);
     }
 
     /**

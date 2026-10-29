@@ -185,7 +185,8 @@ reads it once at startup by calling `Storage#readAddressBookWithBackup()`, which
    * `requireNoTrailingContent` rejects anything other than whitespace after the JSON value, because Jackson stops
      reading after the first value and would drop the rest without an error.
 
-   `readJsonFile` also rejects a file that contains only `null`.
+   `readJsonFile` also rejects a file that contains only `null`, and an empty file, which Jackson would report
+   without a useful message.
 4. `JsonSerializableAddressBook#toModelType` converts each `JsonAdaptedPerson`, which checks every field with the
    same model methods that the commands use, such as `Name#isValidName`. Null entries and duplicate contacts are
    rejected. A missing or blank `status` becomes `PROSPECT` and a missing `followUp` means no follow-up, so files
@@ -196,7 +197,9 @@ reads it once at startup by calling `Storage#readAddressBookWithBackup()`, which
    `MainApp` logs a warning and starts with an empty `AddressBook`. It also keeps a notice from
    `StartupNotice#forUnloadableDataFile`, which `UiManager` shows in the result box once the window opens. The
    notice names the data file, the `.bak` copy and the reason. `JsonSerializableAddressBook` starts the reason with
-   the position of the invalid contact, e.g. `Contact 3 is invalid.`, so the user knows where to look.
+   the position of the invalid contact, e.g. `Contact 3 is invalid.`, so the user knows where to look. Jackson's
+   own messages name internal classes and quote the file, so `StartupNotice` replaces them with a plain reason and
+   the line number only, because Jackson's column is not always right.
 6. If the data file is not a regular file, such as a folder, or the copy cannot be made, `readAddressBookWithBackup`
    throws a `DataBackupException` instead. `MainApp#initModelManager` rethrows it as an `IllegalStateException`, so
    the app does not open. The message names the data file and the backup path and says that the original file was
