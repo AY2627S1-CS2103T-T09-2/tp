@@ -41,6 +41,13 @@ public class NoteCommandParserTest {
     @Test
     public void parse_missingSpaceBeforePrefix_throwsParseException() {
         assertThrows(ParseException.class, () -> parser.parse("1nt/nospace"));
+
+        ParseException exception = assertThrows(
+                ParseException.class, () -> parser.parse("1nt/a nt/b"));
+
+        assertEquals(
+                ParserUtil.MESSAGE_INVALID_INDEX,
+                exception.getMessage());
     }
 
     @Test
