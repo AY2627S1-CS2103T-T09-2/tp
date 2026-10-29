@@ -70,13 +70,11 @@ public class DeleteNoteCommand extends Command {
                             displayedNotes.size()));
         }
 
-        InteractionNote noteToDelete =
-                displayedNotes.get(noteIndex.getZeroBased());
-
         List<InteractionNote> updatedNotes =
                 new ArrayList<>(personToUpdate.getInteractionNotes());
 
-        updatedNotes.remove(noteToDelete);
+        updatedNotes.remove(
+                updatedNotes.size() - 1 - noteIndex.getZeroBased());
 
         Person updatedPerson = new Person(
                 personToUpdate.getName(),
