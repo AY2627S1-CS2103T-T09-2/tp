@@ -32,7 +32,7 @@ import seedu.address.logic.parser.exceptions.ParseException;
 public class CommandInputParser {
 
     private static final Pattern BASIC_COMMAND_FORMAT =
-            Pattern.compile("(?<commandWord>\\S+)(?<arguments>.*)");
+            Pattern.compile("(?<commandWord>[^\\s\\u00A0]+)(?<arguments>.*)");
 
     private static final Logger logger =
             LogsCenter.getLogger(CommandInputParser.class);
