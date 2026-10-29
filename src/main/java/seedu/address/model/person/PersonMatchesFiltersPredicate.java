@@ -2,7 +2,6 @@ package seedu.address.model.person;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -17,7 +16,6 @@ public class PersonMatchesFiltersPredicate implements Predicate<Person> {
 
     private final Optional<Status> status;
     private final Optional<Tag> tag;
-    private final Optional<String> tagName;
 
     /**
      * Creates a predicate that requires every supplied filter to match.
@@ -30,7 +28,6 @@ public class PersonMatchesFiltersPredicate implements Predicate<Person> {
         this.status = requireNonNull(status);
         // The tag works out its case-insensitive key once here, so each check below is a plain comparison.
         this.tag = requireNonNull(tag);
-        this.tagName = tag.map(value -> value.tagName.toLowerCase(Locale.ROOT));
     }
 
     /**
@@ -41,10 +38,11 @@ public class PersonMatchesFiltersPredicate implements Predicate<Person> {
     }
 
     /**
-     * Returns the optional tag filter in lowercase.
+     * Returns the name of the optional tag filter, spelt as the user typed it, for showing to the user.
+     * Matching does not use this name: it ignores case through {@link Tag#equals(Object)}.
      */
     public Optional<String> getTagName() {
-        return tagName;
+        return tag.map(value -> value.tagName);
     }
 
     /**
@@ -86,7 +84,7 @@ public class PersonMatchesFiltersPredicate implements Predicate<Person> {
     public String toString() {
         return new ToStringBuilder(this)
                 .add("status", status)
-                .add("tagName", tagName)
+                .add("tagName", getTagName())
                 .toString();
     }
 }

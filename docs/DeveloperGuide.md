@@ -535,7 +535,7 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `list t/REFERRAL`<br>
       Expected: Only Filter Client Referral and Filter Prospect Referral are shown.
-      The result is `Listed 2 contacts with tag referral.`
+      The result is `Listed 2 contacts with tag REFERRAL.`
 
    1. Test case: `list t/ref`<br>
       Expected: No contacts are shown.
@@ -548,7 +548,8 @@ testers are expected to do more *exploratory* testing.
       The result is `Listed 1 contact with status CLIENT and tag referral.`
 
    1. Test case: `list t/REFERRAL st/CLIENT`<br>
-      Expected: The same contact and result message are shown.
+      Expected: The same contact is shown.
+      The result is `Listed 1 contact with status CLIENT and tag REFERRAL.`
 
 1. Resetting the filter
 
