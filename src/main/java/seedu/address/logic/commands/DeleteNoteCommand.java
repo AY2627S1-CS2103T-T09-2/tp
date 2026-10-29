@@ -31,9 +31,6 @@ public class DeleteNoteCommand extends Command {
     public static final String MESSAGE_SUCCESS =
             "Deleted interaction note %2$d for %1$s.";
 
-    public static final String MESSAGE_INVALID_NOTE_INDEX =
-            "There is no interaction note %1$d. The history shows %2$d notes.";
-
     private final Index contactIndex;
     private final Index noteIndex;
 
@@ -69,8 +66,7 @@ public class DeleteNoteCommand extends Command {
 
         if (noteIndex.getZeroBased() >= displayedNotes.size()) {
             throw new CommandException(
-                    String.format(
-                            MESSAGE_INVALID_NOTE_INDEX,
+                    getInvalidNoteDisplayedIndexMessage(
                             noteIndex.getOneBased(),
                             displayedNotes.size()));
         }
@@ -100,6 +96,19 @@ public class DeleteNoteCommand extends Command {
                         MESSAGE_SUCCESS,
                         personToUpdate.getName(),
                         noteIndex.getOneBased()));
+    }
+
+    /**
+     * Returns the error message for a note index outside the displayed history.
+     */
+    private static String getInvalidNoteDisplayedIndexMessage(
+            int invalidIndex, int displayedCount) {
+        String noteWord = displayedCount == 1 ? "note" : "notes";
+        return String.format(
+                "There is no interaction note %d. The history shows %d %s.",
+                invalidIndex,
+                displayedCount,
+                noteWord);
     }
 
     @Override
