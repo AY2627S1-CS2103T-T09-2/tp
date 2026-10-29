@@ -53,4 +53,19 @@ public class LastContactTest {
         assertFalse(first.equals(different));
         assertFalse(first.equals(null));
     }
+
+    @Test
+    public void isValidLastContact_yearZero_returnsFalse() {
+        assertFalse(LastContact.isValidLastContact("01-01-0000"));
+    }
+
+    @Test
+    public void isValidLastContact_yearOne_returnsTrue() {
+        assertTrue(LastContact.isValidLastContact("01-01-0001"));
+    }
+
+    @Test
+    public void isValidLastContact_signedYear_returnsFalse() {
+        assertFalse(LastContact.isValidLastContact("01-01-+20260"));
+    }
 }
