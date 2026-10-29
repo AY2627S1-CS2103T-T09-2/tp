@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -143,6 +144,24 @@ public class JsonUtilTest {
         // EP: the value itself is incomplete, which was already rejected before this check.
         assertThrows(DataLoadingException.class, () ->
                 readJson(VALID_JSON.substring(0, VALID_JSON.length() - 1)));
+    }
+
+    @Test
+    public void readJsonFile_invalidUtf8InValue_throwsDataLoadingException() throws Exception {
+        // EP: well-formed JSON whose text has a byte that is not valid UTF-8, e.g. 0xFF in a value.
+        Path filePath = testFolder.resolve("data.json");
+        byte[] prefix = "{\"name\":\"Blk 1".getBytes(StandardCharsets.UTF_8);
+        byte[] suffix = " Road\"}".getBytes(StandardCharsets.UTF_8);
+        byte[] content = new byte[prefix.length + 1 + suffix.length];
+        System.arraycopy(prefix, 0, content, 0, prefix.length);
+        content[prefix.length] = (byte) 0xFF;
+        System.arraycopy(suffix, 0, content, prefix.length + 1, suffix.length);
+        Files.write(filePath, content);
+
+        DataLoadingException e = assertThrows(DataLoadingException.class, () ->
+                JsonUtil.readJsonFile(filePath, SerializableTestClass.class));
+        assertEquals(String.format(FileUtil.MESSAGE_INVALID_UTF8, filePath, prefix.length),
+                e.getCause().getMessage());
     }
 
     @Test

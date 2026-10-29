@@ -16,10 +16,12 @@ import static seedu.address.testutil.TypicalPersons.IDA;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributeView;
@@ -392,15 +394,34 @@ public class JsonAddressBookStorageTest {
 
     @Test
     public void saveAddressBook_fileAtParent_preservesParentFile() throws Exception {
+        // EP: a regular file occupies the immediate parent folder of the data file.
         Path parent = testFolder.resolve("data");
         Files.writeString(parent, "Do not overwrite");
         Path filePath = parent.resolve("addressbook.json");
 
-        assertThrows(IOException.class, () ->
+        NotDirectoryException thrown = org.junit.jupiter.api.Assertions.assertThrows(NotDirectoryException.class, () ->
                 new JsonAddressBookStorage(filePath).saveAddressBook(getTypicalAddressBook()));
 
+        assertEquals(parent.toString(), thrown.getFile());
+        assertTrue(thrown.getCause() instanceof IOException);
         assertEquals("Do not overwrite", Files.readString(parent));
         assertOnlyDataFileRemains(parent);
+    }
+
+    @Test
+    public void saveAddressBook_fileAtAncestor_reportsBlockingPath() throws Exception {
+        // EP: a regular file blocks an ancestor while the immediate parent does not exist.
+        Path ancestor = testFolder.resolve("blocked data");
+        Files.writeString(ancestor, "Do not overwrite");
+        Path filePath = ancestor.resolve("nested").resolve("addressbook.json");
+
+        NotDirectoryException thrown = org.junit.jupiter.api.Assertions.assertThrows(NotDirectoryException.class, () ->
+                new JsonAddressBookStorage(filePath).saveAddressBook(getTypicalAddressBook()));
+
+        assertEquals(ancestor.toString(), thrown.getFile());
+        assertTrue(thrown.getCause() instanceof IOException);
+        assertEquals("Do not overwrite", Files.readString(ancestor));
+        assertOnlyDataFileRemains(ancestor);
     }
 
     @Test
@@ -442,6 +463,27 @@ public class JsonAddressBookStorageTest {
 
             assertArrayEquals(savedBytes, Files.readAllBytes(filePath));
             assertOnlyDataFileRemains(filePath);
+        } finally {
+            Files.setPosixFilePermissions(folder, originalPermissions);
+        }
+    }
+
+    @Test
+    public void saveAddressBook_missingParentUnderReadOnlyFolder_reportsPermissionError() throws Exception {
+        // EP: creating missing folders fails because of permissions, with no file blocking the folder path.
+        Path folder = Files.createDirectory(testFolder.resolve("data"));
+        assumeTrue(Files.getFileAttributeView(folder, PosixFileAttributeView.class) != null);
+        Path filePath = folder.resolve("new").resolve("addressbook.json");
+        Set<PosixFilePermission> originalPermissions = Files.getPosixFilePermissions(folder);
+        try {
+            Files.setPosixFilePermissions(folder, Set.of(PosixFilePermission.OWNER_READ,
+                    PosixFilePermission.OWNER_EXECUTE));
+            assumeFalse(Files.isWritable(folder), "Elevated users can write to read-only directories");
+
+            assertThrows(AccessDeniedException.class, () ->
+                    new JsonAddressBookStorage(filePath).saveAddressBook(getTypicalAddressBook()));
+
+            assertFolderEmpty(folder);
         } finally {
             Files.setPosixFilePermissions(folder, originalPermissions);
         }
@@ -625,6 +667,47 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
+    public void readAddressBookWithBackup_invalidUtf8InAddress_backupCreatedWithSameBytes() throws Exception {
+        Path filePath = testFolder.resolve("addressbook.json");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        // EP: invalid byte, overlong encoding, encoded surrogate and cut-off character inside an address.
+        for (byte[] badBytes : List.of(new byte[] {(byte) 0xFF}, new byte[] {(byte) 0xC0, (byte) 0xAF},
+                new byte[] {(byte) 0xED, (byte) 0xA0, (byte) 0x80}, new byte[] {(byte) 0xE4, (byte) 0xB8})) {
+            storage.saveAddressBook(getTypicalAddressBook());
+            byte[] corruptedBytes = insertAfter(Files.readAllBytes(filePath), "Jurong", badBytes);
+            Files.write(filePath, corruptedBytes);
+
+            // Without strict decoding the file loaded and the next save kept U+FFFD for good.
+            assertThrows(DataLoadingException.class, storage::readAddressBookWithBackup);
+
+            assertArrayEquals(corruptedBytes, Files.readAllBytes(filePath));
+            assertArrayEquals(corruptedBytes, Files.readAllBytes(JsonAddressBookStorage.getBackupFilePath(filePath)));
+        }
+    }
+
+    @Test
+    public void readAndSaveAddressBook_nonAsciiText_bytesUnchanged() throws Exception {
+        // EP: valid UTF-8 with emoji, CJK, Tamil and a combining accent must keep loading and saving as is.
+        Path filePath = testFolder.resolve("addressbook.json");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+        String address = "Blk 1 \uD83C\uDFE0 \u4E1C\u6D77\u8DEF \u0B9A\u0BC6\u0BA9\u0BCD\u0BA9\u0BC8 Jose\u0301 Road";
+        Person person = new PersonBuilder().withName("\u9648\u5927\u6587 \u0B95\u0BC1\u0BAE\u0BBE\u0BB0\u0BCD")
+                .withAddress(address).build();
+        AddressBook addressBook = new AddressBook();
+        addressBook.addPerson(person);
+        storage.saveAddressBook(addressBook);
+        byte[] savedBytes = Files.readAllBytes(filePath);
+
+        ReadOnlyAddressBook readBack = storage.readAddressBookWithBackup().get();
+        assertEquals(address, readBack.getPersonList().get(0).getAddress().value);
+        storage.saveAddressBook(readBack);
+
+        assertArrayEquals(savedBytes, Files.readAllBytes(filePath));
+        assertFalse(Files.exists(JsonAddressBookStorage.getBackupFilePath(filePath)));
+    }
+
+    @Test
     public void readAddressBookWithBackup_existingBackup_backupReplaced() throws Exception {
         // EP: a backup already exists; the newest unreadable file replaces it.
         Path backupPath = testFolder.resolve("addressbook.json.bak");
@@ -717,6 +800,21 @@ public class JsonAddressBookStorageTest {
 
         assertArrayEquals(original, Files.readAllBytes(filePath));
         assertArrayEquals(original, Files.readAllBytes(JsonAddressBookStorage.getBackupFilePath(filePath)));
+    }
+
+    /**
+     * Returns a copy of {@code original} with {@code inserted} placed right after the first {@code marker}.
+     */
+    private static byte[] insertAfter(byte[] original, String marker, byte[] inserted) {
+        // ISO-8859-1 maps each byte to one char, so the index found is also the byte offset.
+        int markerIndex = new String(original, StandardCharsets.ISO_8859_1).indexOf(marker);
+        assertTrue(markerIndex >= 0, "Marker not found: " + marker);
+        int splitAt = markerIndex + marker.length();
+        byte[] result = new byte[original.length + inserted.length];
+        System.arraycopy(original, 0, result, 0, splitAt);
+        System.arraycopy(inserted, 0, result, splitAt, inserted.length);
+        System.arraycopy(original, splitAt, result, splitAt + inserted.length, original.length - splitAt);
+        return result;
     }
 
     /**
