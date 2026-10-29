@@ -10,6 +10,8 @@ import static seedu.address.testutil.Assert.assertThrows;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -81,7 +83,37 @@ public class LogicManagerTest {
     public void execute_storageThrowsAdException_throwsCommandException() {
         // EP: saving fails because of permissions; this requires a different error message.
         assertCommandFailureForExceptionFromStorage(DUMMY_AD_EXCEPTION, String.format(
-                LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, DUMMY_AD_EXCEPTION.getMessage()));
+                LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, temporaryFolder.resolve("ExceptionAddressBook.json")));
+    }
+
+    @Test
+    public void execute_storageDeniesTemporaryFile_reportsConfiguredDataFile() {
+        // EP: a permission error describes an internal temporary file, with or without extra filesystem details.
+        Path temporaryFile = temporaryFolder.resolve(".addressbook-123456.tmp");
+        Path dataFile = temporaryFolder.resolve("ExceptionAddressBook.json");
+        assertCommandFailureForExceptionFromStorage(new AccessDeniedException(temporaryFile.toString()),
+                String.format(LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, dataFile));
+        assertCommandFailureForExceptionFromStorage(new AccessDeniedException(temporaryFile.toString(),
+                dataFile.toString(), "Permission denied"),
+                String.format(LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, dataFile));
+    }
+
+    @Test
+    public void execute_storageReportsBlockedFolder_namesDataFileAndFolder() {
+        // EP: storage identifies an existing file blocking a required data folder.
+        Path folder = temporaryFolder.resolve("blocked data");
+        String expectedMessage = "Could not save data to file " + temporaryFolder.resolve("ExceptionAddressBook.json")
+                + " because " + folder + " is not a folder.";
+        assertCommandFailureForExceptionFromStorage(new NotDirectoryException(folder.toString()), expectedMessage);
+    }
+
+    @Test
+    public void execute_storageCannotReplaceExistingTarget_preservesIoError() {
+        // EP: an existing target can prevent replacement without any parent folder being blocked.
+        IOException failure = new FileAlreadyExistsException(temporaryFolder.resolve("addressbook.json").toString(),
+                null, "Replacement not supported");
+        assertCommandFailureForExceptionFromStorage(failure,
+                String.format(LogicManager.FILE_OPS_ERROR_FORMAT, failure.getMessage()));
     }
 
     @Test
@@ -149,10 +181,10 @@ public class LogicManagerTest {
      * @param expectedMessage the message expected inside exception thrown by the Logic component
      */
     private void assertCommandFailureForExceptionFromStorage(IOException e, String expectedMessage) {
-        Path prefPath = temporaryFolder.resolve("ExceptionUserPrefs.json");
+        Path dataPath = temporaryFolder.resolve("ExceptionAddressBook.json");
 
         // Inject LogicManager with a JsonAddressBookStorage that throws the IOException e when saving
-        JsonAddressBookStorage addressBookStorage = new JsonAddressBookStorage(prefPath) {
+        JsonAddressBookStorage addressBookStorage = new JsonAddressBookStorage(dataPath) {
             @Override
             public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
                 throw e;

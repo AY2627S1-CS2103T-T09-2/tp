@@ -21,6 +21,7 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributeView;
@@ -393,15 +394,34 @@ public class JsonAddressBookStorageTest {
 
     @Test
     public void saveAddressBook_fileAtParent_preservesParentFile() throws Exception {
+        // EP: a regular file occupies the immediate parent folder of the data file.
         Path parent = testFolder.resolve("data");
         Files.writeString(parent, "Do not overwrite");
         Path filePath = parent.resolve("addressbook.json");
 
-        assertThrows(IOException.class, () ->
+        NotDirectoryException thrown = org.junit.jupiter.api.Assertions.assertThrows(NotDirectoryException.class, () ->
                 new JsonAddressBookStorage(filePath).saveAddressBook(getTypicalAddressBook()));
 
+        assertEquals(parent.toString(), thrown.getFile());
+        assertTrue(thrown.getCause() instanceof IOException);
         assertEquals("Do not overwrite", Files.readString(parent));
         assertOnlyDataFileRemains(parent);
+    }
+
+    @Test
+    public void saveAddressBook_fileAtAncestor_reportsBlockingPath() throws Exception {
+        // EP: a regular file blocks an ancestor while the immediate parent does not exist.
+        Path ancestor = testFolder.resolve("blocked data");
+        Files.writeString(ancestor, "Do not overwrite");
+        Path filePath = ancestor.resolve("nested").resolve("addressbook.json");
+
+        NotDirectoryException thrown = org.junit.jupiter.api.Assertions.assertThrows(NotDirectoryException.class, () ->
+                new JsonAddressBookStorage(filePath).saveAddressBook(getTypicalAddressBook()));
+
+        assertEquals(ancestor.toString(), thrown.getFile());
+        assertTrue(thrown.getCause() instanceof IOException);
+        assertEquals("Do not overwrite", Files.readString(ancestor));
+        assertOnlyDataFileRemains(ancestor);
     }
 
     @Test
@@ -443,6 +463,27 @@ public class JsonAddressBookStorageTest {
 
             assertArrayEquals(savedBytes, Files.readAllBytes(filePath));
             assertOnlyDataFileRemains(filePath);
+        } finally {
+            Files.setPosixFilePermissions(folder, originalPermissions);
+        }
+    }
+
+    @Test
+    public void saveAddressBook_missingParentUnderReadOnlyFolder_reportsPermissionError() throws Exception {
+        // EP: creating missing folders fails because of permissions, with no file blocking the folder path.
+        Path folder = Files.createDirectory(testFolder.resolve("data"));
+        assumeTrue(Files.getFileAttributeView(folder, PosixFileAttributeView.class) != null);
+        Path filePath = folder.resolve("new").resolve("addressbook.json");
+        Set<PosixFilePermission> originalPermissions = Files.getPosixFilePermissions(folder);
+        try {
+            Files.setPosixFilePermissions(folder, Set.of(PosixFilePermission.OWNER_READ,
+                    PosixFilePermission.OWNER_EXECUTE));
+            assumeFalse(Files.isWritable(folder), "Elevated users can write to read-only directories");
+
+            assertThrows(AccessDeniedException.class, () ->
+                    new JsonAddressBookStorage(filePath).saveAddressBook(getTypicalAddressBook()));
+
+            assertFolderEmpty(folder);
         } finally {
             Files.setPosixFilePermissions(folder, originalPermissions);
         }

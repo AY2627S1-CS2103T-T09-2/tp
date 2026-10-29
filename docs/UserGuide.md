@@ -383,6 +383,10 @@ interaction notes. You do not need to save manually. Commands that leave contact
 If saving fails, the app shows an error and restores your previous contacts and displayed list. Resolve the
 reported file or folder problem, then enter the command again. The previous saved data remains unchanged.
 
+For a permissions error, check that the reported data file and its parent folder are writable. If the error
+says a path is not a folder, move or rename the file blocking that folder path, restore the data folder if
+needed, then retry the command.
+
 ### Editing the data file
 
 Easy-Insurance data is saved automatically as a JSON file `data/addressbook.json`, inside the folder you run the app from. If you follow the Quick start, that is your home folder. Advanced users are welcome to update data directly by editing that data file.
