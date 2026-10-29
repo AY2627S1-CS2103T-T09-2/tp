@@ -2,6 +2,8 @@ package seedu.address.storage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -50,19 +52,23 @@ class JsonSerializableAddressBook {
      *     the position of the offending contact, e.g. {@code Contact 3 is invalid. ...}.
      */
     public AddressBook toModelType() throws IllegalValueException {
-        AddressBook addressBook = new AddressBook();
+        List<Person> convertedPersons = new ArrayList<>(persons.size());
+        Set<String> seenNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         for (int i = 0; i < persons.size(); i++) {
-            addressBook.addPerson(toModelPerson(persons.get(i), i + 1, addressBook));
+            convertedPersons.add(toModelPerson(persons.get(i), i + 1, seenNames));
         }
+
+        AddressBook addressBook = new AddressBook();
+        addressBook.setPersons(convertedPersons);
         return addressBook;
     }
 
     /**
-     * Converts the contact at {@code position} (counting from 1) and checks it is not already in
-     * {@code addressBook}.
+     * Converts the contact at {@code position} (counting from 1) and records its name in {@code seenNames}.
+     * Rejects a name already seen, ignoring case and extra spaces.
      */
     private static Person toModelPerson(JsonAdaptedPerson jsonAdaptedPerson, int position,
-            AddressBook addressBook) throws IllegalValueException {
+            Set<String> seenNames) throws IllegalValueException {
         if (jsonAdaptedPerson == null) {
             throw new IllegalValueException(String.format(MESSAGE_CONTACT_POSITION, position, MESSAGE_NULL_PERSON));
         }
@@ -74,7 +80,7 @@ class JsonSerializableAddressBook {
             // control characters is blank once trimmed. That is invalid data too, so the file gets backed up.
             throw new IllegalValueException(String.format(MESSAGE_CONTACT_POSITION, position, e.getMessage()), e);
         }
-        if (addressBook.hasPerson(person)) {
+        if (!seenNames.add(person.getName().fullName.replaceAll(" +", " ").trim())) {
             throw new IllegalValueException(String.format(MESSAGE_CONTACT_POSITION, position,
                     MESSAGE_DUPLICATE_PERSON));
         }

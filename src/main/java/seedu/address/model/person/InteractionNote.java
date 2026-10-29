@@ -64,10 +64,10 @@ public class InteractionNote {
      * Returns true if the given string is a valid interaction note.
      */
     public static boolean isValidNote(String test) {
-      return test != null
-              && !isVisuallyBlank(test)
-              && test.trim().length() <= MAX_LENGTH
-              && test.chars().noneMatch(Character::isISOControl);
+        return test != null
+                && !isVisuallyBlank(test)
+                && test.trim().length() <= MAX_LENGTH
+                && test.chars().noneMatch(Character::isISOControl);
     }
 
     /**

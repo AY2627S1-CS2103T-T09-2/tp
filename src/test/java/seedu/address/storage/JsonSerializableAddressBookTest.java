@@ -5,6 +5,8 @@ import static seedu.address.testutil.Assert.assertThrows;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 
@@ -13,6 +15,9 @@ import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.AddressBook;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.Name;
+import seedu.address.model.person.Person;
+import seedu.address.testutil.PersonBuilder;
 import seedu.address.testutil.TypicalPersons;
 
 public class JsonSerializableAddressBookTest {
@@ -51,6 +56,67 @@ public class JsonSerializableAddressBookTest {
         // EP: contacts are individually valid but have duplicate identities.
         JsonSerializableAddressBook dataFromFile = JsonUtil.readJsonFile(DUPLICATE_PERSON_FILE,
                 JsonSerializableAddressBook.class).get();
+        assertThrows(IllegalValueException.class, String.format(JsonSerializableAddressBook.MESSAGE_CONTACT_POSITION,
+                2, JsonSerializableAddressBook.MESSAGE_DUPLICATE_PERSON), dataFromFile::toModelType);
+    }
+
+    @Test
+    public void toModelType_largeAddressBook_preservesEveryContact() throws Exception {
+        // EP: a large file contains only valid contacts with distinct identities.
+        List<Person> people = IntStream.range(0, 5000)
+                .mapToObj(index -> new PersonBuilder().withName("Contact " + index).build())
+                .toList();
+        AddressBook source = new AddressBook();
+        source.setPersons(people);
+
+        AddressBook loaded = new JsonSerializableAddressBook(source).toModelType();
+
+        assertEquals(source, loaded);
+    }
+
+    @Test
+    public void toModelType_normalizedNameAtLimit_preservesContactAfterJsonRoundTrip() throws Exception {
+        // EP: an accepted name expands under NFC and must still load from its saved canonical form.
+        // Boundary value: the stored name has exactly the maximum permitted length.
+        Person person = new PersonBuilder().withName("\u0958".repeat(Name.MAX_INPUT_LENGTH / 2)).build();
+        assertEquals(Name.MAX_INPUT_LENGTH, person.getName().fullName.length());
+        AddressBook source = new AddressBook();
+        source.addPerson(person);
+
+        String json = JsonUtil.toJsonString(new JsonSerializableAddressBook(source));
+        JsonSerializableAddressBook savedData = JsonUtil.fromJsonString(json, JsonSerializableAddressBook.class);
+
+        assertEquals(source, savedData.toModelType());
+    }
+
+    @Test
+    public void toModelType_emptyAddressBook_success() throws Exception {
+        // EP: no contacts require conversion or duplicate checks.
+        // Boundary value: zero is the smallest supported contact count.
+        JsonSerializableAddressBook dataFromFile = new JsonSerializableAddressBook(List.of());
+
+        assertEquals(new AddressBook(), dataFromFile.toModelType());
+    }
+
+    @Test
+    public void toModelType_caseAndSpaceVariantDuplicate_messageNamesPosition() throws Exception {
+        // EP: different name spelling by case and extra spaces still identifies the same contact.
+        String json = "{\"persons\":[" + contactJson("Alice Tan", "alice@example.com") + ","
+                + contactJson("Bob Lim", "bob@example.com") + ","
+                + contactJson("ALICE  TAN", "other@example.com") + "]}";
+        JsonSerializableAddressBook dataFromFile = JsonUtil.fromJsonString(json, JsonSerializableAddressBook.class);
+
+        assertThrows(IllegalValueException.class, String.format(JsonSerializableAddressBook.MESSAGE_CONTACT_POSITION,
+                3, JsonSerializableAddressBook.MESSAGE_DUPLICATE_PERSON), dataFromFile::toModelType);
+    }
+
+    @Test
+    public void toModelType_duplicateBeforeInvalidContact_reportsFirstError() throws Exception {
+        // EP: an earlier duplicate must be reported before an invalid field in a later contact.
+        String json = "{\"persons\":[" + contactJson("Alice Tan", "alice@example.com") + ","
+                + contactJson("Alice Tan", "other@example.com") + "," + contactJson("Carl Ong", "carl@") + "]}";
+        JsonSerializableAddressBook dataFromFile = JsonUtil.fromJsonString(json, JsonSerializableAddressBook.class);
+
         assertThrows(IllegalValueException.class, String.format(JsonSerializableAddressBook.MESSAGE_CONTACT_POSITION,
                 2, JsonSerializableAddressBook.MESSAGE_DUPLICATE_PERSON), dataFromFile::toModelType);
     }

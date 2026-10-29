@@ -149,12 +149,43 @@ public class StringUtilTest {
         assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Anne-Marie Tan", "ANNE"));
         assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Anne-Marie Tan", "Anne-Marie"));
         assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Anne-Marie Tan", "anne-m"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("O'Connor", "con"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Dr. Lee", "lee"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Tan, Alice", "ali"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Raj s/o Kumar", "o"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("O'Connor", "O'Con"));
 
         // EP: a query occurs only inside a word, so substring matching would be incorrect.
         assertFalse(StringUtil.containsWordStartingWithIgnoreCase("Alice Tan", "lic"));
+        assertFalse(StringUtil.containsWordStartingWithIgnoreCase("O'Connor", "onn"));
 
         // EP: a query starts with a whole word but is longer than that word.
         assertFalse(StringUtil.containsWordStartingWithIgnoreCase("Alice Tan", "tanley"));
+    }
+
+    @Test
+    public void containsWordStartingWithIgnoreCase_punctuatedNamePart_matchesPrefix() {
+        // EP: a part begins after any supported separator and retains punctuation inside the query.
+        for (char separator : " -'.,/".toCharArray()) {
+            String name = "Smith" + separator + "O'Connor";
+            assertTrue(StringUtil.containsWordStartingWithIgnoreCase(name, "o'connor"), name);
+            assertTrue(StringUtil.containsWordStartingWithIgnoreCase(name, "O'CON"), name);
+            assertTrue(StringUtil.containsWordStartingWithIgnoreCase(name, "connor"), name);
+        }
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("D'Anne-Marie", "anne-marie"));
+        assertTrue(StringUtil.containsWordStartingWithIgnoreCase("Smith-O'Connor", "smith-o'con"));
+    }
+
+    @Test
+    public void containsWordStartingWithIgnoreCase_nonmatchingNamePart_returnsFalse() {
+        // EP: an internal substring does not start a name part.
+        assertFalse(StringUtil.containsWordStartingWithIgnoreCase("Smith-O'Connor", "onn"));
+        // EP: a longer query or different punctuation is not the same prefix.
+        assertFalse(StringUtil.containsWordStartingWithIgnoreCase("Smith-O'Connor", "o'connors"));
+        assertFalse(StringUtil.containsWordStartingWithIgnoreCase("Smith-O'Connor", "o-connor"));
+        // EP: an empty or whitespace-only sentence contains no matching part.
+        assertFalse(StringUtil.containsWordStartingWithIgnoreCase("", "alice"));
+        assertFalse(StringUtil.containsWordStartingWithIgnoreCase("   ", "alice"));
     }
 
     //---------------- Tests for getDetails --------------------------------------
