@@ -23,9 +23,7 @@ public class ContactedCommandParser implements Parser<ContactedCommand> {
         ArgumentMultimap argMultimap =
                 ArgumentTokenizer.tokenize(args, PREFIX_LAST_CONTACT);
 
-        ParserUtil.verifyNoDuplicatePrefixesFor(
-                argMultimap,
-                PREFIX_LAST_CONTACT);
+        argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_LAST_CONTACT);
 
         String indexText = argMultimap.getPreamble().trim();
 
