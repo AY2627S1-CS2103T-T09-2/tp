@@ -241,7 +241,15 @@ public class TagTest {
 
     @Test
     public void isValidTagName_overlyLongInputs_rejectedQuickly() {
-        // Case mapping a long run of Greek sigma takes minutes, so the length must be checked first.
+        // NFC sorts the combining marks on each letter, and sorting a long run of marks given in the wrong
+        // order takes over ten seconds here, so the raw length must be checked before normalizing.
+        String unsortedMarks = "a" + "\u0315".repeat(100_000) + "\u0300".repeat(100_000);
+        assertTimeoutPreemptively(FAST, () -> assertFalse(Tag.isValidTagName(unsortedMarks)));
+        assertTimeoutPreemptively(FAST, () -> assertThrows(IllegalArgumentException.class,
+                Tag.MESSAGE_CONSTRAINTS, () -> new Tag(unsortedMarks)));
+
+        // Lowercasing a long run of capital sigma takes over a minute, so the constructor must reject
+        // the name before it works out the case-insensitive comparison key.
         String sigmas = "\u03A3".repeat(100_000);
         assertTimeoutPreemptively(FAST, () -> assertFalse(Tag.isValidTagName(sigmas)));
         assertTimeoutPreemptively(FAST, () ->
