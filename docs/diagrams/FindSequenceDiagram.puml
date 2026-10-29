@@ -1,0 +1,83 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant ":CommandInputParser" as CommandInputParser LOGIC_COLOR
+participant ":FindCommandParser" as FindCommandParser LOGIC_COLOR
+participant "f:FindCommand" as FindCommand LOGIC_COLOR
+participant "r:CommandResult" as CommandResult LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "p:NameContainsKeywordsPredicate" as NamePredicate MODEL_COLOR
+participant "p:PhoneContainsKeywordPredicate" as PhonePredicate MODEL_COLOR
+participant "m:Model" as Model MODEL_COLOR
+end box
+
+[-> LogicManager : execute("find alice")
+activate LogicManager
+
+LogicManager -> CommandInputParser : parseCommand("find alice")
+activate CommandInputParser
+
+create FindCommandParser
+CommandInputParser -> FindCommandParser
+activate FindCommandParser
+
+FindCommandParser -> FindCommandParser : parse("alice")
+
+alt name search
+    create NamePredicate
+    FindCommandParser -> NamePredicate : NameContainsKeywordsPredicate(["alice"])
+    activate NamePredicate
+    NamePredicate --> FindCommandParser
+    deactivate NamePredicate
+else phone search
+    create PhonePredicate
+    FindCommandParser -> PhonePredicate : PhoneContainsKeywordPredicate("9123")
+    activate PhonePredicate
+    PhonePredicate --> FindCommandParser
+    deactivate PhonePredicate
+end
+
+create FindCommand
+FindCommandParser -> FindCommand : FindCommand(predicate)
+activate FindCommand
+FindCommand --> FindCommandParser
+deactivate FindCommand
+
+FindCommandParser --> CommandInputParser : f
+deactivate FindCommandParser
+FindCommandParser -[hidden]-> CommandInputParser
+destroy FindCommandParser
+
+CommandInputParser --> LogicManager : f
+deactivate CommandInputParser
+
+LogicManager -> FindCommand : execute(m)
+activate FindCommand
+
+FindCommand -> Model : updateFilteredPersonList(predicate)
+activate Model
+Model --> FindCommand
+deactivate Model
+
+FindCommand -> Model : getFilteredPersonList().size()
+activate Model
+Model --> FindCommand : number of matching contacts
+deactivate Model
+
+create CommandResult
+FindCommand -> CommandResult : getPersonListOverview(count)
+activate CommandResult
+CommandResult --> FindCommand
+deactivate CommandResult
+
+FindCommand --> LogicManager : r
+deactivate FindCommand
+
+[<--LogicManager
+deactivate LogicManager
+@enduml
