@@ -10,6 +10,9 @@ import seedu.address.logic.commands.ContactedCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.LastContact;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 public class ContactedCommandParserTest {
 
     private final ContactedCommandParser parser =
@@ -63,5 +66,37 @@ public class ContactedCommandParserTest {
     public void parse_extraArguments_throwsParseException() {
         assertThrows(ParseException.class, () ->
                 parser.parse("1 d/27-10-2026 extra"));
+    }
+
+    @Test
+    public void parse_futureDate_throwsParseException() {
+        DateTimeFormatter formatter =
+                DateTimeFormatter.ofPattern("dd-MM-uuuu");
+
+        String futureDate =
+                LocalDate.now()
+                        .plusDays(1)
+                        .format(formatter);
+
+        ParseException exception =
+                assertThrows(ParseException.class, () ->
+                        parser.parse("1 d/" + futureDate));
+
+        assertEquals(
+                LastContact.MESSAGE_FUTURE_DATE,
+                exception.getMessage());
+    }
+
+    @Test
+    public void parse_missingSpaceBeforePrefix_throwsParseException() {
+        assertThrows(ParseException.class, () ->
+                parser.parse("1d/27-10-2026"));
+    }
+
+    @Test
+    public void parse_duplicateDatePrefix_throwsParseException() {
+        assertThrows(ParseException.class, () ->
+                parser.parse(
+                        "1 d/27-10-2026 d/28-10-2026"));
     }
 }
