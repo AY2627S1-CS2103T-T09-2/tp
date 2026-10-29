@@ -45,6 +45,9 @@ public class JsonUtil {
 
     public static final String MESSAGE_DUPLICATE_KEY = "Duplicate field '%s' at line %d, column %d";
 
+    public static final String MESSAGE_UNPAIRED_SURROGATE =
+            "Text contains half of a character (\\u%04X with no matching pair) at line %d, column %d";
+
     private static final Logger logger = LogsCenter.getLogger(JsonUtil.class);
 
     private static ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules()
@@ -136,8 +139,10 @@ public class JsonUtil {
      * deeper than {@link #MAX_NESTING_DEPTH} or repeats a key within one object. Jackson's object mapping
      * recurses once per level, so this streaming pass, which uses no recursion, has to run first.
      * Repeated keys are checked here too because Jackson 2.7 does not say where the repeated key is,
-     * which makes it hard to find in a large data file. Only the first value is checked; anything after
-     * it is reported by {@link #requireNoTrailingContent(JsonParser, String)} instead.
+     * which makes it hard to find in a large data file. Strings and field names holding half of a surrogate
+     * pair, which can only come from a Unicode escape in the JSON text, are rejected too: they are not valid text,
+     * and saving them would replace them with {@code ?} for good. Only the first value is checked;
+     * anything after it is reported by {@link #requireNoTrailingContent(JsonParser, String)} instead.
      */
     private static void requireValidStructure(String json) throws IOException {
         try (JsonParser parser = objectMapper.getFactory().createParser(json)) {
@@ -163,9 +168,30 @@ public class JsonUtil {
                     throw new IOException(formatWithLocation(MESSAGE_DUPLICATE_KEY, parser,
                             parser.getCurrentName()));
                 }
+                if (token == JsonToken.FIELD_NAME || token == JsonToken.VALUE_STRING) {
+                    requireNoUnpairedSurrogate(parser);
+                }
                 if (depth == 0) {
                     return;
                 }
+            }
+        }
+    }
+
+    /**
+     * Throws an {@code IOException} if the text of the current string or field name token of
+     * {@code parser} has a high surrogate that is not followed by a low surrogate, or a low surrogate
+     * that does not follow a high surrogate.
+     */
+    private static void requireNoUnpairedSurrogate(JsonParser parser) throws IOException {
+        String text = parser.getText();
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (Character.isHighSurrogate(c) && i + 1 < text.length()
+                    && Character.isLowSurrogate(text.charAt(i + 1))) {
+                i++; // A complete pair, such as an escaped emoji.
+            } else if (Character.isSurrogate(c)) {
+                throw new IOException(formatWithLocation(MESSAGE_UNPAIRED_SURROGATE, parser, (int) c));
             }
         }
     }

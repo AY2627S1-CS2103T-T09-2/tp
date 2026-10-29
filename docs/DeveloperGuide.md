@@ -179,7 +179,8 @@ reads it once at startup by calling `Storage#readAddressBookWithBackup()`, which
    * `requireValidStructure` reads the tokens without recursion. It rejects a key that appears twice in one object,
      and objects or arrays nested more than 100 levels deep (`MAX_NESTING_DEPTH`), giving the line and column.
      Without this pass, a repeated key would be reported without its location, and deep nesting would overflow
-     the stack inside Jackson.
+     the stack inside Jackson. It also rejects text holding half of a surrogate pair, such as an escaped
+     `\ud83c` with no low half, which valid UTF-8 cannot hold and which would be saved as `?`.
    * Jackson maps the JSON value to a `JsonSerializableAddressBook`. Unknown fields are ignored.
    * `requireNoTrailingContent` rejects anything other than whitespace after the JSON value, because Jackson stops
      reading after the first value and would drop the rest without an error.
@@ -222,8 +223,8 @@ From then on, the `.bak` copy is the only copy of the old data.
 
 **Aspect: How strictly to read the file**
 
-* **Alternative 1 (current choice):** Reject invalid UTF-8, repeated keys, deep nesting, trailing content and
-  invalid field values. Accept unknown fields and missing optional fields.
+* **Alternative 1 (current choice):** Reject invalid UTF-8, unpaired surrogate escapes, repeated keys, deep
+  nesting, trailing content and invalid field values. Accept unknown fields and missing optional fields.
   * Pros: No contact data is dropped or changed without the user knowing (only unknown fields, which the app does
     not use, are discarded on the next save), and a rejected file is backed up whole. Files without the `status`
     and `followUp` fields still load.
