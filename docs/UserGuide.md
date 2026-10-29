@@ -6,7 +6,7 @@
 
 # Easy-Insurance User Guide
 
-Easy-Insurance is a **desktop app for junior insurance agents to keep track of their prospects and clients**. It records each contact's details, their status (prospect, client or inactive) and when you should next follow up with them. It is optimized for use through a Command Line Interface (CLI) while keeping a Graphical User Interface (GUI), so if you type quickly, you can manage your contacts faster than with a mouse-driven app.
+Easy-Insurance is a **desktop app for junior insurance agents to keep track of their prospects and clients**. It records each contact's details, their status (prospect, client or inactive), when you should next follow up with them, and notes from past client interactions. It is optimized for use through a Command Line Interface (CLI) while keeping a Graphical User Interface (GUI), so if you type quickly, you can manage your contacts faster than with a mouse-driven app.
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -34,6 +34,12 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
    * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a contact named `John Doe` to Easy-Insurance.
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
+  
+   * `note 2 nt/Discussed hospital coverage with client` : Adds an interaction note to the 2nd displayed contact.
+
+   * `history 2` : Shows the interaction history of the 2nd displayed contact.
+  
+   * `contacted 2 d/27-10-2026` : Updates the last contact date of the 2nd displayed contact.
 
    * `clear confirm` : Deletes all contacts after confirmation.
 
@@ -75,14 +81,37 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 * Command words are case-insensitive.
   For example, `list`, `LIST`, and `LiSt` are treated as the same command.
 
+* Field prefixes are case-sensitive. Type them in lowercase, for example `n/`, `a/` and `st/`.
+
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </box>
+
+### Recalling previous commands
+
+While the command box is focused, press the arrow keys without modifier keys:
+
+* **Up** recalls the previous submitted command. Press it again to move to older commands.
+* **Down** moves to newer commands. Moving past the newest command restores the unfinished input you had before browsing.
+* At either end, further presses stay there without wrapping around.
+
+Recalling a command only fills the command box. You can edit it, then press **Enter** to submit it.
+If you edit a recalled command and then browse away without submitting it, those edits are discarded.
+Each non-blank submission resets browsing to the newest end of the history.
+
+When you start browsing, if the newest command already matches the command box and an older entry exists,
+the first **Up** skips that newest entry.
+
+The app remembers the **100 most recent non-blank submitted commands**, including commands that produced errors.
+This history is kept only for the current session and is cleared when you restart the app.
+
+Other text-editing keys and modified arrow keys keep their normal behavior. When the contact list is focused,
+Up and Down navigate the list instead.
 
 ### Viewing help: `help`
 
 Opens the Easy-Insurance Command Guide, which shows the available commands together with their formats and examples.
 
-The help window also provides a **Copy URL** button for copying the full User Guide link.
+The help window also provides a **Copy User Guide URL** button for copying the full User Guide link.
 
 ![help message](images/helpMessage.png)
 
@@ -102,34 +131,52 @@ The contact list shows blue, green, and grey badges respectively for these statu
 
 <box type="tip" seamless>
 
-**Follow-up date:** `f/FOLLOW_UP_DATE` is optional. Use the `DD-MM-YYYY` format, e.g. `f/25-12-2026`. The date must be a real calendar date (`31-02-2026` is rejected). A date in the past is accepted, so you can record a follow-up you already did, but Easy-Insurance shows a note reminding you that it is in the past. The follow-up date appears on the contact's card.
+**Follow-up date:** `f/FOLLOW_UP_DATE` is optional. Use the `DD-MM-YYYY` format, e.g. `f/25-12-2026`. The date must be a real calendar date (`31-02-2026` is rejected). The follow-up date appears on the contact's card. A date in the past is accepted, but Easy-Insurance shows a note reminding you that it is in the past. It is still saved as a pending follow-up, so the card shows it in red with `(overdue)` and `due` lists it until you mark it done with `done`.
 </box>
 
 <box type="tip" seamless>
 
-**Tags:** A contact can have any number of tags, including zero.
+**Tags:** A contact can have any number of tags, including zero. Each tag is a single word of letters and digits,
+up to 50 characters long, such as `t/referral` or `t/lifePolicy2`. Accented and non-English letters are accepted
+(`t/café`, `t/ज़िंदगी`), but spaces, symbols and invisible characters are not, so `t/high value` and `t/high-value`
+are rejected; write `t/highValue` instead. Each letter can carry up to 5 accents or marks, which is enough for words
+in scripts such as Hindi, Burmese and Hebrew, so only piled-up stacks of marks are rejected. Accents and marks count
+toward the 50 characters. Digits must be decimal digits (0 to 9, or the same digits in another script, such as `٣`),
+so number symbols like `½`, `²` and `①` are rejected.
+Tags ignore case, so `t/VIP` and `t/vip` are the same tag and a contact keeps only one of them.
 </box>
 
 Names with extra spaces are saved with single spaces. A contact cannot be added if its name matches an existing contact's name after ignoring case and extra spaces.
-Names must start with a letter, including accented letters. They may then contain letters, digits, spaces,
-hyphens (`-`), apostrophes (`'`), periods (`.`), commas (`,`), and slashes (`/`), so names such as
+Names must start with a letter, including accented letters, and end with a letter or digit. Punctuation cannot
+appear at the end of a name. Names may then contain letters, digits, spaces, hyphens (`-`), apostrophes (`'`),
+periods (`.`), commas (`,`), and slashes (`/`), so names such as
 `Anne-Marie`, `O'Connor`, and `Raj s/o Kumar` are accepted. Phone numbers must contain at least three
 digits. They may start with `+` and include spaces or dashes between digits, for example `+65 9123-4567`.
+A phone number can be at most 30 characters long and an email at most 254 characters long.
 Phone numbers are saved exactly as entered. If a name is already in the contact list, Easy-Insurance
 shows that contact's name and phone number.
+
+<box type="warning" seamless>
+
+**Names containing A/L or A/P:** Use fully capitalized `A/L` or `A/P`, for example `Ravi A/L Kumar`
+or `Devi A/P Kumar`, to keep these words in the name.
+As a known limitation, a lowercase `a/` after a space starts an address instead, including in
+`a/l`, `a/L`, `a/p` and `a/P`. For example, `n/Ravi a/l Kumar` sets the name to `Ravi` and the address
+to `l Kumar`. Supplying another `a/ADDRESS` in the same command causes a duplicate-address-prefix error.
+</box>
 
 Examples:
 * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
 * `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT t/referral`
-* `add n/Ravi Kumar p/92345678 e/ravi@example.com a/10 Tampines Street 1 st/CLIENT f/25-12-2026`
+* `add n/Ravi A/L Kumar p/92345678 e/ravi@example.com a/10 Tampines Street 1 st/CLIENT f/25-12-2026`
+
+If the current view filters out a new contact, it is still saved. The result tells you it is hidden; enter `list` to show all contacts.
 
 ### Listing contacts: `list`
 
 Shows all contacts, or filters contacts by status, tag, or both.
 
 Format: `list [st/STATUS] [t/TAG]`
-
-Known issue: names containing `a/l` are interpreted as an address prefix by the command parser.
 
 * Plain `list` removes the current filter and shows all contacts.
 * `st/STATUS` accepts `PROSPECT`, `CLIENT`, or `INACTIVE`, ignoring case.
@@ -142,6 +189,7 @@ Known issue: names containing `a/l` are interpreted as an address prefix by the 
 * A filtered result reports the number of matching contacts.
   If no contacts match, the displayed list is empty.
 * Each new `list` command replaces the previous filter.
+* Adding or editing contacts keeps the current filter. A contact appears or disappears from the displayed list as its details change.
 
 Examples:
 
@@ -160,18 +208,25 @@ Format: `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] 
 * Edits the contact at the specified `INDEX`. The index refers to the index number shown in the displayed contact list. The index **must be a positive integer** 1, 2, 3, ...
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
+* Use fully capitalized `A/L` or `A/P` within names. Editing only the name preserves the existing address.
+  A lowercase `a/` after a space starts an address, including in `a/l`, `a/L`, `a/p` and `a/P`.
+  For example, `edit 1 n/Ravi a/L Kumar` sets the name to `Ravi` and replaces the address with `L Kumar`.
 * `st/STATUS` changes the contact's status. Status is case-insensitive.
+* A new phone number (at most 30 characters) or email (at most 254 characters) follows the same rules as in `add`.
 * `f/FOLLOW_UP_DATE` changes the follow-up date. The date must be real and in `DD-MM-YYYY` format.
 * Past follow-up dates are accepted with a warning.
 * To clear an existing follow-up, enter `f/` without a date after it.
 * When editing tags, all of the contact's existing tags are removed; adding tags is not cumulative.
 * To remove all of a contact's tags, enter `t/` without a tag after it.
+* The success message always includes tags and the follow-up date. Empty fields show `Tags: none` or `Follow-up: none`. Multiple tags are separated by spaces, for example `Tags: [a] [b]`, in the same order as on the contact card.
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st contact to be `91234567` and `johndoe@example.com` respectively.
 *  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd contact to be `Betsy Crower` and clears all existing tags.
 *  `edit 1 st/CLIENT f/25-12-2026` Changes the 1st contact's status and follow-up date.
 *  `edit 1 f/` Clears the 1st contact's follow-up date.
+*  `edit 1 n/Ravi A/L Kumar` Changes only the name; the address stays unchanged.
+*  `edit 1 n/Devi A/P Kumar a/20 Tampines Street 2` Changes both the name and the address.
 
 ### Finding contacts by name or phone: `find`
 
@@ -230,9 +285,100 @@ Examples:
 * `list` followed by `done 2` completes the second displayed contact's follow-up, if it has one.
 * `find John` followed by `done 1` completes the first matching contact's follow-up, if it has one.
 
+### Updating the last contact date: `contacted`
+
+Updates the date on which an existing contact was last contacted.
+
+Format: `contacted INDEX d/DD-MM-YYYY`
+
+* The index refers to the number shown in the displayed contact list.
+* The index must be a positive integer and refer to a displayed contact.
+* `d/DD-MM-YYYY` is required.
+* The date must be a valid calendar date in `DD-MM-YYYY` format. For example, `31-02-2026` is rejected.
+* Year `0000` and signed years are rejected.
+* The last contact date cannot be in the future. Today's date and past dates are accepted.
+* If the contact already has a last contact date, the existing date is replaced.
+* The contact's other details, follow-up and interaction notes remain unchanged.
+* The contact card displays `Last contacted: DD-MM-YYYY`. Contacts without a recorded last contact date display `Last contacted: Never`.
+
+On success, the result is:
+
+`Updated last contact date for <name> to <date>.`
+
+Examples:
+
+* `contacted 1 d/27-10-2026`
+* `find John` followed by `contacted 1 d/27-10-2026` updates the first displayed matching contact.
+
+### Adding an interaction note: `note`
+
+Adds a note about an interaction with an existing contact.
+
+Format: `note INDEX nt/NOTE`
+
+* The index refers to the number shown in the displayed contact list.
+* The index must be a positive integer and refer to a displayed contact.
+* `nt/NOTE` is required and cannot be blank.
+* The note may contain spaces.
+* New notes are appended to the contact's existing interaction history. Existing notes are not replaced.
+* Interaction notes remain attached to the contact when other contact details are edited or when a follow-up is marked as completed.
+
+On success, the result is:
+
+`Added interaction note for <name>.`
+
+Examples:
+
+* `note 1 nt/Called client to discuss renewal options`
+* `note 2 nt/Discussed hospital coverage and requested updated quotation`
+
+### Viewing interaction history: `history`
+
+Shows all interaction notes recorded for an existing contact.
+
+Format: `history INDEX`
+
+* The index refers to the number shown in the displayed contact list.
+* The index must be a positive integer and refer to a displayed contact.
+* Notes are shown newest first.
+* Each note is displayed with the date and time it was recorded.
+* `history` does not modify the contact or its notes.
+
+If notes have been recorded, the result is shown in this format:
+
+```text
+Interaction history for John Tan:
+1. [29-10-2026 07:09] Discussed renewal options
+2. [29-10-2026 07:05] Called client
+```
+
+If the contact has no interaction notes, the result is:
+
+`No interaction notes recorded for <name>.`
+
+Examples:
+
+* `history 1`
+* `find John` followed by `history 1` shows the interaction history of the first displayed matching contact.
+
+### Deleting an interaction note: `deletenote`
+
+Deletes an interaction note from an existing contact.
+
+Format: `deletenote CONTACT_INDEX NOTE_INDEX`
+
+* `CONTACT_INDEX` refers to the contact's index in the currently displayed list.
+* `NOTE_INDEX` refers to the note number shown by the `history` command.
+* Both indices must be positive integers.
+* Deleting a note does not modify the contact's other details.
+
+Example:
+
+* `deletenote 1 2` deletes note 2 from the first displayed contact.
+
 ### Viewing follow-ups that are due: `due`
 
-Shows contacts whose follow-up date is today or earlier, or within the next few days, earliest first.
+Shows contacts whose follow-up date is today or earlier, or within the next `DAYS` days if given, earliest first.
 
 Format: `due [DAYS]`
 
@@ -244,9 +390,11 @@ Format: `due [DAYS]`
 * The result reports how many follow-ups are due, for example `3 follow-ups due by 28-10-2026.`
   If none are due, the result is `No follow-ups due by 28-10-2026.` and the displayed list is empty.
 * The index numbers follow this sorted list, so `done 1` after `due` completes the earliest follow-up.
+* After `done`, the contact leaves the due list because it no longer has a follow-up. Use `list` to see it again.
 * `list` shows all contacts again in their usual order.
 
 On the contact cards, a follow-up date that has already passed is shown in red with `(overdue)` after it.
+The marker and the `due` list are worked out when they are shown. If you leave Easy-Insurance open past midnight, a follow-up that has just become overdue may not be marked, and an open `due` list keeps its old date, until you next run `list`, `find` or `due`.
 
 Examples:
 
@@ -257,7 +405,7 @@ Examples:
 
 Requests confirmation before removing all contacts from Easy-Insurance.
 
-Format: `clear`
+Format: `clear [confirm]`
 
 * `clear` does not remove any contacts immediately.
 * It shows how many contacts would be deleted and asks you to type `clear confirm`.
@@ -277,7 +425,16 @@ Format: `exit`
 
 ### Saving the data
 
-Easy-Insurance saves your data automatically after every successful command. You do not need to save manually.
+Easy-Insurance automatically saves after a command changes contact details, follow-up information or
+interaction notes. You do not need to save manually. Commands that leave contact data unchanged, such as
+`list`, `find`, `due`, `history`, `help` and `exit`, do not write to the data file.
+
+If saving fails, the app shows an error and restores your previous contacts and displayed list. Resolve the
+reported file or folder problem, then enter the command again. The previous saved data remains unchanged.
+
+For a permissions error, check that the reported data file and its parent folder are writable. If the error
+says a path is not a folder, move or rename the file blocking that folder path, restore the data folder if
+needed, then retry the command.
 
 ### Editing the data file
 
@@ -286,7 +443,8 @@ Easy-Insurance data is saved automatically as a JSON file `data/addressbook.json
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, Easy-Insurance copies it to `addressbook.json.bak` in the same `data` folder and then starts with an empty contact list. The invalid `addressbook.json` is overwritten after your next successful command, but the `.bak` copy is kept. To recover, close the app, fix the `.bak` file and rename it back to `addressbook.json`. A later backup replaces the previous `.bak` file, so we still recommend keeping your own copy before editing.<br>
+If your changes make the data file invalid (including anything other than spaces, tabs or line breaks after its final closing `}`, or saving it in an encoding other than UTF-8; UTF-8 with or without a byte order mark is fine), Easy-Insurance copies it to `addressbook.json.bak` in the same `data` folder and then starts with an empty contact list. The invalid `addressbook.json` is overwritten after your next successful command that changes contact data, but the `.bak` copy is kept. To recover, close the app, fix the `.bak` file and rename it back to `addressbook.json`. A later backup replaces the previous `.bak` file, so we still recommend keeping your own copy before editing.<br>
+If Easy-Insurance cannot make the backup, it stops starting and leaves `addressbook.json` unchanged. Check that `addressbook.json` is a readable file and not a folder, that the `data` folder is writable, that `addressbook.json.bak` is not a folder and that `addressbook.json` is not a link to `addressbook.json.bak`, then try again.<br>
 Two contacts whose names differ only in case or extra spaces also make the data file invalid and cause it to load as an empty contact list.<br>
 Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
@@ -296,7 +454,7 @@ Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways
 ## FAQ
 
 **Q**: How do I transfer my data to another computer?<br>
-**A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous Easy-Insurance home folder.
+**A**: Install the app on the other computer and make sure it is closed. In its home folder, create a folder named `data` if there is not one already. Copy `addressbook.json` from the `data` folder in your old home folder into this `data` folder, replacing any file already there. Your contacts appear the next time you launch the app.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -304,6 +462,7 @@ Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways
 
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
 2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
+3. **If you run two copies of Easy-Insurance from the same folder at once**, or edit `data/addressbook.json` while the app is open, whichever copy saves last overwrites the other's changes. The remedy is to run only one copy at a time and to close the app before editing the data file.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -313,11 +472,15 @@ Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...` <br> e.g., `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT f/25-12-2026 t/referral`
 **Clear**  | `clear` to request confirmation<br>`clear confirm` to clear all contacts
+**Contacted** | `contacted INDEX d/DD-MM-YYYY`<br> e.g., `contacted 2 d/27-10-2026`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Due**    | `due [DAYS]`<br> e.g., `due 7`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...`<br> e.g., `edit 2 n/James Lee st/CLIENT f/25-12-2026`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]` or `find p/PHONE_DIGITS`<br> e.g., `find James Jake` or `find p/9123`
 **List**   | `list [st/STATUS] [t/TAG]`<br> e.g., `list st/CLIENT t/referral`
+**History**| `history INDEX`<br> e.g., `history 2`
+**Note**   | `note INDEX nt/NOTE`<br> e.g., `note 2 nt/Discussed hospital coverage`
+**DeleteNote** | `deletenote CONTACT_INDEX NOTE_INDEX`<br> e.g., `deletenote 1 2`
 **Help**   | `help`
 **Exit**   | `exit`

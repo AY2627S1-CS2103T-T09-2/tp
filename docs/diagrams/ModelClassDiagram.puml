@@ -39,7 +39,13 @@ Class FollowUp {
   + isRealDate(String) : boolean
   + isPast() : boolean
 }
+Class LastContact {
+  - date : LocalDate
+  + isValidLastContact(String) : boolean
+  + isAfter(LocalDate) : boolean
+}
 Class Tag
+Class InteractionNote
 
 Class I #FFFFFF
 }
@@ -64,7 +70,9 @@ Person *--> Email
 Person *--> Address
 Person *--> Status
 Person *--> "0..1" FollowUp
+Person *--> "0..1" LastContact
 Person *--> "*" Tag
+Person *--> "*" InteractionNote
 
 Person -[hidden]up--> I
 UniquePersonList -[hidden]right-> I

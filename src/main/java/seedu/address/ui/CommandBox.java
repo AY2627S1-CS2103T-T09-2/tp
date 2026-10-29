@@ -3,6 +3,8 @@ package seedu.address.ui;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Region;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
@@ -17,6 +19,7 @@ public class CommandBox extends UiPart<Region> {
     private static final String FXML = "CommandBox.fxml";
 
     private final CommandExecutor commandExecutor;
+    private final CommandHistory commandHistory = new CommandHistory();
 
     @FXML
     private TextField commandTextField;
@@ -29,6 +32,34 @@ public class CommandBox extends UiPart<Region> {
         this.commandExecutor = commandExecutor;
         // calls #setStyleToDefault() whenever there is a change to the text of the command box.
         commandTextField.textProperty().addListener((unused1, unused2, unused3) -> setStyleToDefault());
+        commandTextField.addEventFilter(KeyEvent.KEY_PRESSED, this::handleHistoryKeyPressed);
+    }
+
+    /**
+     * Recalls a command without submitting it or changing normal text-editing shortcuts.
+     */
+    private void handleHistoryKeyPressed(KeyEvent event) {
+        if (!isHistoryKey(event, commandTextField.isFocused())) {
+            return;
+        }
+
+        String currentInput = commandTextField.getText();
+        String recalledInput = event.getCode() == KeyCode.UP
+                ? commandHistory.previous(currentInput) : commandHistory.next(currentInput);
+        if (!currentInput.equals(recalledInput)) {
+            commandTextField.setText(recalledInput);
+            commandTextField.positionCaret(recalledInput.length());
+        }
+        event.consume();
+    }
+
+    /**
+     * Returns whether a plain Up or Down press belongs to the focused command input.
+     */
+    static boolean isHistoryKey(KeyEvent event, boolean isInputFocused) {
+        return isInputFocused && event.getEventType() == KeyEvent.KEY_PRESSED
+                && !event.isShiftDown() && !event.isControlDown() && !event.isAltDown() && !event.isMetaDown()
+                && (event.getCode() == KeyCode.UP || event.getCode() == KeyCode.DOWN);
     }
 
     /**
@@ -41,6 +72,7 @@ public class CommandBox extends UiPart<Region> {
             return;
         }
 
+        commandHistory.add(commandText);
         try {
             commandExecutor.execute(commandText);
             commandTextField.setText("");

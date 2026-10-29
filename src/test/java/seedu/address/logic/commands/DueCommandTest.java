@@ -6,9 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Locale;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,11 +51,14 @@ public class DueCommandTest {
 
     @Test
     public void execute_nullModel_throwsNullPointerException() {
+        // EP: null model violates the command precondition.
         assertThrows(NullPointerException.class, () -> new DueCommand(0, TODAY).execute(null));
     }
 
     @Test
     public void execute_today_showsOverdueAndTodayEarliestFirst() {
+        // EP: follow-ups are before, on or after the cutoff, or absent; only the first two are included.
+        // Boundary values: a zero-day window and a follow-up exactly on today's cutoff.
         CommandResult result = new DueCommand(0, TODAY).execute(model);
 
         assertEquals("2 follow-ups due by 21-10-2026.", result.getFeedbackToUser());
@@ -62,6 +67,8 @@ public class DueCommandTest {
 
     @Test
     public void execute_sevenDays_includesLastDay() {
+        // EP: a positive window includes overdue and upcoming follow-ups through the cutoff.
+        // Boundary value: NEXT_WEEK is exactly on the inclusive seven-day cutoff.
         CommandResult result = new DueCommand(7, TODAY).execute(model);
 
         assertEquals("3 follow-ups due by 28-10-2026.", result.getFeedbackToUser());
@@ -70,6 +77,7 @@ public class DueCommandTest {
 
     @Test
     public void execute_oneMatch_usesSingular() {
+        // EP: exactly one due contact requires singular feedback.
         model.deletePerson(TODAY_FOLLOW_UP);
 
         CommandResult result = new DueCommand(0, TODAY).execute(model);
@@ -79,7 +87,23 @@ public class DueCommandTest {
     }
 
     @Test
+    public void execute_nonEnglishDefaultLocale_usesAsciiDigits() {
+        // EP: a default locale whose number format uses non-ASCII digits must not change the message.
+        Locale originalLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("ar-EG"));
+            CommandResult result = new DueCommand(0, TODAY).execute(model);
+
+            assertEquals("2 follow-ups due by 21-10-2026.", result.getFeedbackToUser());
+        } finally {
+            Locale.setDefault(originalLocale);
+        }
+    }
+
+    @Test
     public void execute_noneDue_showsEmptyList() {
+        // EP: no due contacts remain, although future and undated contacts still exist.
+        // Boundary value: zero results uses the no-follow-ups message.
         model.deletePerson(TODAY_FOLLOW_UP);
         model.deletePerson(OVERDUE);
 
@@ -90,7 +114,119 @@ public class DueCommandTest {
     }
 
     @Test
+    public void execute_sameDate_sortsAccentedNamesAlphabetically() {
+        // EP: two follow-ups on the same date are ordered by name, including names with accented letters.
+        Person zack = new PersonBuilder().withName("Zack Lim").withPhone("91110001")
+                .withEmail("zack@example.com").withFollowUp("21-10-2026").build();
+        Person emile = new PersonBuilder().withName("Émile Tan").withPhone("91110002")
+                .withEmail("emile@example.com").withFollowUp("21-10-2026").build();
+        model.deletePerson(TODAY_FOLLOW_UP);
+        model.deletePerson(OVERDUE);
+        model.addPerson(zack);
+        model.addPerson(emile);
+
+        new DueCommand(0, TODAY).execute(model);
+
+        assertEquals(List.of(emile, zack), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_equivalentUnicodeNames_keepsSameSortOrder() {
+        // EP: composed and decomposed names use the same canonical values when due dates tie.
+        Person zack = new PersonBuilder().withName("Zack Lim").withFollowUp("21-10-2026").build();
+        Person expectedEmile = new PersonBuilder().withName("\u00c9mile Tan").withFollowUp("21-10-2026").build();
+        for (String name : List.of("\u00c9mile Tan", "E\u0301mile Tan")) {
+            AddressBook addressBook = new AddressBook();
+            addressBook.addPerson(zack);
+            addressBook.addPerson(new PersonBuilder(expectedEmile).withName(name).build());
+            Model unicodeModel = new ModelManager(addressBook, new UserPrefs());
+
+            new DueCommand(0, TODAY).execute(unicodeModel);
+
+            assertEquals(List.of(expectedEmile, zack), unicodeModel.getFilteredPersonList());
+        }
+    }
+
+    @Test
+    public void execute_sameDate_spacesSeparateWords() {
+        // EP: a shorter first word sorts before a longer word it starts, even when the next word would not.
+        assertSameDayOrder(List.of("Li Mei", "Lim Bo"), "Lim Bo", "Li Mei");
+        assertSameDayOrder(List.of("Tan Wei", "Tanaka"), "Tanaka", "Tan Wei");
+    }
+
+    @Test
+    public void execute_sameDate_accentAndCaseVariantsSortWordByWord() {
+        // EP: accented and lowercase names are still ordered word by word, next to their base letters.
+        assertSameDayOrder(List.of("Émile Tan", "Lé Mei", "li mei", "Lim Bo", "Zack Lim"),
+                "Zack Lim", "Lim Bo", "li mei", "Lé Mei", "Émile Tan");
+    }
+
+    @Test
+    public void execute_sameDate_laterWordOutranksAccentAndCase() {
+        // EP: first words differ only by accent or case, so the next word decides the order.
+        assertSameDayOrder(List.of("Emile Ann", "Émile Bo", "émile Zoe"),
+                "émile Zoe", "Émile Bo", "Emile Ann");
+    }
+
+    @Test
+    public void execute_sameDate_hyphensSeparateWords() {
+        // EP: a hyphen splits a name into words just like a space does.
+        assertSameDayOrder(List.of("Mary-Ann Lee", "Mary Tan", "Maryann Lim"),
+                "Maryann Lim", "Mary Tan", "Mary-Ann Lee");
+    }
+
+    @Test
+    public void execute_sameDate_commasSeparateWords() {
+        // EP: a comma, with or without a space after it, splits a name into words.
+        assertSameDayOrder(List.of("Tan,Ann", "Tan, Ann", "Tan Wei Ming", "Tan Zed"),
+                "Tan Wei Ming", "Tan Zed", "Tan, Ann", "Tan,Ann");
+        assertSameDayOrder(List.of("Tan,Ann", "Tan, Ann", "Tan Wei Ming", "Tan Zed"),
+                "Tan,Ann", "Tan Zed", "Tan, Ann", "Tan Wei Ming");
+        assertSameDayOrder(List.of("Tan,Wei", "Tanaka"), "Tanaka", "Tan,Wei");
+    }
+
+    @Test
+    public void execute_sameDate_periodsSeparateWords() {
+        // EP: a period, with or without a space after it, splits a name into words, so initials sort as words.
+        // Names with the same words fall back to the whole-name collator, whatever order they were added in.
+        assertSameDayOrder(List.of("J.Tan", "J. Tan", "J. Zed", "J Zed"),
+                "J Zed", "J. Tan", "J. Zed", "J.Tan");
+        assertSameDayOrder(List.of("J.Tan", "J. Tan", "J. Zed", "J Zed"),
+                "J.Tan", "J. Zed", "J. Tan", "J Zed");
+        assertSameDayOrder(List.of("Tan.Wei", "Tanaka"), "Tanaka", "Tan.Wei");
+    }
+
+    @Test
+    public void execute_sameDate_equivalentNamesHaveFixedOrder() {
+        // EP: names with the same words, split differently, still get one order whatever order they were added.
+        // Fully identical names cannot both be stored, as they are duplicate contacts.
+        assertSameDayOrder(List.of("Mary Ann Tan", "Mary-Ann Tan"), "Mary Ann Tan", "Mary-Ann Tan");
+        assertSameDayOrder(List.of("Mary Ann Tan", "Mary-Ann Tan"), "Mary-Ann Tan", "Mary Ann Tan");
+    }
+
+    /**
+     * Adds contacts with the given names, all due today, and checks that {@code due} lists them in
+     * {@code expectedOrder}.
+     */
+    private static void assertSameDayOrder(List<String> expectedOrder, String... namesInInsertionOrder) {
+        AddressBook addressBook = new AddressBook();
+        for (int i = 0; i < namesInInsertionOrder.length; i++) {
+            addressBook.addPerson(new PersonBuilder().withName(namesInInsertionOrder[i])
+                    .withPhone("9111000" + i).withEmail("person" + i + "@example.com")
+                    .withFollowUp("21-10-2026").build());
+        }
+        Model sameDayModel = new ModelManager(addressBook, new UserPrefs());
+
+        new DueCommand(0, TODAY).execute(sameDayModel);
+
+        List<String> actualOrder = sameDayModel.getFilteredPersonList().stream()
+                .map(person -> person.getName().fullName).toList();
+        assertEquals(expectedOrder, actualOrder);
+    }
+
+    @Test
     public void execute_thenList_restoresOriginalOrder() {
+        // EP: list is run after due has applied a filter and sort; the stored order must be restored.
         new DueCommand(365, TODAY).execute(model);
         new ListCommand().execute(model);
 
@@ -101,11 +237,25 @@ public class DueCommandTest {
     @Test
     public void equals() {
         DueCommand dueToday = new DueCommand(0, TODAY);
+        Clock tomorrow = Clock.offset(TODAY, Duration.ofDays(1));
 
         assertTrue(dueToday.equals(dueToday));
         assertTrue(dueToday.equals(new DueCommand(0, TODAY)));
         assertFalse(dueToday.equals(new DueCommand(7, TODAY)));
+        // Same number of days, but "today" is a different day, so the cutoff differs.
+        assertFalse(dueToday.equals(new DueCommand(0, tomorrow)));
         assertFalse(dueToday.equals(null));
         assertFalse(dueToday.equals(new ListCommand()));
+    }
+
+    @Test
+    public void hashCodeMethod() {
+        assertEquals(new DueCommand(7, TODAY).hashCode(), new DueCommand(7, TODAY).hashCode());
+    }
+
+    @Test
+    public void toStringMethod() {
+        String expected = DueCommand.class.getCanonicalName() + "{days=7}";
+        assertEquals(expected, new DueCommand(7, TODAY).toString());
     }
 }
