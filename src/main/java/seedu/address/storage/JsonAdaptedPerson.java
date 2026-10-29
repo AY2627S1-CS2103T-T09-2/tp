@@ -16,6 +16,7 @@ import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.InteractionNote;
+import seedu.address.model.person.LastContact;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -44,6 +45,9 @@ class JsonAdaptedPerson {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private final String followUp;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private final String lastContact;
+
     private final List<JsonAdaptedInteractionNote> interactionNotes =
             new ArrayList<>();
 
@@ -59,6 +63,7 @@ class JsonAdaptedPerson {
             @JsonProperty("status") String status,
             @JsonProperty("tags") List<JsonAdaptedTag> tags,
             @JsonProperty("followUp") String followUp,
+            @JsonProperty("lastContact") String lastContact,
             @JsonProperty("interactionNotes")
                     List<JsonAdaptedInteractionNote> interactionNotes) {
 
@@ -73,6 +78,7 @@ class JsonAdaptedPerson {
         }
 
         this.followUp = followUp;
+        this.lastContact = lastContact;
 
         if (interactionNotes != null) {
             this.interactionNotes.addAll(interactionNotes);
@@ -94,6 +100,7 @@ class JsonAdaptedPerson {
                 null,
                 tags,
                 null,
+                null,
                 null);
     }
 
@@ -112,6 +119,7 @@ class JsonAdaptedPerson {
                 address,
                 status,
                 tags,
+                null,
                 null,
                 null);
     }
@@ -133,7 +141,30 @@ class JsonAdaptedPerson {
                 status,
                 tags,
                 followUp,
+                null,
                 null);
+    }
+
+    public JsonAdaptedPerson(
+            String name,
+            String phone,
+            String email,
+            String address,
+            String status,
+            List<JsonAdaptedTag> tags,
+            String followUp,
+            List<JsonAdaptedInteractionNote> interactionNotes) {
+
+        this(
+                name,
+                phone,
+                email,
+                address,
+                status,
+                tags,
+                followUp,
+                null,
+                interactionNotes);
     }
 
     /**
@@ -152,6 +183,10 @@ class JsonAdaptedPerson {
 
         followUp = source.getFollowUp()
                 .map(FollowUp::toString)
+                .orElse(null);
+
+        lastContact = source.getLastContact()
+                .map(LastContact::toString)
                 .orElse(null);
 
         interactionNotes.addAll(
@@ -243,16 +278,33 @@ class JsonAdaptedPerson {
 
         final Set<Tag> modelTags = new HashSet<>(personTags);
 
-        if (followUp != null
-                && !followUp.isBlank()
-                && !FollowUp.isValidFollowUp(followUp)) {
-            throw new IllegalValueException(FollowUp.MESSAGE_CONSTRAINTS);
+        if (followUp != null && !followUp.isBlank()) {
+            if (!FollowUp.hasValidFormat(followUp)) {
+                throw new IllegalValueException(FollowUp.MESSAGE_CONSTRAINTS);
+            }
+
+            if (!FollowUp.isRealDate(followUp)) {
+                throw new IllegalValueException(
+                        String.format(FollowUp.MESSAGE_NOT_A_REAL_DATE, followUp));
+            }
         }
 
         final Optional<FollowUp> modelFollowUp =
                 followUp == null || followUp.isBlank()
                         ? Optional.empty()
                         : Optional.of(new FollowUp(followUp));
+
+        if (lastContact != null
+                && !lastContact.isBlank()
+                && !LastContact.isValidLastContact(lastContact)) {
+            throw new IllegalValueException(
+                    LastContact.MESSAGE_CONSTRAINTS);
+        }
+
+        final Optional<LastContact> modelLastContact =
+                lastContact == null || lastContact.isBlank()
+                        ? Optional.empty()
+                        : Optional.of(new LastContact(lastContact));
 
         final List<InteractionNote> modelInteractionNotes =
                 new ArrayList<>();
@@ -275,6 +327,7 @@ class JsonAdaptedPerson {
                 modelStatus,
                 modelTags,
                 modelFollowUp,
+                modelLastContact,
                 modelInteractionNotes);
     }
 }

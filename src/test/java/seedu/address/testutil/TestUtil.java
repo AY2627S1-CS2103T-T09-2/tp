@@ -1,6 +1,10 @@
 package seedu.address.testutil;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -51,5 +55,44 @@ public class TestUtil {
      */
     public static Person getPerson(Model model, Index index) {
         return model.getFilteredPersonList().get(index.getZeroBased());
+    }
+
+    /**
+     * Returns the bytes whose unsigned values are {@code values}, such as {@code bytes(0xEF, 0xBB, 0xBF)}.
+     */
+    public static byte[] bytes(int... values) {
+        byte[] result = new byte[values.length];
+        for (int i = 0; i < values.length; i++) {
+            result[i] = (byte) values[i];
+        }
+        return result;
+    }
+
+    /**
+     * Returns {@code parts} joined in order. Each part is either a {@code byte[]}, used as is, or a
+     * {@code String}, encoded as UTF-8.
+     */
+    public static byte[] concat(Object... parts) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        for (Object part : parts) {
+            byte[] partBytes = part instanceof String text ? text.getBytes(StandardCharsets.UTF_8) : (byte[]) part;
+            out.writeBytes(partBytes);
+        }
+        return out.toByteArray();
+    }
+
+    /**
+     * Returns a copy of {@code original} with {@code inserted} placed right after the first {@code marker}.
+     */
+    public static byte[] insertAfter(byte[] original, String marker, byte[] inserted) {
+        // ISO-8859-1 maps each byte to one char, so the index found is also the byte offset.
+        int markerIndex = new String(original, StandardCharsets.ISO_8859_1).indexOf(marker);
+        assertTrue(markerIndex >= 0, "Marker not found: " + marker);
+        int splitAt = markerIndex + marker.length();
+        byte[] result = new byte[original.length + inserted.length];
+        System.arraycopy(original, 0, result, 0, splitAt);
+        System.arraycopy(inserted, 0, result, splitAt, inserted.length);
+        System.arraycopy(original, splitAt, result, splitAt + inserted.length, original.length - splitAt);
+        return result;
     }
 }

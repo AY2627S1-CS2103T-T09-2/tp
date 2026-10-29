@@ -1,7 +1,7 @@
 ---
-  layout: default.md
-  title: "Developer Guide"
-  pageNav: 3
+layout: default.md
+title: "Developer Guide"
+pageNav: 3
 ---
 
 # Easy-Insurance Developer Guide
@@ -15,6 +15,9 @@
 
 * This project is based on the [AddressBook-Level3](https://github.com/se-edu/addressbook-level3) project created by the [SE-EDU initiative](https://se-education.org).
 * Libraries used: [JavaFX](https://openjfx.io/), [Jackson](https://github.com/FasterXML/jackson), [JUnit5](https://github.com/junit-team/junit5)
+* Tommy Quak used AI coding assistants (Claude and Codex) to help with parts of his coding, testing and documentation.
+  He reviewed all of the resulting code himself, and every change was also reviewed by a teammate, built and tested
+  before it was merged.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -99,12 +102,6 @@ The sequence diagram below illustrates how the `find` command filters contacts b
 
 <puml src="diagrams/FindSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `find` Command" />
 
-<box type="info" seamless>
-
-**Note:** The lifeline for `DeleteCommandParser` should end at the destroy marker (X), but due to a limitation of PlantUML, the lifeline continues till the end of diagram.
-</box>
-
-
 How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to a `CommandInputParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
@@ -126,7 +123,7 @@ How the parsing works:
 
 <puml src="diagrams/ModelClassDiagram.puml" width="450" />
 
-`Status.DEFAULT` is `PROSPECT`. Each `Person` stores one status and optionally one follow-up date.
+`Status.DEFAULT` is `PROSPECT`. Each `Person` stores one status, optionally one follow-up date, optionally one last-contact date, and zero or more interaction notes.
 `Name` accepts Unicode letters and common name punctuation after an initial letter; `Phone` accepts
 an optional leading plus sign and separators between at least three digits.
 `Phone` is capped at 30 characters and `Email` at 254. Both lengths are checked before the regex, so
@@ -168,6 +165,82 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 ## **Implementation**
 
+### Loading and backing up the data file
+
+Contact data is stored in `data/addressbook.json`, in the folder the app is launched from. `MainApp#initModelManager`
+reads it once at startup by calling `Storage#readAddressBookWithBackup()`, which `StorageManager` passes on to
+`JsonAddressBookStorage`. The activity diagram below shows the possible outcomes.
+
+<puml src="diagrams/DataFileLoadingActivityDiagram.puml" alt="Loading the data file at startup" />
+
+1. If the data file does not exist, `JsonUtil.readJsonFile` returns `Optional.empty()` and `MainApp` loads the
+   sample contacts from `SampleDataUtil`. The file is created the first time a command changes contact data.
+2. Otherwise, `FileUtil.readFromFile` reads the bytes and decodes them as UTF-8 with a decoder that reports invalid
+   bytes instead of replacing them with the character U+FFFD. Replaced characters would be written back on the next
+   save, so the original text would be lost. The error gives the byte offset of the first invalid sequence.
+3. `JsonUtil.fromJsonString` parses the text in three steps:
+   * `requireValidStructure` reads the tokens without recursion. It rejects a key that appears twice in one object,
+     and objects or arrays nested more than 100 levels deep (`MAX_NESTING_DEPTH`), giving the line and column.
+     Without this pass, a repeated key would be reported without its location, and deep nesting would overflow
+     the stack inside Jackson. It also rejects text holding half of a surrogate pair, such as an escaped
+     `\ud83c` with no low half, which valid UTF-8 cannot hold and which would be saved as `?`.
+   * Jackson maps the JSON value to a `JsonSerializableAddressBook`. Unknown fields are ignored.
+   * `requireNoTrailingContent` rejects anything other than whitespace after the JSON value, because Jackson stops
+     reading after the first value and would drop the rest without an error.
+
+   `readJsonFile` also rejects a file that contains only `null`, and an empty file, which Jackson would report
+   without a useful message.
+4. `JsonSerializableAddressBook#toModelType` converts each `JsonAdaptedPerson`, which checks every field with the
+   same model methods that the commands use, such as `Name#isValidName`. Null entries and duplicate contacts are
+   rejected. A missing or blank `status` becomes `PROSPECT` and a missing `followUp` means no follow-up, so files
+   without the `status` and `followUp` fields still load. Values that later versions made stricter, such as v1.4
+   phones with repeated separators, are rejected like any other invalid value.
+5. A failure in any of steps 2 to 4 causes a `DataLoadingException`. `readAddressBookWithBackup` copies the data
+   file to `addressbook.json.bak` in the same folder, replacing any older backup, and rethrows the exception.
+   `MainApp` logs a warning and starts with an empty `AddressBook`. It also keeps a notice from
+   `StartupNotice#forUnloadableDataFile`, which `UiManager` shows in the result box once the window opens. The
+   notice names the data file, the `.bak` copy and the reason. `JsonSerializableAddressBook` starts the reason with
+   the position of the invalid contact, e.g. `Contact 3 is invalid.`, so the user knows where to look. Jackson's
+   own messages name internal classes and quote the file, so `StartupNotice` replaces them with a plain reason and
+   the line number only, because Jackson's column is not always right.
+6. If the data file is not a regular file, such as a folder, or the copy cannot be made, `readAddressBookWithBackup`
+   throws a `DataBackupException` instead. `MainApp#initModelManager` rethrows it as an `IllegalStateException`, so
+   the app does not open. The message names the data file and the backup path and says that the original file was
+   not changed.
+
+Starting with an empty list does not save anything. The invalid data file stays on disk until the first command
+that changes contact data replaces it, because `LogicManager` skips saving when the data is unchanged.
+From then on, the `.bak` copy is the only copy of the old data.
+
+#### Design considerations
+
+**Aspect: What to do when the data file cannot be loaded**
+
+* **Alternative 1 (current choice):** Back up the file, then start with an empty contact list.
+  * Pros: The app opens whenever the invalid file can be backed up, and the user's data is kept in full in the
+    `.bak` file for recovery.
+  * Cons: The next change replaces the invalid file, so the user must recover from the `.bak` file. A later
+    failed load replaces that backup too.
+* **Alternative 2:** Refuse to start until the file is fixed.
+  * Pros: The invalid file can never be overwritten.
+  * Cons: The agent cannot use the app at all until they find and fix the problem in the JSON by hand. We keep
+    this behaviour only for the case where the backup cannot be made, because starting then would put the only
+    copy of the data at risk.
+
+**Aspect: How strictly to read the file**
+
+* **Alternative 1 (current choice):** Reject invalid UTF-8, unpaired surrogate escapes, repeated keys, deep
+  nesting, trailing content and invalid field values. Accept unknown fields and missing optional fields.
+  * Pros: No contact data is dropped or changed without the user knowing (only unknown fields, which the app does
+    not use, are discarded on the next save), and a rejected file is backed up whole. Files without the `status`
+    and `followUp` fields still load.
+  * Cons: One bad value makes the whole file load as an empty list, instead of skipping only the bad contact.
+* **Alternative 2:** Read leniently, for example by skipping invalid contacts, keeping the last of repeated keys
+  and replacing bad bytes.
+  * Pros: More of the data appears straight away.
+  * Cons: The skipped contacts and replaced text are lost for good on the next save, with no backup and no
+    warning, so the user may not notice until much later.
+
 ### Completing a follow-up
 
 The `done INDEX` command clears the pending follow-up of the contact at the specified index in the currently
@@ -186,7 +259,8 @@ follow-up. Individual field getters and the internal calls within `Model` and `S
    contact. It then checks that the selected contact has a pending follow-up.
 4. The command constructs a replacement `Person`, copying the other contact details and setting the
    follow-up to `Optional.empty()`. It calls `Model.setPerson` to replace the original contact in memory.
-5. The command returns a `CommandResult` containing `Marked follow-up for <name> as completed.`.
+5. The command returns a `CommandResult` with the original contact's name and scheduled date:
+   `Marked follow-up for <name> as completed (scheduled for <DD-MM-YYYY>).`
    `LogicManager` obtains the updated address book from `Model` and passes it to `Storage.saveAddressBook`.
    After the save succeeds, `LogicManager` returns the result to its caller.
 
@@ -203,8 +277,16 @@ through the `Storage` interface; the model does not call storage directly.
 These validation failures leave the contact unchanged. Execution stops before `Model.setPerson` and
 `Storage.saveAddressBook` are called.
 
+Before executing a command, `LogicManager` snapshots the current `AddressBook`. Copying a concrete
+`AddressBook` takes linear time: it copies the already-validated list and shares its immutable `Person`
+values, without repeating pairwise duplicate checks. The snapshot has its own list, so later additions,
+edits and deletions do not change it. Other read-only implementations and subclasses still undergo
+duplicate validation when copied.
+
 If saving fails with an `IOException` (including `AccessDeniedException`), `LogicManager` restores the
 pre-command address book, filter and sort order, then throws a `CommandException` with a save-error message.
+Permission errors name the configured data file rather than an internal temporary file. If a file blocks a
+required parent folder, the error names both the data file and the blocking path.
 The restored contact still has its pending follow-up, and the displayed indexes return to their previous order.
 No success result is returned. This rollback applies to commands that change contact data, including
 interaction notes. `LogicManager` compares the address book before and after execution and skips saving
@@ -235,11 +317,6 @@ of the current implementation; their preservation tests must be added when those
 The sequence diagram below shows how `due 7` is executed.
 
 <puml src="diagrams/DueSequenceDiagram.puml" alt="Interactions inside the Logic and Model components for the `due 7` command" />
-
-<box type="info" seamless>
-
-**Note:** The lifeline for `DueCommandParser` should end at the destroy marker (X) but due to a limitation of PlantUML, the lifeline continues till the end of diagram.
-</box>
 
 **Design considerations:**
 
@@ -358,7 +435,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. Agent enters `find KEYWORD [MORE_KEYWORDS]` or `find p/PHONE_DIGITS`.
+1. Agent enters `find KEYWORD [MORE_KEYWORDS]...` or `find p/PHONE_DIGITS`.
 2. System ignores leading and trailing spaces and checks that the search value is present.
    A phone search must contain digits only.
 3. For a name search, the system matches the start of any word in a contact's name against any supplied keyword,
@@ -379,6 +456,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   * Use case ends without changing the contact list.
 * 2c. A phone search contains non-digit characters.
   * 2c1. System explains that the phone search must contain digits only.
+  * Use case ends without changing the contact list.
+* 2d. The search contains a prefix other than `p/`, such as `n/`, `st/` or `t/`.
+  * 2d1. System names the prefix, explains that `find` only searches names or phone numbers, and points to `list st/STATUS` or `list t/TAG` for filtering.
   * Use case ends without changing the contact list.
 * 3a. No contact matches the name keywords or phone digits.
   * 3a1. System shows an empty result list and reports `0 contacts listed.`
@@ -406,6 +486,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 3b. The follow-up date is in the past.
   * 3b1. System saves the date and warns the agent that it is in the past.
   * Use case resumes at step 4.
+* 3c. The new name matches another contact's name, ignoring case and extra spaces.
+  * 3c1. System shows `This contact already exists: NAME (PHONE).` with that contact's name and phone number, and does not change the contact.
+  * Use case ends.
 * 4a. The selected contact is not in the displayed list.
   * 4a1. System explains that the contact reference is invalid.
   * Use case ends without changing any contacts.
@@ -429,6 +512,34 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 3b. The selected contact is not in the displayed list.
   * 3b1. System explains that the contact reference is invalid.
   * Use case ends without changing any contacts.
+
+**Use case: Review due follow-ups**
+
+**MSS**
+
+1. Agent requests to see the follow-ups due within a given number of days from today.
+2. System works out the cutoff date, which is today plus that number of days.
+3. System shows only the contacts whose follow-up date is on or before the cutoff date, including overdue ones,
+   earliest date first. Contacts with the same date are sorted by name.
+4. System reports how many follow-ups are due and the cutoff date.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. Agent does not give a number of days.
+  * 1a1. System uses 0 days, so the cutoff date is today.
+  * Use case resumes at step 3.
+* 1b. The number of days is not a whole number from 0 to 365.
+  * 1b1. System shows `Number of days must be a whole number from 0 to 365, e.g. due 7.`
+  * Use case ends without changing the displayed list.
+* 3a. No contact has a follow-up on or before the cutoff date.
+  * 3a1. System shows an empty list and reports that no follow-ups are due by the cutoff date.
+  * Use case ends.
+* 4a. Agent completes one of the listed follow-ups, referring to it by its position in the sorted list.
+  * 4a1. System clears that follow-up as in the use case *Complete a follow-up*, and removes the contact from
+    the list because it no longer has a follow-up.
+  * Use case ends.
 
 **Use case: Delete a contact**
 
@@ -469,9 +580,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Prospect**: A contact the agent may sell a policy to but who is not yet a client.
 * **Client**: A contact who has bought a policy from the agent.
 * **Inactive**: A contact the agent is no longer actively pursuing but keeps in the app.
-* **Follow-up**: The date on which the agent intends to next contact a prospect or client. It may be in the past, for example when recording a follow-up that already happened.
+* **Follow-up**: The date on which the agent intends to next contact a prospect or client. A past date is accepted with a warning and is treated as an overdue follow-up until it is marked done.
 * **Pending follow-up**: A follow-up date that is still recorded on a contact. Marking it done removes the date.
-* **Duplicate contact**: A contact whose name matches an existing contact's name after ignoring letter case and extra spaces. Easy-Insurance refuses to add a duplicate.
+* **Duplicate contact**: A contact whose name matches an existing contact's name after ignoring letter case and extra spaces. Easy-Insurance refuses to add a duplicate or to rename a contact to another contact's name.
 * **Index**: The number shown next to a contact in the currently displayed list. Commands such as `edit`, `delete` and `done` refer to contacts by index.
 * **Name keyword**: Non-empty text used by `find` to match the start of any word in a contact's name, ignoring letter case.
 * **Phone search digits**: A non-empty sequence of digits used by `find p/PHONE_DIGITS` to match consecutive digits in a phone number, ignoring stored formatting.
@@ -533,7 +644,7 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `list t/REFERRAL`<br>
       Expected: Only Filter Client Referral and Filter Prospect Referral are shown.
-      The result is `Listed 2 contacts with tag referral.`
+      The result is `Listed 2 contacts with tag REFERRAL.`
 
    1. Test case: `list t/ref`<br>
       Expected: No contacts are shown.
@@ -546,7 +657,8 @@ testers are expected to do more *exploratory* testing.
       The result is `Listed 1 contact with status CLIENT and tag referral.`
 
    1. Test case: `list t/REFERRAL st/CLIENT`<br>
-      Expected: The same contact and result message are shown.
+      Expected: The same contact is shown.
+      The result is `Listed 1 contact with status CLIENT and tag REFERRAL.`
 
 1. Resetting the filter
 
@@ -611,18 +723,22 @@ testers are expected to do more *exploratory* testing.
 
 1. Adding a contact with a future follow-up date
 
+   1. Prerequisites: Run `list` so that all contacts are shown. A filter left over from an earlier test, such as `find`, would hide the new contact.
+
    1. Test case: `add n/Sarah Lim p/92345678 e/sarah@example.com a/10 Tampines Street 1 f/25-12-2099`<br>
       Expected: The contact is added and the card shows `Follow-up: 25-12-2099`. No note is shown.
 
 1. Adding a contact with a past follow-up date
 
    1. Test case: `add n/Ben Ong p/93456789 e/ben@example.com a/5 Bishan Road f/01-01-2020`<br>
-      Expected: The contact is added. The result message ends with `Note: 01-01-2020 is in the past; it was saved anyway.`
+      Expected: The contact is added. The result message ends with `Note: 01-01-2020 is in the past; it was saved anyway.`<br>
+      The card shows `Follow-up: 01-01-2020 (overdue)` in red, and `due` lists the contact until its follow-up is marked done.
 
 1. Adding a contact with an impossible or badly formatted date
 
    1. Test case: `add n/Ann Lee p/94567890 e/ann@example.com a/1 Clementi Ave f/31-02-2026`<br>
       Expected: No contact is added. Error: `31-02-2026 is not a real date.`
+
    1. Test case: `add n/Ann Lee p/94567890 e/ann@example.com a/1 Clementi Ave f/2026-12-25`<br>
       Expected: No contact is added. Error: `Follow-up date must be in DD-MM-YYYY format, e.g. 25-12-2026.`
 
@@ -637,7 +753,26 @@ testers are expected to do more *exploratory* testing.
       and the updated details are shown.
 
    1. Test case: `edit 1 f/`<br>
-      Expected: The first contact's follow-up is cleared and its card shows `Follow-up: None`.
+      Expected: The first contact's follow-up is cleared. The result includes `Follow-up: none`, and its card shows `Follow-up: None`. Other contact details remain unchanged.
+
+   1. Test case: Repeat `edit 1 f/`.<br>
+      Expected: The result still includes `Follow-up: none`. The contact remains unchanged.
+
+1. Replacing and clearing tags
+
+   1. Prerequisites: Run `list` and ensure at least one contact is shown.
+
+   1. Test case: `edit 1 t/b t/a`<br>
+      Expected: The first contact's tags are replaced with `a` and `b`. The result includes `Tags: [a] [b]`, and the follow-up date is unchanged.
+
+   1. Test case: `edit 1 t/`<br>
+      Expected: The tags are cleared. The result includes `Tags: none`, and the follow-up date is unchanged. Repeating the command still shows `Tags: none`.
+
+   1. Test case: `edit 1 t/ f/`<br>
+      Expected: Both tags and the follow-up are cleared. The result ends with `Tags: none; Follow-up: none`.
+
+   1. Test case: Close and reopen the app.<br>
+      Expected: The cleared fields remain empty, and the contact's other details are unchanged.
 
 1. Editing a contact with a past follow-up date
 
@@ -661,7 +796,7 @@ testers are expected to do more *exploratory* testing.
       Run `find Followup` and check that only this contact is shown.
 
    1. Test case: `done 1`<br>
-      Expected: The result shows `Marked follow-up for Followup Test as completed.`
+      Expected: The result shows `Marked follow-up for Followup Test as completed (scheduled for 25-12-2099).`
       The card shows `Follow-up: None`. The contact's name, phone, email, address, status and tags remain unchanged.
 
    1. Test case: Run `done 1` again.<br>
@@ -685,20 +820,21 @@ testers are expected to do more *exploratory* testing.
 
 1. Listing due follow-ups in date order
 
-   1. Prerequisites: Add three contacts with follow-ups, one overdue, one today and one in 3 days. For example, if today is 21-10-2026:<br>
-      `add n/Due Past p/91110001 e/duepast@example.com a/1 Test Road f/01-10-2026`<br>
-      `add n/Due Today p/91110002 e/duetoday@example.com a/2 Test Road f/21-10-2026`<br>
-      `add n/Due Soon p/91110003 e/duesoon@example.com a/3 Test Road f/24-10-2026`
+   1. Prerequisites: Add three contacts with follow-ups: one in the past, one today and one 3 days from today.
+      Replace `TODAY` with today's date and `IN_3_DAYS` with the date 3 days from today, both in `DD-MM-YYYY` format.<br>
+      `add n/Due Past p/91110001 e/duepast@example.com a/1 Test Road f/01-01-2020`<br>
+      `add n/Due Today p/91110002 e/duetoday@example.com a/2 Test Road f/TODAY`<br>
+      `add n/Due Soon p/91110003 e/duesoon@example.com a/3 Test Road f/IN_3_DAYS`
 
    1. Test case: `due`<br>
-      Expected: `Due Past` then `Due Today` are shown, plus any other contact due by today. `Due Soon` is not shown.
-      The result shows `N follow-ups due by 21-10-2026.` The `Due Past` card shows its date in red with `(overdue)`.
+      Expected: `Due Past` and `Due Today` are shown in that order, plus any other contact due by today. `Due Soon` is not shown.
+      The result shows `N follow-ups due by TODAY.`, where `N` is the number of contacts listed. The `Due Past` card shows its date in red with `(overdue)`.
 
    1. Test case: `due 3`<br>
-      Expected: `Due Soon` is now included, after the other two.
+      Expected: `Due Soon` is now included, after `Due Past` and `Due Today`. The result shows `N follow-ups due by IN_3_DAYS.`
 
    1. Test case: `due` followed by `done 1`<br>
-      Expected: The earliest follow-up in the sorted list is completed.
+      Expected: The first contact's follow-up is completed, and that contact leaves the list because it no longer has a follow-up.
 
    1. Other incorrect commands to try: `due -1`, `due 366`, `due abc`, `due 7 days`<br>
       Expected: No change to the list. Error: `Number of days must be a whole number from 0 to 365, e.g. due 7.`
@@ -710,14 +846,16 @@ testers are expected to do more *exploratory* testing.
    1. Close the app. Delete `data/addressbook.json` from the folder you ran the app from.
 
    1. Relaunch the app.<br>
-      Expected: The app starts with the sample contacts. The data file is created again after the next command that runs without an error, such as `list`.
+      Expected: The app starts with the sample contacts. The data file is created again after the next command that changes contact data, such as `add` or `note`. Commands that only show data, such as `list`, do not create it.
 
 1. Dealing with a corrupted data file
+
+   1. Prerequisites: `data/addressbook.json` exists and holds at least one contact. The previous test leaves no data file, so run `add n/Test Person p/91234567 e/test@example.com a/1 Test Road` first.
 
    1. Close the app. Open `data/addressbook.json` and change one contact's `"status"` value to `"lead"`.
 
    1. Relaunch the app.<br>
-      Expected: The app starts with an empty contact list, because the file could not be read. A copy of the invalid file is saved as `data/addressbook.json.bak`. Restoring the original value and relaunching brings the contacts back.
+      Expected: The app starts with an empty contact list, because the file could not be read. A copy of the invalid file is saved as `data/addressbook.json.bak`. The result box says so and gives the reason, starting with the position of the changed contact. Restoring the original value and relaunching brings the contacts back.
 
    1. Repeat with one contact's `"phone"` changed to 31 or more digits.<br>
       Expected: The same as above. The app still opens.
@@ -741,7 +879,57 @@ testers are expected to do more *exploratory* testing.
 
 1. Dealing with an older data file
 
-   1. Close the app. Remove the `"status"` and `"followUp"` fields from one contact in `data/addressbook.json`.
+   1. Prerequisites: `data/addressbook.json` holds at least one valid contact. The previous test leaves invalid data and an empty list, so run `add n/Old Format p/92345678 e/old@example.com a/2 Test Road st/CLIENT f/01-01-2030` first.
+
+   1. Close the app. Remove the `"status"`, `"followUp"`, `"lastContact"` and `"interactionNotes"` fields from one contact in `data/addressbook.json`.
 
    1. Relaunch the app.<br>
-      Expected: The contact loads with status `PROSPECT` and no follow-up. Nothing else is lost.
+      Expected: The contact loads with status `PROSPECT`, no follow-up, no last-contact date and no interaction notes. Nothing else is lost.
+
+--------------------------------------------------------------------------------------------------------------------
+
+## **Appendix: Planned Enhancements**
+
+Team size: 5
+
+The items below are known flaws in the current version. Each item describes the flaw and the exact change we plan to make in a future version.
+
+1. **Stop a second window or a hand edit of the data file from being overwritten.**
+   Easy-Insurance reads `data/addressbook.json` once at startup. After that, every command that changes contact data writes the app's own copy over the file. If two windows are open on the same `data` folder, or the user edits the file while the app is running, the last save wins and the other changes are lost with no warning. For example, window 1 runs `add n/Bob Lim p/92345678 e/bob@example.com a/2 Road` and then window 2 runs `add n/Carol Ng p/93456789 e/carol@example.com a/3 Road`. Both show a success message, but after a restart Bob Lim is gone.<br>
+   We plan to make the app remember a hash of the data file's contents when it loads the file and after each of its own successful saves. Before each save, it hashes the file again. If the contents have changed, the app does not save, rolls back the change in this window as it does for other save errors, and shows: `The data file was changed outside this window, so this change was not saved. Restart Easy-Insurance to load the latest data.` In the example above, window 2's `add` then shows this message and Bob Lim is kept.
+
+1. **Reject prefixes typed in capitals instead of saving them into the previous field.**
+   Prefixes are case-sensitive, so a capitalised prefix after another field is kept as part of that field's value. For example, `add n/Ann Lee p/91234567 e/ann@example.com a/1 Road ST/CLIENT F/01-01-2030` gives `New contact added: Ann Lee (PROSPECT)`. The address is saved as `1 Road ST/CLIENT F/01-01-2030`, and the status and follow-up are not set. `edit 1 n/Bob ST/CLIENT` renames the contact to `Bob ST/CLIENT`.<br>
+   We plan to make `add` and `edit` check each value for a known prefix (`n/`, `p/`, `e/`, `a/`, `st/`, `t/` or `f/`) typed with one or more capital letters after a space. If one is found, the command changes nothing and shows: `Prefixes must be typed in lowercase. Use st/ instead of ST/.` `A/L` and `A/P` inside a name stay allowed, so `add n/Ravi A/L Kumar p/92345679 e/ravi@example.com a/10 Tampines St 1` still works.
+
+1. **Keep `a/l` and `a/p` in a name as part of the name.**
+   A lowercase `a/` always starts the address, even inside a name. For example, `edit 2 n/Ravi a/l Kumar` gives `Edited contact: Ravi; ... Address: l Kumar; ...`, so the name loses `a/l Kumar` and the address is overwritten. `add n/Ravi a/l Kumar p/92345678 e/ravi@example.com a/10 Tampines St 1` fails with `Multiple values specified for the following single-valued field(s): a/`. The UG lists this as a known issue.<br>
+   We plan to treat `a/` as part of the name when it comes after `n/` with no other prefix in between, and is followed by a single `l` or `p` (in either case) and then a space. The name is saved with `A/L` or `A/P` in capitals. `edit 2 n/Ravi a/l Kumar` then gives `Edited contact: Ravi A/L Kumar; ...` and leaves the address unchanged. An `a/` anywhere else still starts the address, so `edit 2 a/Lorong 1 Geylang` still sets the address.
+
+1. **Turn a pasted tab into a space instead of deleting it.**
+   The command box deletes any tab in pasted text, so a command copied from a spreadsheet or another document loses the gap between two parameters. For example, pasting `add n/Tab Test p/93456789 e/tab@example.com a/2 Road` with a tab instead of a space before `p/`, `e/` and `a/` leaves `add n/Tab Testp/93456789e/tab@example.coma/2 Road` in the command box, which gives `Missing required field(s): p/PHONE, e/EMAIL, a/ADDRESS`. Pasting `edit 1`, a tab and `p/93456780` leaves `edit 1p/93456780`, which gives `Index must be a positive integer.`<br>
+   We plan to make the command box replace each pasted tab with a space. Both commands above then work the same as when they are typed with spaces.
+
+1. **Point out a missing space after the index in `edit`.**
+   `edit 4st/CLIENT` gives `Index must be a positive integer.`, although 4 is a positive integer. The real problem is the missing space before `st/`.<br>
+   We plan to check whether the text in front of the first prefix is a positive integer followed directly by a known prefix. If it is, the command changes nothing and shows: `Add a space between the index and st/, e.g. edit 4 st/CLIENT.` Other invalid indexes, such as `edit abc st/CLIENT`, keep the current message.
+
+1. **Treat an index above 2147483647 as an index outside the list.**
+   An index is read as a Java `int`, so a larger number is rejected as if it were not a number at all. `delete 2147483647` gives `There is no contact 2147483647. The list shows 8 contacts.`, but `delete 99999999999` and `done 2147483648` give `Index must be a positive integer.`, which is not true.<br>
+   We plan to give a positive whole number that is too large to store the same message as any other index outside the list. `delete 99999999999` then gives `There is no contact 99999999999. The list shows 8 contacts.` This applies to every command that takes an index: `delete`, `edit`, `done`, `contacted`, `note`, `history` and both indexes of `deletenote`.
+
+1. **Accept only the digits 0 to 9 in an index.**
+   Java's number parser also accepts digits from other scripts, so they work as indexes. `delete ١` (the Arabic-Indic digit one) gives `Deleted contact: John Tan`, and `edit ２ n/Bob Wide` (a full-width 2) renames the second contact. Other numbers are stricter: `due ７` is rejected with `Number of days must be a whole number from 0 to 365, e.g. due 7.`<br>
+   We plan to accept an index only if every character in it is one of the digits 0 to 9. `delete ١` then gives `Index must be a positive integer.` and deletes nothing.
+
+1. **Show the confirmation prompt when `clear` gets anything other than `confirm`.**
+   `clear CONFIRM` and `clear confirm now` give `The clear command does not accept additional parameters.` This is not true, because `clear` accepts `confirm`. The message also does not say what to type.<br>
+   We plan to keep `confirm` exact and lowercase, so a typo never deletes data. Any other argument changes nothing and shows the same prompt as plain `clear`, for example `This deletes all 8 contacts. Type 'clear confirm' to proceed.`
+
+1. **Say that `find` cannot search by name and phone at the same time.**
+   `find alice p/9123` and `find p/9123 alice` give `Phone search keywords must contain digits only. Example: find p/9123`, although `9123` is all digits. The real problem is that a name keyword and a phone search are mixed.<br>
+   We plan to give this case its own message when there is a name keyword before `p/` or a word after the phone digits: `Search by name or by phone, not both. Use find KEYWORD [MORE_KEYWORDS]... or find p/PHONE_DIGITS.` A phone search with a non-digit value, such as `find p/9a23`, keeps the current message.
+
+1. **Make email and address optional when adding a contact.**
+   `add` requires `e/` and `a/`, so a prospect known only by name and phone cannot be added. For example, `add n/Jane Doe p/98765432` gives `Missing required field(s): e/EMAIL, a/ADDRESS`. The only workaround is a made-up email and address, which then appear on the contact card and in the data file as if they were real.<br>
+   We plan to make `e/EMAIL` and `a/ADDRESS` optional in `add`, like `st/`, `f/` and `t/`. A contact added without them has no email or address: the contact card leaves out those lines and the data file stores no value for them. `add n/Jane Doe p/98765432` then gives `New contact added: Jane Doe (PROSPECT)`. Name and phone stay required, and a given `e/` or `a/` value must still be valid, so `add n/Jane Doe p/98765432 e/jane` still shows the email format error.

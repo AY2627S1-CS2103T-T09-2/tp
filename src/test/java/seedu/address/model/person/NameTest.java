@@ -2,6 +2,7 @@ package seedu.address.model.person;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
@@ -27,10 +28,28 @@ public class NameTest {
 
     @Test
     public void constructor_decomposedUnicode_normalizesToNfc() {
-        Name decomposedName = new Name("Jose\u0301 Núñez");
+        // EP: decomposed Latin accents are stored in the same form as their composed equivalents.
+        Name decomposedName = new Name("Jose\u0301 Nu\u0301n\u0303ez");
+        Name composedName = new Name("José Núñez");
 
         assertEquals("José Núñez", decomposedName.fullName);
-        assertEquals(new Name("José Núñez"), decomposedName);
+        assertEquals(composedName, decomposedName);
+        assertEquals(composedName.hashCode(), decomposedName.hashCode());
+
+        // EP: canonical composition also applies to non-Latin scripts, such as Hangul syllables.
+        Name decomposedHangul = new Name("\u1100\u1161 Kim");
+        assertEquals("\uac00 Kim", decomposedHangul.fullName);
+        assertEquals(new Name("\uac00 Kim"), decomposedHangul);
+        assertEquals(new Name("\uac00 Kim").hashCode(), decomposedHangul.hashCode());
+    }
+
+    @Test
+    public void equals_differentCaseOrAccents_returnsFalse() {
+        Name name = new Name("José Núñez");
+
+        // EP: normalization preserves accents and the existing case-sensitive value equality.
+        assertNotEquals(name, new Name("Jose Núñez"));
+        assertNotEquals(name, new Name("JOSÉ NÚÑEZ"));
     }
 
     @Test
@@ -39,7 +58,10 @@ public class NameTest {
         assertThrows(NullPointerException.class, () -> Name.isValidName(null));
 
         // EP: blank input with no starting letter.
-        assertFalse(Name.isValidName("")); // Boundary value: zero characters.
+        // Boundary value: zero characters.
+        // @@author kaseyho-reused
+        assertFalse(Name.isValidName(""));
+        // @@author
         assertFalse(Name.isValidName(" ")); // spaces only
 
         // EP: characters outside the permitted letters, digits, spaces and name punctuation.
@@ -50,6 +72,9 @@ public class NameTest {
         assertFalse(Name.isValidName("12345")); // must start with a letter
         assertFalse(Name.isValidName("-Alice"));
         assertFalse(Name.isValidName(" Alice"));
+        assertFalse(Name.isValidName("Alice-"));
+        assertFalse(Name.isValidName("Alice'"));
+        assertFalse(Name.isValidName("Alice."));
 
         // EP: names starting with a letter and containing only letters, digits and spaces.
         assertTrue(Name.isValidName("peter jack")); // alphabets only
@@ -68,6 +93,12 @@ public class NameTest {
         // EP: Unicode letters, represented in both composed and decomposed forms.
         assertTrue(Name.isValidName("José Núñez"));
         assertTrue(Name.isValidName("Jose\u0301 Núñez"));
+        assertTrue(Name.isValidName("\uac00 Kim"));
+        assertTrue(Name.isValidName("\u1100\u1161 Kim"));
+
+        // EP: normalization must not make otherwise invalid names valid.
+        assertFalse(Name.isValidName("José^"));
+        assertFalse(Name.isValidName("Jose\u0301^"));
     }
 
     @Test

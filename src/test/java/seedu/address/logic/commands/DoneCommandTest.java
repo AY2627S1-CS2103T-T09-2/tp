@@ -11,6 +11,7 @@ import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
+import java.util.List;
 import java.util.logging.Level;
 
 import org.junit.jupiter.api.Test;
@@ -45,9 +46,10 @@ public class DoneCommandTest {
             .withFollowUp("25-12-2099")
             .build();
 
+    // @@author kaseyho
     @Test
     public void execute_validIndexUnfilteredList_completesFollowUp() {
-        // EP: displayed contact has a pending follow-up; completing it preserves its other fields.
+        // EP: a pending follow-up is cleared; feedback retains its date and other contact fields are preserved.
         // Boundary value: index 1 is the first valid index in the unfiltered list.
         Person originalPerson =
                 model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
@@ -55,7 +57,7 @@ public class DoneCommandTest {
         model.setPerson(originalPerson, personWithFollowUp);
 
         String expectedMessage =
-                "Marked follow-up for John Tan as completed.";
+                "Marked follow-up for John Tan as completed (scheduled for 25-12-2099).";
 
         Model expectedModel =
                 new ModelManager(model.getAddressBook(), new UserPrefs());
@@ -80,7 +82,7 @@ public class DoneCommandTest {
 
     @Test
     public void execute_validIndexFilteredList_completesFollowUp() {
-        // EP: displayed contact has a pending follow-up after filtering.
+        // EP: a filtered contact has a pending follow-up; feedback identifies that contact and its original date.
         // Displayed index 1 refers to the second stored contact, so stored indexes must not be used.
         Person originalPerson =
                 model.getFilteredPersonList().get(INDEX_SECOND_PERSON.getZeroBased());
@@ -89,7 +91,7 @@ public class DoneCommandTest {
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
 
         String expectedMessage =
-                "Marked follow-up for John Tan as completed.";
+                "Marked follow-up for John Tan as completed (scheduled for 25-12-2099).";
 
         Model expectedModel =
                 new ModelManager(model.getAddressBook(), new UserPrefs());
@@ -111,6 +113,24 @@ public class DoneCommandTest {
             assertNoContactDetails(logs);
         }
     }
+
+    @Test
+    public void execute_validDateBoundaries_reportsOriginalDate() {
+        // EP: valid pending dates retain their DD-MM-YYYY representation after completion.
+        // Boundary values: the minimum year, a leap day, and the maximum four-digit year.
+        for (String date : List.of("01-01-0001", "29-02-2028", "31-12-9999")) {
+            Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+            Person scheduledPerson = new PersonBuilder(completedPerson).withFollowUp(date).build();
+            model.setPerson(originalPerson, scheduledPerson);
+
+            Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+            expectedModel.setPerson(scheduledPerson, completedPerson);
+
+            String expectedMessage = "Marked follow-up for John Tan as completed (scheduled for " + date + ").";
+            assertCommandSuccess(new DoneCommand(INDEX_FIRST_PERSON), model, expectedMessage, expectedModel);
+        }
+    }
+    // @@author
 
     @Test
     public void execute_completeFollowUp_preservesInteractionNotes() {
@@ -144,7 +164,7 @@ public class DoneCommandTest {
                 personWithNotesAndFollowUp);
 
         String expectedMessage =
-                "Marked follow-up for John Tan as completed.";
+                "Marked follow-up for John Tan as completed (scheduled for 25-12-2099).";
 
         Model expectedModel =
                 new ModelManager(
@@ -162,6 +182,7 @@ public class DoneCommandTest {
                 expectedModel);
     }
 
+    // @@author kaseyho
     @Test
     public void execute_noPendingFollowUp_throwsCommandException() {
         // EP: displayed contact has no pending follow-up, so there is nothing to complete.
@@ -204,7 +225,7 @@ public class DoneCommandTest {
         assertCommandSuccess(
                 command,
                 model,
-                "Marked follow-up for John Tan as completed.",
+                "Marked follow-up for John Tan as completed (scheduled for 25-12-2099).",
                 expectedModel);
 
         assertCommandFailure(
@@ -225,9 +246,13 @@ public class DoneCommandTest {
             assertCommandFailure(
                     new DoneCommand(invalidIndex),
                     model,
+                    // @@author
+                    // @@author kqjy29
                     Messages.getInvalidPersonDisplayedIndexMessage(
                             invalidIndex.getOneBased(),
                             model.getFilteredPersonList().size()));
+            // @@author
+            // @@author kaseyho
 
             logs.assertSingleLog(
                     Level.FINE,
@@ -246,9 +271,13 @@ public class DoneCommandTest {
             assertCommandFailure(
                     new DoneCommand(INDEX_SECOND_PERSON),
                     model,
+                    // @@author
+                    // @@author kqjy29
                     Messages.getInvalidPersonDisplayedIndexMessage(
                             INDEX_SECOND_PERSON.getOneBased(),
                             model.getFilteredPersonList().size()));
+            // @@author
+            // @@author kaseyho
 
             logs.assertSingleLog(
                     Level.FINE,
@@ -309,12 +338,14 @@ public class DoneCommandTest {
                         new DoneCommand(INDEX_SECOND_PERSON)));
         assertFalse(firstCommand.equals(null));
         assertFalse(firstCommand.equals(new Object()));
+        // @@author
 
         assertEquals(
                 firstCommand.hashCode(),
                 new DoneCommand(Index.fromOneBased(1)).hashCode());
     }
 
+    // @@author kaseyho
     private void assertNoContactDetails(LogCapture logs) {
         String message =
                 logs.getRecords().getFirst().getMessage();
@@ -325,5 +356,7 @@ public class DoneCommandTest {
         assertFalse(message.contains("21 Clementi Ave 3"));
         assertFalse(message.contains("referral"));
         assertFalse(message.contains("lifePolicy"));
+        assertFalse(message.contains("25-12-2099"));
     }
+    // @@author
 }

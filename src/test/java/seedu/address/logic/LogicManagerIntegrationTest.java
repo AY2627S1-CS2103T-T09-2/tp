@@ -3,6 +3,7 @@ package seedu.address.logic;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,6 +28,7 @@ import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Status;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
@@ -36,6 +38,9 @@ import seedu.address.testutil.PersonBuilder;
  * Tests command sequences through the real parser, model and JSON storage.
  */
 public class LogicManagerIntegrationTest {
+
+    private static final String NORA_EDIT_FEEDBACK = "Edited contact: Nora Tan; Phone: 81000001; "
+            + "Email: nora@example.com; Address: 1 North Road; Status: PROSPECT; ";
 
     @TempDir
     private Path temporaryFolder;
@@ -85,22 +90,26 @@ public class LogicManagerIntegrationTest {
         assertState(originalPersons, List.of(oldestOverdue, amyOverdue, zaraOverdue, nextWeek));
 
         // Boundary: the first displayed index differs from the first stored index.
+        // EP: completion removes the selected contact from the due view; feedback must retain its original date.
         CommandResult result = logic.execute("done 1");
-        assertEquals(new CommandResult(String.format(DoneCommand.MESSAGE_SUCCESS, oldestOverdue.getName())), result);
+        assertEquals(new CommandResult(String.format(DoneCommand.MESSAGE_SUCCESS, oldestOverdue.getName(),
+                oldestOverdue.getFollowUp().orElseThrow())), result);
         assertState(replace(originalPersons, oldestOverdue, complete(oldestOverdue)),
                 List.of(amyOverdue, zaraOverdue, nextWeek));
     }
 
     @Test
     public void execute_repeatedDoneInDueView_reindexesRemainingContacts() throws Exception {
-        // EP: equal dates use case-insensitive name order, rather than insertion order.
+        // EP: equal dates use case-insensitive name order; each completion reports the newly selected contact's date.
         logic.execute("due 7");
         List<Person> remainingPersons = new ArrayList<>(List.of(oldestOverdue, amyOverdue, zaraOverdue, nextWeek));
         List<Person> expectedPersons = originalPersons;
         assertState(expectedPersons, remainingPersons);
 
         for (Person person : List.copyOf(remainingPersons)) {
-            logic.execute("done 1");
+            CommandResult result = logic.execute("done 1");
+            assertEquals(new CommandResult(String.format(DoneCommand.MESSAGE_SUCCESS, person.getName(),
+                    person.getFollowUp().orElseThrow())), result);
             expectedPersons = replace(expectedPersons, person, complete(person));
             remainingPersons.remove(0);
             assertState(expectedPersons, remainingPersons);
@@ -132,6 +141,62 @@ public class LogicManagerIntegrationTest {
     }
 
     @Test
+    public void execute_clearFollowUp_reportsEmptyDateAndPreservesOtherFields() throws Exception {
+        Person clearedPerson = new PersonBuilder(noFollowUp).withInteractionNotes("Called client").build();
+        Person personWithFollowUp = new PersonBuilder(clearedPerson).withFollowUp("25-12-2099").build();
+        initialize(List.of(nextMonth, personWithFollowUp));
+        logic.execute("find Nora");
+
+        // EP: clearing a pending date, then clearing an already-empty date, in a filtered view.
+        for (int attempt = 0; attempt < 2; attempt++) {
+            CommandResult result = logic.execute("edit 1 f/");
+            assertEquals(NORA_EDIT_FEEDBACK + "Tags: [family]; Follow-up: none", result.getFeedbackToUser());
+            assertState(List.of(nextMonth, clearedPerson), List.of(clearedPerson));
+        }
+
+        reload();
+        assertState(List.of(nextMonth, clearedPerson), List.of(nextMonth, clearedPerson));
+    }
+
+    @Test
+    public void execute_replaceThenClearTags_reportsTagsAndPreservesFollowUp() throws Exception {
+        Person personWithFollowUp = new PersonBuilder(noFollowUp).withFollowUp("25-12-2099").build();
+        initialize(List.of(personWithFollowUp));
+
+        // EP: replacing tags with multiple values reports each tag separately in card order.
+        CommandResult result = logic.execute("edit 1 t/b t/a");
+        assertEquals(NORA_EDIT_FEEDBACK + "Tags: [a] [b]; Follow-up: 25-12-2099", result.getFeedbackToUser());
+        Person editedPerson = new PersonBuilder(personWithFollowUp).withTags("a", "b").build();
+        assertState(List.of(editedPerson), List.of(editedPerson));
+
+        // EP: clearing populated tags and repeating the clear both explicitly report an empty tag set.
+        Person clearedPerson = new PersonBuilder(personWithFollowUp).withTags().build();
+        for (int attempt = 0; attempt < 2; attempt++) {
+            result = logic.execute("edit 1 t/");
+            assertEquals(NORA_EDIT_FEEDBACK + "Tags: none; Follow-up: 25-12-2099", result.getFeedbackToUser());
+            assertState(List.of(clearedPerson), List.of(clearedPerson));
+        }
+
+        reload();
+        assertState(List.of(clearedPerson), List.of(clearedPerson));
+    }
+
+    @Test
+    public void execute_clearTagsAndFollowUp_reportsBothEmptyFields() throws Exception {
+        Person clearedPerson = new PersonBuilder(noFollowUp).withTags().withInteractionNotes("Called client").build();
+        Person originalPerson = new PersonBuilder(clearedPerson).withTags("family", "referral")
+                .withFollowUp("25-12-2099").build();
+        initialize(List.of(originalPerson));
+
+        // EP: both optional fields are explicitly cleared in the same parsed command.
+        CommandResult result = logic.execute("edit 1 f/ t/");
+        assertEquals(NORA_EDIT_FEEDBACK + "Tags: none; Follow-up: none", result.getFeedbackToUser());
+        assertState(List.of(clearedPerson), List.of(clearedPerson));
+        reload();
+        assertState(List.of(clearedPerson), List.of(clearedPerson));
+    }
+
+    @Test
     public void execute_deleteAfterListFilters_removesDisplayedContact() throws Exception {
         // EP: each filter type retains the other matches after deletion.
         assertFilteredDelete("list st/CLIENT", List.of(nextMonth, nextWeek, zaraOverdue));
@@ -141,7 +206,7 @@ public class LogicManagerIntegrationTest {
 
     @Test
     public void execute_doneAfterListFilters_preservesOtherFieldsAndMatches() throws Exception {
-        // EP: completing a follow-up does not remove a status/tag match from the display.
+        // EP: completion retains status/tag matches and reports the selected contact's original date.
         assertFilteredDone("list st/CLIENT", List.of(nextMonth, nextWeek, zaraOverdue));
         assertFilteredDone("list t/ReFeRrAl", List.of(nextMonth, nextWeek, amyOverdue));
         assertFilteredDone("list st/client t/referral", List.of(nextMonth, nextWeek));
@@ -250,6 +315,155 @@ public class LogicManagerIntegrationTest {
     }
 
     @Test
+    public void execute_addUppercaseNameAbbreviation_preservesNameAndAddress() throws Exception {
+        // EP: uppercase A/L and A/P are name text, with the address before or after the name.
+        for (String abbreviation : List.of("A/L", "A/P")) {
+            String nameField = " n/Ravi " + abbreviation + " Kumar";
+            for (String fields : List.of(nameField + " a/1 North Road", " a/1 North Road" + nameField)) {
+                initialize(List.of());
+                Person expectedPerson = new PersonBuilder(noFollowUp)
+                        .withName("Ravi " + abbreviation + " Kumar").build();
+
+                logic.execute("add" + fields + " p/81000001 e/nora@example.com t/family");
+
+                assertState(List.of(expectedPerson), List.of(expectedPerson));
+                reload();
+                assertState(List.of(expectedPerson), List.of(expectedPerson));
+            }
+        }
+    }
+
+    @Test
+    public void execute_editUppercaseNameAbbreviation_changesOnlySuppliedFields() throws Exception {
+        for (String abbreviation : List.of("A/L", "A/P")) {
+            initialize(List.of(nextWeek));
+            Person renamedPerson = new PersonBuilder(nextWeek).withName("Ravi " + abbreviation + " Kumar").build();
+
+            // EP: no address parameter; preserve the address and every other contact field.
+            logic.execute("edit 1 n/Ravi " + abbreviation + " Kumar");
+            assertState(List.of(renamedPerson), List.of(renamedPerson));
+            reload();
+            assertState(List.of(renamedPerson), List.of(renamedPerson));
+
+            // EP: an explicit address parameter replaces the address without splitting the name.
+            Person movedPerson = new PersonBuilder(renamedPerson).withAddress("20 Tampines Street 2").build();
+            logic.execute("edit 1 n/Ravi " + abbreviation + " Kumar a/20 Tampines Street 2");
+            assertState(List.of(movedPerson), List.of(movedPerson));
+            reload();
+            assertState(List.of(movedPerson), List.of(movedPerson));
+        }
+    }
+
+    @Test
+    public void execute_addLowercaseAddressPrefix_splitsNameAndAddress() throws Exception {
+        // EP: lowercase a/ starts an address whether the following l or p is lowercase or uppercase.
+        for (String suffix : List.of("l", "L", "p", "P")) {
+            initialize(List.of());
+            Person expectedPerson = new PersonBuilder(noFollowUp).withName("Ravi")
+                    .withAddress(suffix + " Kumar").build();
+
+            logic.execute("add n/Ravi a/" + suffix + " Kumar p/81000001 e/nora@example.com t/family");
+
+            assertState(List.of(expectedPerson), List.of(expectedPerson));
+            reload();
+            assertState(List.of(expectedPerson), List.of(expectedPerson));
+        }
+    }
+
+    @Test
+    public void execute_editLowercaseAddressPrefix_replacesNameAndAddress() throws Exception {
+        // EP: lowercase a/ supplies an address update rather than preserving the original address.
+        for (String suffix : List.of("l", "L", "p", "P")) {
+            initialize(List.of(nextWeek));
+            Person expectedPerson = new PersonBuilder(nextWeek).withName("Ravi")
+                    .withAddress(suffix + " Kumar").build();
+
+            logic.execute("edit 1 n/Ravi a/" + suffix + " Kumar");
+
+            assertState(List.of(expectedPerson), List.of(expectedPerson));
+            reload();
+            assertState(List.of(expectedPerson), List.of(expectedPerson));
+        }
+    }
+
+    @Test
+    public void execute_lowercaseNameAbbreviationAndAddress_rejectsDuplicatePrefix() throws Exception {
+        byte[] originalFile = Files.readAllBytes(dataFile);
+        // EP: a lowercase abbreviation followed by another address exceeds the one-address-prefix limit.
+        for (String suffix : List.of("l", "L", "p", "P")) {
+            for (String command : List.of(
+                    "add n/Ravi a/" + suffix + " Kumar p/92345678 e/ravi@example.com a/1 Road",
+                    "edit 1 n/Ravi a/" + suffix + " Kumar a/1 Road")) {
+                ParseException exception = assertThrows(ParseException.class, () -> logic.execute(command));
+                assertEquals(Messages.getErrorMessageForDuplicatePrefixes(PREFIX_ADDRESS), exception.getMessage());
+                assertState(originalPersons, originalPersons);
+                assertArrayEquals(originalFile, Files.readAllBytes(dataFile));
+            }
+        }
+    }
+
+    @Test
+    public void execute_unicodeNameThenReload_preservesCanonicalNameAndSearch() throws Exception {
+        // EP: composed and decomposed spellings enter through add and remain searchable after reload.
+        for (String name : List.of("Jos\u00e9 N\u00fa\u00f1ez", "Jose\u0301 Nu\u0301n\u0303ez")) {
+            initialize(List.of());
+            Person expectedPerson = new PersonBuilder(noFollowUp).withName("Jos\u00e9 N\u00fa\u00f1ez").build();
+            logic.execute("add n/  " + name + "  p/81000001 e/nora@example.com a/1 North Road t/family");
+            assertState(List.of(expectedPerson), List.of(expectedPerson));
+            reload();
+            assertState(List.of(expectedPerson), List.of(expectedPerson));
+
+            // EP: equivalent complete words, mixed-case prefixes, and multiple keywords retain OR matching.
+            for (String keywords : List.of("Jos\u00e9", "Jose\u0301", "jOsE\u0301", "NU\u0301N\u0303",
+                    "Nobody jOsE\u0301")) {
+                logic.execute("find " + keywords);
+                assertState(List.of(expectedPerson), List.of(expectedPerson));
+            }
+
+            // EP: removing an accent is not canonical equivalence and must not broaden the search.
+            logic.execute("find Jose");
+            assertState(List.of(expectedPerson), List.of());
+        }
+    }
+
+    @Test
+    public void execute_editUnicodeNameThenReload_preservesCanonicalNameAndSearch() throws Exception {
+        // EP: either encoding of a replacement name keeps other fields intact through edit and storage.
+        for (String name : List.of("\u00c9lodie N\u00fa\u00f1ez", "E\u0301lodie Nu\u0301n\u0303ez")) {
+            initialize(List.of(noFollowUp));
+            Person expectedPerson = new PersonBuilder(noFollowUp).withName("\u00c9lodie N\u00fa\u00f1ez").build();
+            logic.execute("edit 1 n/  " + name + "  ");
+            assertState(List.of(expectedPerson), List.of(expectedPerson));
+            reload();
+            assertState(List.of(expectedPerson), List.of(expectedPerson));
+
+            // Boundary: a prefix containing the first accented letter must match in either encoding.
+            for (String keyword : List.of("\u00e9L", "e\u0301L")) {
+                logic.execute("find " + keyword);
+                assertState(List.of(expectedPerson), List.of(expectedPerson));
+            }
+        }
+    }
+
+    @Test
+    public void execute_equivalentUnicodeDuplicate_preservesDataViewAndFile() throws Exception {
+        Person existingPerson = new PersonBuilder(nextMonth).withName("Jos\u00e9 N\u00fa\u00f1ez").build();
+        initialize(List.of(noFollowUp, existingPerson));
+        logic.execute("find Nora");
+
+        // EP: a hidden duplicate still matches after NFC, case and repeated-space normalization.
+        for (String name : List.of("JOS\u00c9  N\u00da\u00d1EZ", "JOSE\u0301  NU\u0301N\u0303EZ")) {
+            assertFailure("add n/" + name + " p/89999999 e/new@example.com a/7 Test Road", CommandException.class);
+            assertFailure("edit 1 n/" + name, CommandException.class);
+        }
+
+        // EP: changing only the encoding of the selected contact's own name is not a duplicate.
+        logic.execute("list");
+        logic.execute("edit 2 n/Jose\u0301 Nu\u0301n\u0303ez");
+        assertState(List.of(noFollowUp, existingPerson), List.of(noFollowUp, existingPerson));
+    }
+
+    @Test
     public void execute_deleteOnlyContact_savesAndReloadsEmptyAddressBook() throws Exception {
         // Boundary: deleting the sole contact persists an empty collection.
         initialize(List.of(nextWeek));
@@ -277,6 +491,52 @@ public class LogicManagerIntegrationTest {
             for (String command : List.of("due -1", "due 366", "due 2147483648")) {
                 assertFailure(command, ParseException.class);
             }
+        }
+    }
+
+    @Test
+    public void execute_unicodeStatus_preservesDataViewAndFile() throws Exception {
+        // EP: rejected commands retain the full list, due ordering, or a combined status/tag filter.
+        for (String viewCommand : List.of("list", "due 7", "list st/CLIENT t/referral")) {
+            logic.execute(viewCommand);
+            List<Person> displayedBefore = List.copyOf(logic.getFilteredPersonList());
+            byte[] fileBefore = Files.readAllBytes(dataFile);
+
+            // EP: dotted I, dotless i and long s resemble ASCII status letters but are unsupported.
+            for (String status : List.of("CL\u0130ENT", "cl\u0131ent", "PRO\u017FPECT")) {
+                for (String command : List.of(
+                        "add n/Status Test p/89999999 e/status@example.com a/7 Test Road st/" + status,
+                        "edit 1 n/Changed Name st/" + status,
+                        "list st/" + status)) {
+                    ParseException exception = assertThrows(ParseException.class, () -> logic.execute(command),
+                            command);
+                    assertEquals(Status.MESSAGE_CONSTRAINTS, exception.getMessage(), command);
+                    assertState(originalPersons, displayedBefore);
+                    assertArrayEquals(fileBefore, Files.readAllBytes(dataFile), command);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void execute_mixedCaseStatuses_savesAndFiltersContacts() throws Exception {
+        initialize(List.of());
+        // EP: each supported ASCII status accepts mixed case and surrounding spaces through add and list.
+        for (String status : List.of("pRoSpEcT", "cLiEnT", "iNaCtIvE")) {
+            Person expectedPerson = new PersonBuilder().withName("Status Test").withPhone("89999999")
+                    .withEmail("status@example.com").withAddress("7 Test Road").withStatus(status).build();
+            logic.execute("add n/Status Test p/89999999 e/status@example.com a/7 Test Road st/  " + status + "  ");
+            logic.execute("list st/  " + status + "  ");
+            assertState(List.of(expectedPerson), List.of(expectedPerson));
+
+            // EP: editing to another supported status removes a contact from the active status filter.
+            String editedStatus = status.equals("iNaCtIvE") ? "cLiEnT" : "iNaCtIvE";
+            Person editedPerson = new PersonBuilder(expectedPerson).withStatus(editedStatus).build();
+            logic.execute("edit 1 st/  " + editedStatus + "  ");
+            assertState(List.of(editedPerson), List.of());
+            reload();
+            assertState(List.of(editedPerson), List.of(editedPerson));
+            initialize(List.of());
         }
     }
 
@@ -392,7 +652,9 @@ public class LogicManagerIntegrationTest {
             Person selectedPerson = displayedPersons.get(index - 1);
             Person completedPerson = complete(selectedPerson);
 
-            logic.execute("done " + index);
+            CommandResult result = logic.execute("done " + index);
+            assertEquals(new CommandResult(String.format(DoneCommand.MESSAGE_SUCCESS, selectedPerson.getName(),
+                    selectedPerson.getFollowUp().orElseThrow())), result);
             assertState(replace(originalPersons, selectedPerson, completedPerson),
                     replace(displayedPersons, selectedPerson, completedPerson));
         }

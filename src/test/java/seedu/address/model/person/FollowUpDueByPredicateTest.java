@@ -1,5 +1,6 @@
 package seedu.address.model.person;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -49,5 +50,18 @@ public class FollowUpDueByPredicateTest {
         assertTrue(predicate.equals(new FollowUpDueByPredicate(LocalDate.of(2026, 10, 28))));
         assertFalse(predicate.equals(new FollowUpDueByPredicate(CUTOFF.plusDays(1))));
         assertFalse(predicate.equals(null));
+    }
+
+    @Test
+    public void hashCode_sameCutoff_sameHashCode() {
+        // EP: equal predicates built separately must hash the same, so they behave in hash-based collections.
+        assertEquals(new FollowUpDueByPredicate(CUTOFF).hashCode(),
+                new FollowUpDueByPredicate(LocalDate.of(2026, 10, 28)).hashCode());
+    }
+
+    @Test
+    public void toStringMethod() {
+        String expected = FollowUpDueByPredicate.class.getCanonicalName() + "{cutoff=2026-10-28}";
+        assertEquals(expected, new FollowUpDueByPredicate(CUTOFF).toString());
     }
 }

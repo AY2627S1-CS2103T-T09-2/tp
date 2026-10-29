@@ -61,6 +61,38 @@ public class NameContainsKeywordsPredicateTest {
     }
 
     @Test
+    public void test_canonicallyEquivalentKeywords_returnsTrue() {
+        Person person = new PersonBuilder().withName("Émile José Núñez").build();
+
+        // EP: complete words and prefixes match in composed, decomposed and mixed-case forms.
+        for (String keyword : List.of("Émile", "E\u0301mile", "éM", "e\u0301M",
+                "José", "Jose\u0301", "jOsE\u0301", "Nú", "Nu\u0301")) {
+            NameContainsKeywordsPredicate predicate = new NameContainsKeywordsPredicate(List.of(keyword));
+            assertTrue(predicate.test(person), keyword);
+        }
+
+        // EP: one canonically equivalent keyword is enough when other keywords do not match.
+        NameContainsKeywordsPredicate predicate = new NameContainsKeywordsPredicate(List.of("Nobody", "e\u0301M"));
+        assertTrue(predicate.test(person));
+
+        // EP: decomposed Hangul syllables match the same canonical non-Latin name prefix.
+        Person hangulPerson = new PersonBuilder().withName("\uac00 Kim").build();
+        predicate = new NameContainsKeywordsPredicate(List.of("\u1100\u1161"));
+        assertTrue(predicate.test(hangulPerson));
+    }
+
+    @Test
+    public void test_differentAccentOrMiddleOfWord_returnsFalse() {
+        Person person = new PersonBuilder().withName("Émile José Núñez").build();
+
+        // EP: normalization preserves accent distinctions and matches only the start of a word.
+        for (String keyword : List.of("Emile", "Jose", "Jòsé", "mile", "ose\u0301")) {
+            NameContainsKeywordsPredicate predicate = new NameContainsKeywordsPredicate(List.of(keyword));
+            assertFalse(predicate.test(person), keyword);
+        }
+    }
+
+    @Test
     public void test_nameDoesNotContainKeywords_returnsFalse() {
         // EP: no keywords. Boundary value: empty keyword list cannot produce a match.
         NameContainsKeywordsPredicate predicate = new NameContainsKeywordsPredicate(List.of());

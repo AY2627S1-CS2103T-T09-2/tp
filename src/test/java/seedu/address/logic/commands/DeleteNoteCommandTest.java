@@ -1,6 +1,7 @@
 package seedu.address.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -50,7 +51,7 @@ public class DeleteNoteCommandTest {
                 model.getFilteredPersonList().get(0);
 
         assertEquals(
-                "Deleted interaction note 1 for John Tan.",
+                "Deleted interaction note 1 for John Tan: Client requested a quotation",
                 result.getFeedbackToUser());
 
         assertEquals(person.getName(), updatedPerson.getName());
@@ -64,5 +65,65 @@ public class DeleteNoteCommandTest {
         assertEquals(
                 List.of(olderNote),
                 updatedPerson.getInteractionNotes());
+    }
+
+    @Test
+    public void execute_invalidNoteIndexWithOneNote_usesSingularNote()
+            throws CommandException {
+
+        InteractionNote note = new InteractionNote(
+                "Called client",
+                LocalDateTime.of(2026, 10, 26, 20, 30));
+
+        Person person = new PersonBuilder()
+                .withName("John Tan")
+                .withInteractionNotes(note)
+                .build();
+
+        Model model = new ModelManager();
+        model.addPerson(person);
+
+        DeleteNoteCommand command = new DeleteNoteCommand(
+                Index.fromOneBased(1),
+                Index.fromOneBased(2));
+
+        CommandException exception =
+                assertThrows(CommandException.class, () -> command.execute(model));
+
+        assertEquals(
+                "There is no interaction note 2. The history shows 1 note.",
+                exception.getMessage());
+    }
+
+    @Test
+    public void execute_invalidNoteIndexWithTwoNotes_usesPluralNotes()
+            throws CommandException {
+
+        InteractionNote firstNote = new InteractionNote(
+                "Called client",
+                LocalDateTime.of(2026, 10, 26, 20, 30));
+
+        InteractionNote secondNote = new InteractionNote(
+                "Discussed renewal",
+                LocalDateTime.of(2026, 10, 26, 21, 10));
+
+        Person person = new PersonBuilder()
+                .withName("John Tan")
+                .withInteractionNotes(firstNote, secondNote)
+                .build();
+
+        Model model = new ModelManager();
+        model.addPerson(person);
+
+        DeleteNoteCommand command = new DeleteNoteCommand(
+                Index.fromOneBased(1),
+                Index.fromOneBased(3));
+
+        CommandException exception =
+                assertThrows(CommandException.class, () -> command.execute(model));
+
+        assertEquals(
+                "There is no interaction note 3. The history shows 2 notes.",
+                exception.getMessage());
     }
 }

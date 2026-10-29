@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.CARL;
@@ -14,9 +16,11 @@ import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -113,6 +117,31 @@ public class LogicManagerSaveFailureTest {
 
         // EP: viewing interaction history leaves the current filtered list unchanged.
         assertQueryWithoutSaving("history 1", List.of(persons.get(0), persons.get(1)));
+    }
+
+    @Test
+    public void execute_readOnlyCommands_doesNotRecheckContactUniqueness() throws Exception {
+        // EP: queries and UI commands take snapshots of data whose uniqueness is already guaranteed by the model.
+        List<IdentityCountingPerson> persons = contacts().getPersonList().stream()
+                .map(IdentityCountingPerson::new).toList();
+        AddressBook original = new AddressBook();
+        original.setPersons(List.copyOf(persons));
+        ModelManager model = new ModelManager(original, new UserPrefs());
+        FailingStorage storage = new FailingStorage(temporaryFolder.resolve("snapshot.json"));
+        Logic logic = createLogic(model, storage);
+        for (IdentityCountingPerson person : persons) {
+            person.identityChecks = 0;
+        }
+
+        for (String command : List.of("list", "list st/CLIENT", "find Alice", "due", "history 1", "help", "exit")) {
+            logic.execute(command);
+
+            // Count the expensive operation instead of asserting a machine-dependent running time.
+            assertEquals(0, persons.stream().mapToInt(person -> person.identityChecks).sum(), command);
+            assertEquals(original, model.getAddressBook());
+            assertEquals(0, storage.saveAttempts);
+            assertFalse(Files.exists(storage.getAddressBookFilePath()));
+        }
     }
 
     @Test
@@ -215,6 +244,84 @@ public class LogicManagerSaveFailureTest {
     }
 
     @Test
+    public void execute_noteWithReadOnlyFolder_reportsDataFileAndAllowsRetry() throws Exception {
+        // EP: the data file is writable, but its parent cannot create the temporary file needed for saving.
+        Path folder = Files.createDirectory(temporaryFolder.resolve("data"));
+        assumeTrue(Files.getFileStore(folder).supportsFileAttributeView("posix"));
+        Path filePath = folder.resolve("addressbook.json");
+        AddressBook original = contacts();
+        ModelManager model = new ModelManager(original, new UserPrefs());
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+        storage.saveAddressBook(original);
+        byte[] originalJson = Files.readAllBytes(filePath);
+        Logic logic = createLogic(model, storage);
+        logic.execute("due");
+        List<Person> originalView = List.copyOf(logic.getFilteredPersonList());
+        Set<PosixFilePermission> originalPermissions = Files.getPosixFilePermissions(folder);
+
+        try {
+            Files.setPosixFilePermissions(folder, Set.of(PosixFilePermission.OWNER_READ,
+                    PosixFilePermission.OWNER_EXECUTE));
+            assumeFalse(Files.isWritable(folder), "Elevated users can write to read-only directories");
+
+            CommandException thrown = assertThrows(CommandException.class, () -> logic.execute("note 1 nt/z"));
+
+            assertEquals(String.format(LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, filePath), thrown.getMessage());
+            assertEquals(original, model.getAddressBook());
+            assertEquals(originalView, logic.getFilteredPersonList());
+            assertArrayEquals(originalJson, Files.readAllBytes(filePath));
+            try (var files = Files.list(folder)) {
+                assertEquals(List.of(filePath), files.toList());
+            }
+        } finally {
+            Files.setPosixFilePermissions(folder, originalPermissions);
+        }
+
+        // EP: fixing the permission problem allows the same note command to be saved exactly once.
+        logic.execute("note 1 nt/z");
+        List<InteractionNote> notes = logic.getFilteredPersonList().get(0).getInteractionNotes();
+        assertEquals(originalView.get(0).getInteractionNotes().size() + 1, notes.size());
+        assertEquals("z", notes.get(notes.size() - 1).getValue());
+        assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
+    }
+
+    @Test
+    public void execute_deleteWithBlockedFolder_reportsProblemAndAllowsRetry() throws Exception {
+        // EP: a file blocks either the immediate parent or a higher ancestor of the configured data file.
+        for (boolean isNested : List.of(false, true)) {
+            Path scenarioFolder = Files.createDirectory(temporaryFolder.resolve(isNested ? "nested" : "direct"));
+            Path folder = scenarioFolder.resolve("blocked data");
+            Files.writeString(folder, "Keep this file");
+            Path parent = isNested ? folder.resolve("nested") : folder;
+            Path filePath = parent.resolve("addressbook.json");
+            AddressBook original = contacts();
+            ModelManager model = new ModelManager(original, new UserPrefs());
+            JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+            Logic logic = createLogic(model, storage);
+            logic.execute("due");
+            List<Person> originalView = List.copyOf(logic.getFilteredPersonList());
+
+            CommandException thrown = assertThrows(CommandException.class, () -> logic.execute("delete 1"));
+
+            assertEquals("Could not save data to file " + filePath + " because " + folder + " is not a folder.",
+                    thrown.getMessage());
+            assertEquals(original, model.getAddressBook());
+            assertEquals(originalView, logic.getFilteredPersonList());
+            assertEquals("Keep this file", Files.readString(folder));
+            assertFalse(Files.exists(filePath));
+
+            // EP: moving the blocking file aside allows a retry to create the folders and persist the deletion.
+            Path movedFile = scenarioFolder.resolve("blocked-data.saved");
+            Files.move(folder, movedFile);
+            logic.execute("delete 1");
+            assertEquals(List.of(originalView.get(1)), logic.getFilteredPersonList());
+            assertEquals(original.getPersonList().size() - 1, model.getAddressBook().getPersonList().size());
+            assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
+            assertEquals("Keep this file", Files.readString(movedFile));
+        }
+    }
+
+    @Test
     public void execute_invalidCommand_doesNotSaveOrChangeData() {
         ModelManager model = new ModelManager(contacts(), new UserPrefs());
         FailingStorage storage = new FailingStorage(temporaryFolder.resolve("invalid.json"));
@@ -267,9 +374,11 @@ public class LogicManagerSaveFailureTest {
                 // Repeated failure must not lose further data or change the index used by a retry.
                 for (int attempt = 0; attempt < 2; attempt++) {
                     CommandException thrown = assertThrows(CommandException.class, () -> logic.execute(command));
-                    String errorFormat = failure instanceof AccessDeniedException
-                            ? LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT : LogicManager.FILE_OPS_ERROR_FORMAT;
-                    assertEquals(String.format(errorFormat, failure.getMessage()), thrown.getMessage());
+                    String expectedMessage = failure instanceof AccessDeniedException
+                            ? String.format(LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT,
+                                    storage.getAddressBookFilePath())
+                            : String.format(LogicManager.FILE_OPS_ERROR_FORMAT, failure.getMessage());
+                    assertEquals(expectedMessage, thrown.getMessage());
                     assertSame(failure, thrown.getCause());
                     assertNotEquals(original, storage.attemptedData, "Command must have changed data before saving");
                     assertEquals(original, model.getAddressBook(), command + " after " + viewCommand);
@@ -319,9 +428,27 @@ public class LogicManagerSaveFailureTest {
         return new AddressBookBuilder().withPerson(alice).withPerson(benson).withPerson(CARL).build();
     }
 
-    private Logic createLogic(ModelManager model, FailingStorage storage) {
+    private Logic createLogic(ModelManager model, JsonAddressBookStorage storage) {
         return new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
+    }
+
+    /**
+     * Counts identity checks while preserving the ordinary contact comparison behavior.
+     */
+    private static class IdentityCountingPerson extends Person {
+        private int identityChecks;
+
+        IdentityCountingPerson(Person person) {
+            super(person.getName(), person.getPhone(), person.getEmail(), person.getAddress(), person.getStatus(),
+                    person.getTags(), person.getFollowUp(), person.getInteractionNotes());
+        }
+
+        @Override
+        public boolean isSamePerson(Person otherPerson) {
+            identityChecks++;
+            return super.isSamePerson(otherPerson);
+        }
     }
 
     /**

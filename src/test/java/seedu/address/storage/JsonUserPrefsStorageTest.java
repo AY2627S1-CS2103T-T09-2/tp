@@ -10,6 +10,8 @@ import static seedu.address.storage.JsonUserPrefsStorage.MESSAGE_INVALID_WINDOW_
 import static seedu.address.storage.JsonUserPrefsStorage.MESSAGE_INVALID_WINDOW_SIZE;
 import static seedu.address.storage.JsonUserPrefsStorage.MESSAGE_MISSING_GUI_SETTINGS;
 import static seedu.address.testutil.Assert.assertThrows;
+import static seedu.address.testutil.TestUtil.bytes;
+import static seedu.address.testutil.TestUtil.insertAfter;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -167,6 +169,49 @@ public class JsonUserPrefsStorageTest {
         storage.saveUserPrefs(new UserPrefs());
         assertFalse(Files.readString(prefsFilePath).matches("(?s).*\"guiSettings\"\\s*:\\s*null.*"));
         assertEquals(new UserPrefs(), storage.readUserPrefs().get());
+    }
+
+    @Test
+    public void readUserPrefs_contentAfterJson_defaultsCanBeSavedAndReadBack() throws Exception {
+        // EP: extra content after the preferences is rejected, so the app falls back to defaults.
+        Path prefsFilePath = testFolder.resolve("prefs.json");
+        String validPrefs = Files.readString(TEST_DATA_FOLDER.resolve("TypicalUserPref.json"));
+        JsonUserPrefsStorage storage = new JsonUserPrefsStorage(prefsFilePath);
+
+        for (String trailing : new String[] {" junk", "}", ",{}", "{}"}) {
+            Files.writeString(prefsFilePath, validPrefs + trailing);
+            assertThrows(DataLoadingException.class, storage::readUserPrefs);
+        }
+
+        storage.saveUserPrefs(new UserPrefs());
+        assertEquals(new UserPrefs(), storage.readUserPrefs().get());
+    }
+
+    @Test
+    public void readUserPrefs_invalidUtf8_defaultsCanBeSavedAndReadBack() throws Exception {
+        // EP: a byte that is not valid UTF-8 inside a key is rejected, so the app falls back to defaults.
+        Path prefsFilePath = testFolder.resolve("prefs.json");
+        byte[] validPrefs = Files.readAllBytes(TEST_DATA_FOLDER.resolve("TypicalUserPref.json"));
+        Files.write(prefsFilePath, insertAfter(validPrefs, "window", bytes(0xFF)));
+        JsonUserPrefsStorage storage = new JsonUserPrefsStorage(prefsFilePath);
+
+        assertThrows(DataLoadingException.class, storage::readUserPrefs);
+
+        storage.saveUserPrefs(new UserPrefs());
+        assertEquals(new UserPrefs(), storage.readUserPrefs().get());
+    }
+
+    @Test
+    public void readUserPrefs_leadingByteOrderMark_successfullyRead() throws Exception {
+        // EP: a preferences file saved as "UTF-8 with BOM" keeps its values instead of falling back to defaults.
+        String validPrefs = Files.readString(TEST_DATA_FOLDER.resolve("TypicalUserPref.json"));
+        assertEquals(readUserPrefs("TypicalUserPref.json"), readUserPrefsJson("\uFEFF" + validPrefs));
+    }
+
+    @Test
+    public void readUserPrefs_whitespaceAfterJson_successfullyRead() throws Exception {
+        String validPrefs = Files.readString(TEST_DATA_FOLDER.resolve("TypicalUserPref.json"));
+        assertEquals(readUserPrefs("TypicalUserPref.json"), readUserPrefsJson(validPrefs + "\n\n \t\r\n"));
     }
 
     private Optional<UserPrefs> readUserPrefsJson(String json) throws IOException, DataLoadingException {

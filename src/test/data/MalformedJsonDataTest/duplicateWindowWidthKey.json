@@ -1,0 +1,8 @@
+{
+  "guiSettings" : {
+    "windowWidth" : 1000.0,
+    "windowWidth" : 800.0,
+    "windowHeight" : 500.0
+  },
+  "addressBookFilePath" : "addressbook.json"
+}

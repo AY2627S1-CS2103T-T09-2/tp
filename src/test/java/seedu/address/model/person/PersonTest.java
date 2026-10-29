@@ -89,6 +89,26 @@ public class PersonTest {
     }
 
     @Test
+    public void isSamePerson_canonicallyEquivalentNames_returnsTrue() {
+        // EP: equivalent Unicode spellings identify the same contact and preserve complete value equality.
+        Person composed = new PersonBuilder().withName("José Núñez").build();
+        Person decomposed = new PersonBuilder(composed).withName("Jose\u0301 Nu\u0301n\u0303ez").build();
+        assertTrue(composed.isSamePerson(decomposed));
+        assertTrue(decomposed.isSamePerson(composed));
+        assertEquals(composed, decomposed);
+        assertEquals(composed.hashCode(), decomposed.hashCode());
+
+        // EP: existing case and repeated-space rules still apply to canonical names.
+        Person caseAndSpaceVariant = new PersonBuilder(composed)
+                .withName("JOSE\u0301  NU\u0301N\u0303EZ ").build();
+        assertTrue(composed.isSamePerson(caseAndSpaceVariant));
+
+        // EP: removing an accent changes the name rather than its Unicode representation.
+        Person unaccented = new PersonBuilder(composed).withName("Jose Núñez").build();
+        assertFalse(composed.isSamePerson(unaccented));
+    }
+
+    @Test
     public void equals() {
         // same values -> returns true
         Person aliceCopy = new PersonBuilder(ALICE).build();
@@ -213,6 +233,7 @@ public class PersonTest {
                 + ", status=" + ALICE.getStatus()
                 + ", tags=" + ALICE.getTags()
                 + ", followUp=none"
+                + ", lastContact=none"
                 + ", interactionNotes=[]}";
 
         assertEquals(expected, ALICE.toString());

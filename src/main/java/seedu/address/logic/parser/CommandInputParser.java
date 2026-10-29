@@ -12,6 +12,7 @@ import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.Command;
+import seedu.address.logic.commands.ContactedCommand;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.DeleteNoteCommand;
 import seedu.address.logic.commands.DoneCommand;
@@ -76,20 +77,29 @@ public class CommandInputParser {
             case DeleteNoteCommand.COMMAND_WORD ->
                 new DeleteNoteCommandParser().parse(arguments);
 
+            // @@author kaseyho
             case DoneCommand.COMMAND_WORD ->
                 new DoneCommandParser().parse(arguments);
+            // @@author
+
+            case ContactedCommand.COMMAND_WORD ->
+                new ContactedCommandParser().parse(arguments);
 
             case DueCommand.COMMAND_WORD ->
                 new DueCommandParser().parse(arguments);
 
+            // @@author kaseyho
             case ClearCommand.COMMAND_WORD ->
                 new ClearCommandParser().parse(arguments);
+            // @@author
 
             case FindCommand.COMMAND_WORD ->
                 new FindCommandParser().parse(arguments);
 
+            // @@author kaseyho
             case ListCommand.COMMAND_WORD ->
                 new ListCommandParser().parse(arguments);
+            // @@author
 
             case NoteCommand.COMMAND_WORD ->
                 new NoteCommandParser().parse(arguments);
@@ -97,8 +107,10 @@ public class CommandInputParser {
             case HistoryCommand.COMMAND_WORD ->
                 new HistoryCommandParser().parse(arguments);
 
+            // @@author kaseyho
             case ExitCommand.COMMAND_WORD ->
                 new ExitCommandParser().parse(arguments);
+            // @@author
 
             case HelpCommand.COMMAND_WORD ->
                 new HelpCommandParser().parse(arguments);

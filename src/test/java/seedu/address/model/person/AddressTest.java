@@ -31,12 +31,18 @@ public class AddressTest {
         assertThrows(NullPointerException.class, () -> Address.isValidAddress(null));
 
         // EP: blank input without the required first non-whitespace character.
-        assertFalse(Address.isValidAddress("")); // Boundary value: zero characters.
+        // Boundary value: zero characters.
+        // @@author kaseyho-reused
+        assertFalse(Address.isValidAddress(""));
+        // @@author
         assertFalse(Address.isValidAddress(" ")); // spaces only
 
         // EP: nonempty input beginning with a non-whitespace character; punctuation is permitted.
         assertTrue(Address.isValidAddress("Blk 456, Den Road, #01-355"));
-        assertTrue(Address.isValidAddress("-")); // Boundary value: minimum length of one character.
+        // Boundary value: minimum length of one character.
+        // @@author kaseyho-reused
+        assertTrue(Address.isValidAddress("-"));
+        // @@author
         assertTrue(Address.isValidAddress("Leng Inc; 1234 Market St; San Francisco CA 2349879; USA")); // long address
     }
 

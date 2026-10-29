@@ -20,6 +20,7 @@ import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.InteractionNote;
+import seedu.address.model.person.LastContact;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -46,6 +47,16 @@ public class JsonAdaptedPersonTest {
         // EP: required fields and tags are valid, providing the baseline for single-field failures.
         JsonAdaptedPerson person = new JsonAdaptedPerson(BENSON);
         assertEquals(BENSON, person.toModelType());
+    }
+
+    @Test
+    public void toModelType_equivalentUnicodeNames_returnsCanonicalName() throws Exception {
+        // EP: composed and decomposed accents represent the same valid name in stored data.
+        for (String name : List.of("Jos\u00e9 Garc\u00eda", "Jose\u0301 Garci\u0301a")) {
+            JsonAdaptedPerson person = new JsonAdaptedPerson(
+                    name, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+            assertEquals("Jos\u00e9 Garc\u00eda", person.toModelType().getName().fullName);
+        }
     }
 
     @Test
@@ -103,6 +114,26 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
+    public void toModelType_mixedCaseAsciiStatus_returnsPerson() throws Exception {
+        // EP: an ASCII status with mixed case and surrounding whitespace remains valid in stored data.
+        JsonAdaptedPerson person = new JsonAdaptedPerson(
+                VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, " \tcLiEnT\n ", VALID_TAGS);
+
+        assertEquals(CLIENT_BENSON, person.toModelType());
+    }
+
+    @Test
+    public void toModelType_unicodeStatusLookalikes_throwsIllegalValueException() {
+        // EP: dotted and dotless Unicode I resemble CLIENT but are not ASCII status spellings.
+        for (String status : List.of("CL\u0130ENT", "cl\u0131ent")) {
+            JsonAdaptedPerson person = new JsonAdaptedPerson(
+                    VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, status, VALID_TAGS);
+
+            assertThrows(IllegalValueException.class, Status.MESSAGE_CONSTRAINTS, person::toModelType);
+        }
+    }
+
+    @Test
     public void toModelType_validFollowUp_returnsPersonWithFollowUp() throws Exception {
         // EP: an optional follow-up contains a valid calendar date.
         Person bensonWithFollowUp = new PersonBuilder(BENSON)
@@ -143,8 +174,27 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
-    public void toModelType_invalidFollowUp_throwsIllegalValueException() {
-        // EP: the follow-up has the correct shape but names an impossible calendar date.
+    public void toModelType_invalidFollowUpFormat_throwsIllegalValueException() {
+        // EP: the follow-up is not in the DD-MM-YYYY shape.
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(
+                        VALID_NAME,
+                        VALID_PHONE,
+                        VALID_EMAIL,
+                        VALID_ADDRESS,
+                        null,
+                        VALID_TAGS,
+                        "2099-12-25");
+        assertThrows(
+                IllegalValueException.class,
+                FollowUp.MESSAGE_CONSTRAINTS,
+                person::toModelType);
+    }
+
+    @Test
+    public void toModelType_impossibleFollowUpDate_throwsNotARealDate() {
+        // EP: the follow-up has the correct shape but names an impossible calendar date,
+        // so the message matches the one the add and edit commands give.
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(
                         VALID_NAME,
@@ -156,7 +206,86 @@ public class JsonAdaptedPersonTest {
                         "31-02-2099");
         assertThrows(
                 IllegalValueException.class,
-                FollowUp.MESSAGE_CONSTRAINTS,
+                String.format(FollowUp.MESSAGE_NOT_A_REAL_DATE, "31-02-2099"),
+                person::toModelType);
+    }
+
+    @Test
+    public void toModelType_validLastContact_returnsPersonWithLastContact()
+            throws Exception {
+
+        Person bensonWithLastContact = new PersonBuilder(BENSON)
+                .withLastContact("27-10-2026")
+                .build();
+
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(bensonWithLastContact);
+
+        assertEquals(
+                bensonWithLastContact,
+                person.toModelType());
+    }
+
+    @Test
+    public void jsonSerialization_lastContactRoundTrip_returnsPerson()
+            throws Exception {
+
+        Person bensonWithLastContact = new PersonBuilder(BENSON)
+                .withLastContact("27-10-2026")
+                .build();
+
+        String json = JsonUtil.toJsonString(
+                new JsonAdaptedPerson(bensonWithLastContact));
+
+        JsonAdaptedPerson restored =
+                JsonUtil.fromJsonString(
+                        json,
+                        JsonAdaptedPerson.class);
+
+        assertEquals(
+                bensonWithLastContact,
+                restored.toModelType());
+    }
+
+    @Test
+    public void toModelType_nullLastContact_returnsEmptyLastContact()
+            throws Exception {
+
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(
+                        VALID_NAME,
+                        VALID_PHONE,
+                        VALID_EMAIL,
+                        VALID_ADDRESS,
+                        null,
+                        VALID_TAGS,
+                        null,
+                        null,
+                        null);
+
+        assertTrue(
+                person.toModelType()
+                        .getLastContact()
+                        .isEmpty());
+    }
+
+    @Test
+    public void toModelType_invalidLastContact_throwsIllegalValueException() {
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(
+                        VALID_NAME,
+                        VALID_PHONE,
+                        VALID_EMAIL,
+                        VALID_ADDRESS,
+                        null,
+                        VALID_TAGS,
+                        null,
+                        "31-02-2026",
+                        null);
+
+        assertThrows(
+                IllegalValueException.class,
+                LastContact.MESSAGE_CONSTRAINTS,
                 person::toModelType);
     }
 

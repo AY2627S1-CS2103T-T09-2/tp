@@ -17,6 +17,12 @@ public class Tag {
     /** Longest tag allowed, counted in Unicode code points after NFC normalization. */
     public static final int MAX_LENGTH = 50;
 
+    /**
+     * Most combining marks, such as accents and vowel signs, that one letter may carry. Accents built into a
+     * precomposed letter count too, so "é" carries one and Vietnamese "ệ" carries two.
+     */
+    public static final int MAX_MARKS_PER_LETTER = 5;
+
     /*
      * Inputs longer than this many UTF-16 chars are rejected before NFC normalization, so very long
      * inputs cost almost nothing. NFC composes at most four code points into one, and a code point takes
@@ -25,8 +31,9 @@ public class Tag {
     private static final int MAX_INPUT_LENGTH = 20 * MAX_LENGTH;
 
     public static final String MESSAGE_CONSTRAINTS =
-            "Tags must be a single word of letters and digits, up to " + MAX_LENGTH
-                    + " characters long, with no spaces or symbols, e.g. referral or lifePolicy2.";
+            "Tags must be a single word of letters and digits, such as referral or lifePolicy2, up to "
+                    + MAX_LENGTH + " characters long, with no spaces, symbols or invisible characters, and at most "
+                    + MAX_MARKS_PER_LETTER + " accents or marks on each letter.";
 
     /*
      * A letter, minus the Hangul filler characters, which are classed as letters but draw nothing.
@@ -36,19 +43,25 @@ public class Tag {
     /*
      * A combining mark that can follow a letter, such as an accent or a vowel sign in Hindi or Tamil.
      * Enclosing marks and variation selectors are left out because they only change how the previous
-     * character is drawn, for example turning "1" into a keycap emoji. The combining grapheme joiner
-     * and the Mongolian variation selectors and vowel separator are left out because they are invisible.
+     * character is drawn, for example turning "1" into a keycap emoji. Marks that Unicode lists as
+     * default ignorable are left out because they draw nothing, so "vip" with one of them added would
+     * look the same as "vip": the combining grapheme joiner, the Khmer inherent vowels and the Mongolian
+     * variation selectors and vowel separator.
      */
-    private static final String MARK =
-            "[\\p{Mn}\\p{Mc}&&[^\\u034F\\u180B-\\u180F\\uFE00-\\uFE0F\\x{E0100}-\\x{E01EF}]]";
+    private static final String MARK = "[\\p{Mn}\\p{Mc}&&[^\\u034F\\u17B4\\u17B5\\u180B-\\u180F"
+            + "\\uFE00-\\uFE0F\\x{E0100}-\\x{E01EF}]]";
 
     /*
      * A tag is one word of letters and decimal digits, such as "referral", "café" or "2026".
-     * Each letter may carry up to two combining marks, which covers accents and vowel signs while
-     * rejecting tall stacks of marks that pile up on one letter. Digits are decimal digits from any
-     * script, so number symbols such as "½", "²" and "①" are rejected.
+     * The pattern is matched against the NFD form, where every accent is a separate mark, so each letter
+     * may carry up to MAX_MARKS_PER_LETTER marks however it was typed. Real words need up to five:
+     * Hindi "ज़िंदगी" has three on one letter (nukta, vowel sign and anusvara), and Burmese "လျှော့"
+     * has five (two medials, a two-part vowel and a tone mark). Taller stacks are rejected, since they
+     * only pile marks on top of one another. Digits are decimal digits from any script, so number symbols
+     * such as "½", "²" and "①" are rejected.
      */
-    public static final String VALIDATION_REGEX = "(?:" + LETTER + MARK + "{0,2}+|\\p{Nd})++";
+    public static final String VALIDATION_REGEX =
+            "(?:" + LETTER + MARK + "{0," + MAX_MARKS_PER_LETTER + "}+|\\p{Nd})++";
 
     private static final Pattern VALIDATION_PATTERN = Pattern.compile(VALIDATION_REGEX);
 
@@ -70,8 +83,10 @@ public class Tag {
     }
 
     /**
-     * Returns true if a given string is a valid tag name after Unicode NFC normalization.
-     * The length is checked first, so an overly long input is rejected without further work.
+     * Returns true if a given string is a valid tag name. The length is counted after Unicode NFC
+     * normalization, and marks are counted after NFD normalization, so an accent counts the same whether it
+     * was typed as part of the letter or separately. The raw length is checked first, so an overly long
+     * input is rejected without further work.
      */
     public static boolean isValidTagName(String test) {
         if (isAsciiLettersAndDigits(test)) {
@@ -85,7 +100,8 @@ public class Tag {
         if (composed.codePointCount(0, composed.length()) > MAX_LENGTH) {
             return false;
         }
-        return VALIDATION_PATTERN.matcher(composed).matches();
+        // Decomposing splits accents out of letters such as "é", so they count towards the mark limit.
+        return VALIDATION_PATTERN.matcher(Normalizer.normalize(composed, Form.NFD)).matches();
     }
 
     /**
@@ -111,14 +127,16 @@ public class Tag {
      * the Greek sigma, share one key. {@link Locale#ROOT} keeps the result the same whatever the user's
      * default locale is. Each step is followed by NFC normalization because changing case can turn an
      * NFC string into one that is not NFC.
+     *
+     * @param name A tag name that is already in NFC, as {@link #tagName} is.
      */
     private static String toComparisonKey(String name) {
         if (isAsciiLettersAndDigits(name)) {
             // For ASCII letters and digits, the steps below give the same result as uppercasing alone.
             return name.toUpperCase(Locale.ROOT);
         }
-        String composed = Normalizer.normalize(name, Form.NFC);
-        String lowerCase = Normalizer.normalize(composed.toLowerCase(Locale.ROOT), Form.NFC);
+        assert Normalizer.isNormalized(name, Form.NFC) : "Tag name should already be in NFC";
+        String lowerCase = Normalizer.normalize(name.toLowerCase(Locale.ROOT), Form.NFC);
         return Normalizer.normalize(lowerCase.toUpperCase(Locale.ROOT), Form.NFC);
     }
 

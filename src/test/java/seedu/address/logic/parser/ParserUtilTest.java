@@ -2,11 +2,17 @@ package seedu.address.logic.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_LAST_CONTACT;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_NOTE;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_INDEX;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -38,14 +44,24 @@ public class ParserUtilTest {
 
     @Test
     public void parseStatus_validInput_returnsStatus() throws Exception {
-        // EP: a supported status with different case and surrounding whitespace.
+        // EP: all supported ASCII statuses accept different case and surrounding whitespace.
+        assertEquals(Status.PROSPECT, ParserUtil.parseStatus(" pRoSpEcT "));
         assertEquals(Status.CLIENT, ParserUtil.parseStatus(" client "));
+        assertEquals(Status.INACTIVE, ParserUtil.parseStatus("\tInAcTiVe\r\n"));
     }
 
     @Test
     public void parseStatus_invalidInput_throwsParseException() {
         // EP: a nonempty status name outside the supported set.
         assertThrows(ParseException.class, Status.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseStatus("lead"));
+    }
+
+    @Test
+    public void parseStatus_unicodeLookalikes_throwsParseException() {
+        // EP: dotted I, dotless i and long s resemble ASCII letters but are not valid status spellings.
+        for (String input : List.of("CL\u0130ENT", "cl\u0131ent", "PRO\u017fPECT")) {
+            assertThrows(ParseException.class, Status.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseStatus(input));
+        }
     }
 
     @Test
@@ -252,5 +268,38 @@ public class ParserUtilTest {
         Set<Tag> expectedTagSet = Set.of(new Tag(VALID_TAG_1), new Tag(VALID_TAG_2));
 
         assertEquals(expectedTagSet, actualTagSet);
+    }
+
+    @Test
+    public void findUnsupportedPrefix_noOtherAppPrefix_returnsEmpty() {
+        // EP: only supported prefixes are used.
+        assertEquals(Optional.empty(),
+                ParserUtil.findUnsupportedPrefix(" n/Bob p/91234567", PREFIX_NAME, PREFIX_PHONE));
+
+        // EP: slashes that are not app prefixes, inside a word, or in the name forms a/l, a/p and d/o.
+        assertEquals(Optional.empty(), ParserUtil.findUnsupportedPrefix(
+                " n/Ravi s/o Kumar x/abc data/nt/x", PREFIX_NAME));
+        assertEquals(Optional.empty(), ParserUtil.findUnsupportedPrefix(
+                " n/Siti d/o Ahmad Devi a/p Raju Ravi A/L Kumar Lim D/O", PREFIX_NAME));
+        assertEquals(Optional.empty(), ParserUtil.findUnsupportedPrefix(" n/Siti d/o-Kumar a/l.", PREFIX_NAME));
+
+        // EP: prefixes are lowercase, so a capitalised one is not a prefix.
+        assertEquals(Optional.empty(), ParserUtil.findUnsupportedPrefix(" n/Bob NT/x", PREFIX_NAME));
+    }
+
+    @Test
+    public void findUnsupportedPrefix_otherAppPrefix_returnsFirstOne() {
+        // EP: an app prefix the command does not take, after a space, after a tab, or at the start.
+        assertEquals(Optional.of(PREFIX_NOTE), ParserUtil.findUnsupportedPrefix(
+                " n/Bob nt/Met at roadshow d/27-10-2026", PREFIX_NAME));
+        assertEquals(Optional.of(PREFIX_LAST_CONTACT), ParserUtil.findUnsupportedPrefix(
+                " n/Bob\td/27-10-2026", PREFIX_NAME));
+        assertEquals(Optional.of(PREFIX_ADDRESS), ParserUtil.findUnsupportedPrefix("a/1 Road", PREFIX_NAME));
+
+        // EP: d/ followed by more than the name form d/o is still a prefix.
+        assertEquals(Optional.of(PREFIX_LAST_CONTACT), ParserUtil.findUnsupportedPrefix(
+                " n/Bob d/old", PREFIX_NAME));
+        assertEquals(Optional.of(PREFIX_LAST_CONTACT), ParserUtil.findUnsupportedPrefix(
+                " n/Bob d/o1", PREFIX_NAME));
     }
 }

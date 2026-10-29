@@ -6,14 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import org.junit.jupiter.api.Test;
 
 public class FollowUpTest {
 
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    private static final ZoneId ZONE = ZoneId.of("Asia/Singapore");
 
     @Test
     public void constructor_null_throwsNullPointerException() {
@@ -41,7 +44,10 @@ public class FollowUpTest {
         assertThrows(NullPointerException.class, () -> FollowUp.isValidFollowUp(null));
 
         // EP: blank input rather than date text.
-        assertFalse(FollowUp.isValidFollowUp("")); // Boundary value: zero characters.
+        // Boundary value: zero characters.
+        // @@author tommyquak
+        assertFalse(FollowUp.isValidFollowUp(""));
+        // @@author
         assertFalse(FollowUp.isValidFollowUp(" ")); // spaces only
 
         // EP: nonnumeric input.
@@ -63,22 +69,40 @@ public class FollowUpTest {
 
         // EP: days beyond the selected month's length.
         assertFalse(FollowUp.isValidFollowUp("31-02-2026")); // February has no 31st
-        assertFalse(FollowUp.isValidFollowUp("29-02-2026")); // Boundary value: day after non-leap February ends.
+        // Boundary value: day after non-leap February ends.
+        // @@author tommyquak
+        assertFalse(FollowUp.isValidFollowUp("29-02-2026"));
+        // @@author
 
         // EP: day numbers below the calendar range.
-        assertFalse(FollowUp.isValidFollowUp("00-09-2026")); // Boundary value: one below the minimum day.
+        // Boundary value: one below the minimum day.
+        // @@author tommyquak
+        assertFalse(FollowUp.isValidFollowUp("00-09-2026"));
+        // @@author
 
         // EP: month numbers above the calendar range.
-        assertFalse(FollowUp.isValidFollowUp("20-13-2026")); // Boundary value: one above the maximum month.
+        // Boundary value: one above the maximum month.
+        // @@author tommyquak
+        assertFalse(FollowUp.isValidFollowUp("20-13-2026"));
+        // @@author
 
         // EP: year below the supported range. Boundary value: year zero.
         assertFalse(FollowUp.isValidFollowUp("01-01-0000"));
 
         // EP: real calendar dates in DD-MM-YYYY form, including month/year ends and leap days.
         assertTrue(FollowUp.isValidFollowUp("20-09-2026"));
-        assertTrue(FollowUp.isValidFollowUp("01-01-2027")); // Boundary values: minimum day and month.
-        assertTrue(FollowUp.isValidFollowUp("29-02-2028")); // Boundary value: final day of a leap-year February.
-        assertTrue(FollowUp.isValidFollowUp("31-12-2026")); // Boundary value: final day of the year.
+        // Boundary values: minimum day and month.
+        // @@author tommyquak
+        assertTrue(FollowUp.isValidFollowUp("01-01-2027"));
+        // @@author
+        // Boundary value: final day of a leap-year February.
+        // @@author tommyquak
+        assertTrue(FollowUp.isValidFollowUp("29-02-2028"));
+        // @@author
+        // Boundary value: final day of the year.
+        // @@author tommyquak
+        assertTrue(FollowUp.isValidFollowUp("31-12-2026"));
+        // @@author
         assertTrue(FollowUp.isValidFollowUp("01-01-0001")); // Boundary value: minimum supported year.
     }
 
@@ -92,13 +116,19 @@ public class FollowUpTest {
         FollowUp followUp = new FollowUp("20-09-2026");
 
         // EP: follow-up before the comparison date. Boundary value: one day before it.
+        // @@author tommyquak
         assertTrue(followUp.isBefore(LocalDate.of(2026, 9, 21)));
+        // @@author
 
         // EP: follow-up equal to the comparison date; strict comparison excludes equality.
+        // @@author tommyquak
         assertFalse(followUp.isBefore(LocalDate.of(2026, 9, 20)));
+        // @@author
 
         // EP: follow-up after the comparison date. Boundary value: one day after it.
+        // @@author tommyquak
         assertFalse(followUp.isBefore(LocalDate.of(2026, 9, 19)));
+        // @@author
 
         // EP: null comparison date.
         assertThrows(NullPointerException.class, () -> followUp.isBefore(null));
@@ -109,13 +139,19 @@ public class FollowUpTest {
         FollowUp followUp = new FollowUp("20-09-2026");
 
         // EP: follow-up before the cutoff. Boundary value: one day before it.
+        // @@author tommyquak
         assertTrue(followUp.isOnOrBefore(LocalDate.of(2026, 9, 21)));
+        // @@author
 
         // EP: follow-up on the cutoff; inclusive comparison includes equality.
+        // @@author tommyquak
         assertTrue(followUp.isOnOrBefore(LocalDate.of(2026, 9, 20)));
+        // @@author
 
         // EP: follow-up after the cutoff. Boundary value: one day after it.
+        // @@author tommyquak
         assertFalse(followUp.isOnOrBefore(LocalDate.of(2026, 9, 19)));
+        // @@author
 
         // EP: null cutoff.
         assertThrows(NullPointerException.class, () -> followUp.isOnOrBefore(null));
@@ -131,17 +167,60 @@ public class FollowUpTest {
     }
 
     @Test
-    public void isPast() {
-        LocalDate today = LocalDate.now();
+    public void isPast_clockAtEndOfDay() {
+        FollowUp followUp = new FollowUp("20-09-2026");
 
-        // EP: dates before today. Boundary value: yesterday.
-        assertTrue(new FollowUp(today.minusDays(1).format(DATE_FORMAT)).isPast());
+        // EP: the follow-up day itself. Boundary value: its last second is still not in the past.
+        assertFalse(followUp.isPast(clockAt(LocalDateTime.of(2026, 9, 20, 23, 59, 59))));
 
-        // EP: today, which is not yet in the past.
-        assertFalse(new FollowUp(today.format(DATE_FORMAT)).isPast());
+        // EP: the day before the follow-up. Boundary value: its last second.
+        assertFalse(followUp.isPast(clockAt(LocalDateTime.of(2026, 9, 19, 23, 59, 59))));
+    }
 
-        // EP: dates after today. Boundary value: tomorrow.
-        assertFalse(new FollowUp(today.plusDays(1).format(DATE_FORMAT)).isPast());
+    @Test
+    public void isPast_clockAtStartOfDay() {
+        FollowUp followUp = new FollowUp("20-09-2026");
+
+        // EP: the day after the follow-up. Boundary value: midnight, the first instant it becomes past.
+        assertTrue(followUp.isPast(clockAt(LocalDateTime.of(2026, 9, 21, 0, 0, 0))));
+
+        // EP: the follow-up day itself. Boundary value: its first instant.
+        assertFalse(followUp.isPast(clockAt(LocalDateTime.of(2026, 9, 20, 0, 0, 0))));
+    }
+
+    @Test
+    public void isPast_clockAcrossYearEnd() {
+        FollowUp followUp = new FollowUp("31-12-2026");
+
+        // EP: the date changes and so does the year. Boundary values: one second either side of midnight.
+        assertFalse(followUp.isPast(clockAt(LocalDateTime.of(2026, 12, 31, 23, 59, 59))));
+        assertTrue(followUp.isPast(clockAt(LocalDateTime.of(2027, 1, 1, 0, 0, 0))));
+    }
+
+    @Test
+    public void isPast_clockTimeZone_usesClockDate() {
+        // EP: the same instant falls on different dates in different time zones.
+        Instant instant = LocalDateTime.of(2026, 9, 20, 23, 0).atZone(ZONE).toInstant();
+        FollowUp followUp = new FollowUp("20-09-2026");
+
+        assertFalse(followUp.isPast(Clock.fixed(instant, ZONE))); // still 20-09-2026 in Singapore
+        assertTrue(followUp.isPast(Clock.fixed(instant, ZoneId.of("Pacific/Kiritimati")))); // already 21-09-2026
+    }
+
+    @Test
+    public void isPast_nullClock_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new FollowUp("20-09-2026").isPast(null));
+    }
+
+    @Test
+    public void isPast_systemClock() {
+        // EP: dates far enough from today that the result cannot change while the test runs.
+        assertTrue(new FollowUp("01-01-2020").isPast());
+        assertFalse(new FollowUp("31-12-9999").isPast());
+    }
+
+    private static Clock clockAt(LocalDateTime dateTime) {
+        return Clock.fixed(dateTime.atZone(ZONE).toInstant(), ZONE);
     }
 
     @Test

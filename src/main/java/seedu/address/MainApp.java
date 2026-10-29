@@ -33,7 +33,7 @@ import seedu.address.ui.UiManager;
  */
 public class MainApp extends Application {
 
-    public static final String VERSION = "V1.4";
+    public static final String VERSION = "V1.5";
 
     private static final Logger logger = LogsCenter.getLogger(MainApp.class);
     private static final Path USER_PREFS_FILE_PATH = Paths.get("preferences.json");
@@ -43,6 +43,9 @@ public class MainApp extends Application {
     protected Logic logic;
     protected Storage storage;
     protected Model model;
+
+    /** Message to show in the result box once the window opens, or null if there is nothing to report. */
+    private String startupNotice;
 
     @Override
     public void init() throws Exception {
@@ -58,13 +61,14 @@ public class MainApp extends Application {
 
         logic = new LogicManager(model, storage);
 
-        ui = new UiManager(logic, storage.getAddressBookFilePath());
+        ui = new UiManager(logic, storage.getAddressBookFilePath(), startupNotice);
     }
 
     /**
      * Returns a {@code ModelManager} with the data from {@code storage}'s address book and {@code userPrefs}. <br>
      * The data from the sample address book will be used instead if {@code storage}'s address book is not found,
      * or an empty address book will be used instead if errors occur when reading {@code storage}'s address book.
+     * In that case a notice naming the cause and the backup copy is kept for the UI to show.
      */
     private Model initModelManager(Storage storage, ReadOnlyUserPrefs userPrefs) {
         logger.info("Using data file : " + storage.getAddressBookFilePath());
@@ -74,8 +78,8 @@ public class MainApp extends Application {
         try {
             addressBookOptional = storage.readAddressBookWithBackup();
             if (addressBookOptional.isEmpty()) {
-                logger.info("Creating a new data file " + storage.getAddressBookFilePath()
-                        + " populated with sample Easy-Insurance contacts.");
+                logger.info("Data file " + storage.getAddressBookFilePath() + " not found. Starting with sample"
+                        + " Easy-Insurance contacts; the file is created when contact data first changes.");
             }
             initialData = addressBookOptional.orElseGet(SampleDataUtil::getSampleAddressBook);
         } catch (DataBackupException e) {
@@ -83,6 +87,7 @@ public class MainApp extends Application {
         } catch (DataLoadingException e) {
             logger.warning("Data file at " + storage.getAddressBookFilePath() + " could not be loaded."
                     + " Will be starting with an empty Easy-Insurance contact list.");
+            startupNotice = StartupNotice.forUnloadableDataFile(storage.getAddressBookFilePath(), e);
             initialData = new AddressBook();
         }
 
