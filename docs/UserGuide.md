@@ -246,6 +246,8 @@ Format: `contacted INDEX d/DD-MM-YYYY`
 * The index must be a positive integer and refer to a displayed contact.
 * `d/DD-MM-YYYY` is required.
 * The date must be a valid calendar date in `DD-MM-YYYY` format. For example, `31-02-2026` is rejected.
+* Year `0000` and signed years are rejected.
+* The last contact date cannot be in the future. Today's date and past dates are accepted.
 * If the contact already has a last contact date, the existing date is replaced.
 * The contact's other details, follow-up and interaction notes remain unchanged.
 * The contact card displays `Last contacted: DD-MM-YYYY`. Contacts without a recorded last contact date display `Last contacted: Never`.
@@ -289,15 +291,16 @@ Format: `history INDEX`
 
 * The index refers to the number shown in the displayed contact list.
 * The index must be a positive integer and refer to a displayed contact.
-* Notes are shown in the order they were recorded, with the oldest note first.
+* Notes are shown newest first.
+* Each note is displayed with the date and time it was recorded.
 * `history` does not modify the contact or its notes.
 
 If notes have been recorded, the result is shown in this format:
 
 ```text
 Interaction history for John Tan:
-1. Called client
-2. Discussed renewal options
+1. [29-10-2026 07:09] Discussed renewal options
+2. [29-10-2026 07:05] Called client
 ```
 
 If the contact has no interaction notes, the result is:
@@ -308,6 +311,21 @@ Examples:
 
 * `history 1`
 * `find John` followed by `history 1` shows the interaction history of the first displayed matching contact.
+
+### Deleting an interaction note: `deletenote`
+
+Deletes an interaction note from an existing contact.
+
+Format: `deletenote CONTACT_INDEX NOTE_INDEX`
+
+* `CONTACT_INDEX` refers to the contact's index in the currently displayed list.
+* `NOTE_INDEX` refers to the note number shown by the `history` command.
+* Both indices must be positive integers.
+* Deleting a note does not modify the contact's other details.
+
+Example:
+
+* `deletenote 1 2` deletes note 2 from the first displayed contact.
 
 ### Viewing follow-ups that are due: `due`
 
@@ -354,7 +372,7 @@ Format: `exit`
 
 ### Saving the data
 
-Easy-Insurance automatically saves contact details, follow-up information, last contact dates and interaction notes after every successful command. You do not need to save manually.
+Easy-Insurance automatically saves contact data whenever a command changes the contact list or a contact's details. You do not need to save manually.
 
 ### Editing the data file
 
@@ -363,7 +381,7 @@ Easy-Insurance data is saved automatically as a JSON file `data/addressbook.json
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, Easy-Insurance copies it to `addressbook.json.bak` in the same `data` folder and then starts with an empty contact list. The invalid `addressbook.json` is overwritten after your next successful command, but the `.bak` copy is kept. To recover, close the app, fix the `.bak` file and rename it back to `addressbook.json`. A later backup replaces the previous `.bak` file, so we still recommend keeping your own copy before editing.<br>
+If your changes make the data file invalid, Easy-Insurance copies it to `addressbook.json.bak` in the same `data` folder and then starts with an empty contact list. The invalid `addressbook.json` is overwritten after your next successful command that changes contact data, but the `.bak` copy is kept. To recover, close the app, fix the `.bak` file and rename it back to `addressbook.json`. A later backup replaces the previous `.bak` file, so we still recommend keeping your own copy before editing.<br>
 Two contacts whose names differ only in case or extra spaces also make the data file invalid and cause it to load as an empty contact list.<br>
 Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
@@ -399,5 +417,6 @@ Action     | Format, Examples
 **List**   | `list [st/STATUS] [t/TAG]`<br> e.g., `list st/CLIENT t/referral`
 **History**| `history INDEX`<br> e.g., `history 2`
 **Note**   | `note INDEX nt/NOTE`<br> e.g., `note 2 nt/Discussed hospital coverage`
+**DeleteNote** | `deletenote CONTACT_INDEX NOTE_INDEX`<br> e.g., `deletenote 1 2`
 **Help**   | `help`
 **Exit**   | `exit`
