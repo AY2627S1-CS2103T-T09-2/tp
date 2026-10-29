@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
+import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.geometry.Dimension2D;
 import javafx.geometry.Point2D;
@@ -13,6 +14,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.KeyCode;
@@ -21,6 +23,7 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -72,6 +75,7 @@ public class HelpWindow extends UiPart<Stage> {
         super(FXML, root);
         userGuideUrl.setText(USERGUIDE_URL);
         configureFonts();
+        configureExamples();
         layoutCommandGuide(false);
         getRoot().getScene().addEventFilter(KeyEvent.KEY_PRESSED, event -> handleCloseKey(event, this::hide));
         commandGuideScrollPane.viewportBoundsProperty().addListener((observable, oldBounds, newBounds) -> {
@@ -87,6 +91,35 @@ public class HelpWindow extends UiPart<Stage> {
      */
     public HelpWindow() {
         this(new Stage());
+    }
+
+    /**
+     * Fits read-only examples to their wrapped text so the guide remains the scrolling container.
+     */
+    private void configureExamples() {
+        for (Node row : commandGuideRows.getChildren()) {
+            for (Node cell : ((GridPane) row).getChildren()) {
+                if (cell instanceof TextArea example) {
+                    example.prefHeightProperty().bind(Bindings.createDoubleBinding(() -> {
+                        double textWidth = example.getWidth() - example.getInsets().getLeft()
+                                - example.getInsets().getRight();
+                        return getExampleTextHeight(example.getText(), example.getFont(), textWidth)
+                                + example.getInsets().getTop() + example.getInsets().getBottom();
+                    }, example.textProperty(), example.fontProperty(), example.widthProperty(),
+                            example.insetsProperty()));
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns the height needed for wrapped example text, allowing for pixel rounding and the caret.
+     */
+    static double getExampleTextHeight(String text, Font font, double width) {
+        Text measurement = new Text(text);
+        measurement.setFont(font);
+        measurement.setWrappingWidth(Math.max(1, Math.floor(width)));
+        return Math.ceil(measurement.getLayoutBounds().getHeight()) + 2;
     }
 
     /**

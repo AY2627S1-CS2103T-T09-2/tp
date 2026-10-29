@@ -5,6 +5,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.GridPane?>
@@ -78,8 +79,10 @@
                           <Label text="add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]..."
                                  styleClass="command-guide-cell, command-guide-code, command-guide-format"
                                  maxWidth="Infinity" />
-                          <Label text="add n/Sarah Lim p/98765432 e/sarahlim@example.com a/Tampines st/PROSPECT f/25-12-2026 t/referral"
+                          <TextArea text="add n/Sarah Lim p/98765432 e/sarahlim@example.com a/Tampines st/PROSPECT f/25-12-2026 t/referral"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-example"
+                                 editable="false" wrapText="true" focusTraversable="true"
+                                 prefRowCount="1" minHeight="-Infinity" maxHeight="-Infinity"
                                  maxWidth="Infinity" />
                           <Label text="Format"
                                  styleClass="command-guide-cell, command-guide-caption, command-guide-format"
@@ -98,8 +101,10 @@
                           <Label text="clear [confirm]"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-format"
                                  maxWidth="Infinity" />
-                          <Label text="clear&#10;clear confirm"
+                          <TextArea text="clear&#10;clear confirm"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-example"
+                                 editable="false" wrapText="true" focusTraversable="true"
+                                 prefRowCount="1" minHeight="-Infinity" maxHeight="-Infinity"
                                  maxWidth="Infinity" />
                           <Label text="Format"
                                  styleClass="command-guide-cell, command-guide-caption, command-guide-format"
@@ -118,8 +123,10 @@
                           <Label text="contacted INDEX d/DD-MM-YYYY"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-format"
                                  maxWidth="Infinity" />
-                          <Label text="contacted 2 d/27-10-2026"
+                          <TextArea text="contacted 2 d/27-10-2026"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-example"
+                                 editable="false" wrapText="true" focusTraversable="true"
+                                 prefRowCount="1" minHeight="-Infinity" maxHeight="-Infinity"
                                  maxWidth="Infinity" />
                           <Label text="Format"
                                  styleClass="command-guide-cell, command-guide-caption, command-guide-format"
@@ -138,8 +145,10 @@
                           <Label text="delete INDEX"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-format"
                                  maxWidth="Infinity" />
-                          <Label text="delete 2"
+                          <TextArea text="delete 2"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-example"
+                                 editable="false" wrapText="true" focusTraversable="true"
+                                 prefRowCount="1" minHeight="-Infinity" maxHeight="-Infinity"
                                  maxWidth="Infinity" />
                           <Label text="Format"
                                  styleClass="command-guide-cell, command-guide-caption, command-guide-format"
@@ -158,8 +167,10 @@
                           <Label text="done INDEX"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-format"
                                  maxWidth="Infinity" />
-                          <Label text="done 1"
+                          <TextArea text="done 1"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-example"
+                                 editable="false" wrapText="true" focusTraversable="true"
+                                 prefRowCount="1" minHeight="-Infinity" maxHeight="-Infinity"
                                  maxWidth="Infinity" />
                           <Label text="Format"
                                  styleClass="command-guide-cell, command-guide-caption, command-guide-format"
@@ -178,8 +189,10 @@
                           <Label text="due [DAYS]"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-format"
                                  maxWidth="Infinity" />
-                          <Label text="due 7"
+                          <TextArea text="due 7"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-example"
+                                 editable="false" wrapText="true" focusTraversable="true"
+                                 prefRowCount="1" minHeight="-Infinity" maxHeight="-Infinity"
                                  maxWidth="Infinity" />
                           <Label text="Format"
                                  styleClass="command-guide-cell, command-guide-caption, command-guide-format"
@@ -198,8 +211,10 @@
                           <Label text="edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]..."
                                  styleClass="command-guide-cell, command-guide-code, command-guide-format"
                                  maxWidth="Infinity" />
-                          <Label text="edit 1 p/91234567 st/CLIENT"
+                          <TextArea text="edit 1 p/91234567 st/CLIENT"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-example"
+                                 editable="false" wrapText="true" focusTraversable="true"
+                                 prefRowCount="1" minHeight="-Infinity" maxHeight="-Infinity"
                                  maxWidth="Infinity" />
                           <Label text="Format"
                                  styleClass="command-guide-cell, command-guide-caption, command-guide-format"
@@ -218,8 +233,10 @@
                           <Label text="find KEYWORD [MORE_KEYWORDS]...&#10;or find p/PHONE_DIGITS"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-format"
                                  maxWidth="Infinity" />
-                          <Label text="find ta&#10;find p/9123"
+                          <TextArea text="find ta&#10;find p/9123"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-example"
+                                 editable="false" wrapText="true" focusTraversable="true"
+                                 prefRowCount="1" minHeight="-Infinity" maxHeight="-Infinity"
                                  maxWidth="Infinity" />
                           <Label text="Format"
                                  styleClass="command-guide-cell, command-guide-caption, command-guide-format"
@@ -238,8 +255,10 @@
                           <Label text="history INDEX"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-format"
                                  maxWidth="Infinity" />
-                          <Label text="history 2"
+                          <TextArea text="history 2"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-example"
+                                 editable="false" wrapText="true" focusTraversable="true"
+                                 prefRowCount="1" minHeight="-Infinity" maxHeight="-Infinity"
                                  maxWidth="Infinity" />
                           <Label text="Format"
                                  styleClass="command-guide-cell, command-guide-caption, command-guide-format"
@@ -258,8 +277,10 @@
                           <Label text="deletenote CONTACT_INDEX NOTE_INDEX"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-format"
                                  maxWidth="Infinity" />
-                          <Label text="deletenote 1 2"
+                          <TextArea text="deletenote 1 2"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-example"
+                                 editable="false" wrapText="true" focusTraversable="true"
+                                 prefRowCount="1" minHeight="-Infinity" maxHeight="-Infinity"
                                  maxWidth="Infinity" />
                           <Label text="Format"
                                  styleClass="command-guide-cell, command-guide-caption, command-guide-format"
@@ -279,8 +300,10 @@
                           <Label text="list [st/STATUS] [t/TAG]"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-format"
                                  maxWidth="Infinity" />
-                          <Label text="list st/CLIENT t/referral"
+                          <TextArea text="list st/CLIENT t/referral"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-example"
+                                 editable="false" wrapText="true" focusTraversable="true"
+                                 prefRowCount="1" minHeight="-Infinity" maxHeight="-Infinity"
                                  maxWidth="Infinity" />
                           <Label text="Format"
                                  styleClass="command-guide-cell, command-guide-caption, command-guide-format"
@@ -301,8 +324,10 @@
                           <Label text="note INDEX nt/NOTE"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-format"
                                  maxWidth="Infinity" />
-                          <Label text="note 2 nt/Discussed hospital coverage"
+                          <TextArea text="note 2 nt/Discussed hospital coverage"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-example"
+                                 editable="false" wrapText="true" focusTraversable="true"
+                                 prefRowCount="1" minHeight="-Infinity" maxHeight="-Infinity"
                                  maxWidth="Infinity" />
                           <Label text="Format"
                                  styleClass="command-guide-cell, command-guide-caption, command-guide-format"
@@ -322,8 +347,10 @@
                           <Label text="help"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-format"
                                  maxWidth="Infinity" />
-                          <Label text="help"
+                          <TextArea text="help"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-example"
+                                 editable="false" wrapText="true" focusTraversable="true"
+                                 prefRowCount="1" minHeight="-Infinity" maxHeight="-Infinity"
                                  maxWidth="Infinity" />
                           <Label text="Format"
                                  styleClass="command-guide-cell, command-guide-caption, command-guide-format"
@@ -342,8 +369,10 @@
                           <Label text="exit"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-format"
                                  maxWidth="Infinity" />
-                          <Label text="exit"
+                          <TextArea text="exit"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-example"
+                                 editable="false" wrapText="true" focusTraversable="true"
+                                 prefRowCount="1" minHeight="-Infinity" maxHeight="-Infinity"
                                  maxWidth="Infinity" />
                           <Label text="Format"
                                  styleClass="command-guide-cell, command-guide-caption, command-guide-format"

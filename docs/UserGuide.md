@@ -126,9 +126,15 @@ The full URL is shown below the command guide. After copying, a message confirms
 When Help opens, the command guide has keyboard focus:
 
 * Press **Up/Down** or **Page Up/Page Down** to scroll the guide.
-* Press **Tab** to focus **Copy User Guide URL**, and **Space** to activate it.
-  Press **Shift+Tab** to return to the guide.
+* Press **Tab** to move through the examples and **Copy User Guide URL**; **Shift+Tab** moves backwards.
+  Press **Space** when the URL button is focused to copy the link.
 * Press **Esc** to close Help.
+
+Examples are read-only. Select text with the mouse, or focus an example and use **Shift+Arrow** to select text.
+Use **Ctrl+A** and **Ctrl+C** (**Cmd+A** and **Cmd+C** on macOS) to select and copy a whole example.
+If a box contains multiple example commands, select just the command you want to use.
+While an example is focused, arrow keys move its text cursor. Use **Tab** or **Shift+Tab** to return to the
+command guide for keyboard scrolling.
 
 ![help message](images/helpMessage.png)
 
