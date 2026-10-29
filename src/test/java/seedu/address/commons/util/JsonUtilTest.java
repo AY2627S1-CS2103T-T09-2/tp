@@ -7,8 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -115,6 +117,15 @@ public class JsonUtilTest {
     }
 
     @Test
+    public void readJsonFile_otherSpaceCharactersAfterValue_throwsDataLoadingException() {
+        // EP: only spaces, tabs and line breaks may follow the value, as the user guide says.
+        assertTrailingContentRejected(VALID_JSON + "\f");
+        assertTrailingContentRejected(VALID_JSON + "\u000B");
+        assertTrailingContentRejected(VALID_JSON + "\u00A0");
+        assertTrailingContentRejected(VALID_JSON + "\u3000");
+    }
+
+    @Test
     public void readJsonFile_scalarAfterValue_throwsDataLoadingException() {
         // EP: valid JSON literals after the value are still extra content.
         assertTrailingContentRejected(VALID_JSON + " 5");
@@ -146,6 +157,54 @@ public class JsonUtilTest {
     }
 
     @Test
+    public void readJsonFile_invalidUtf8InValue_throwsDataLoadingException() throws Exception {
+        // EP: well-formed JSON whose text has a byte that is not valid UTF-8, e.g. 0xFF in a value.
+        Path filePath = testFolder.resolve("data.json");
+        byte[] prefix = "{\"name\":\"Blk 1".getBytes(StandardCharsets.UTF_8);
+        byte[] suffix = " Road\"}".getBytes(StandardCharsets.UTF_8);
+        byte[] content = new byte[prefix.length + 1 + suffix.length];
+        System.arraycopy(prefix, 0, content, 0, prefix.length);
+        content[prefix.length] = (byte) 0xFF;
+        System.arraycopy(suffix, 0, content, prefix.length + 1, suffix.length);
+        Files.write(filePath, content);
+
+        DataLoadingException e = assertThrows(DataLoadingException.class, () ->
+                JsonUtil.readJsonFile(filePath, SerializableTestClass.class));
+        assertEquals(String.format(FileUtil.MESSAGE_INVALID_UTF8, filePath, prefix.length),
+                e.getCause().getMessage());
+    }
+
+    @Test
+    public void fromJsonString_escapedUnpairedSurrogate_throwsIoException() {
+        // EP: half of an emoji pair written as an escape, which valid UTF-8 bytes can never hold.
+        IOException e = assertThrows(IOException.class, () ->
+                JsonUtil.fromJsonString("{\"name\":\"Blk 5 \\ud83c Road\"}", SerializableTestClass.class));
+        assertEquals(String.format(JsonUtil.MESSAGE_UNPAIRED_SURROGATE, 0xD83C, 1, 9), e.getMessage());
+
+        // A lone low half, a high half at the very end, two high halves and a pair in the wrong order.
+        for (String text : List.of("Met \\udc00 client", "end \\ud83c", "\\ud83c\\ud83c\\udfe0",
+                "\\udfe0\\ud83c")) {
+            assertThrows(IOException.class, () ->
+                    JsonUtil.fromJsonString("{\"name\":\"" + text + "\"}", SerializableTestClass.class));
+        }
+
+        // A field name and a string inside an array are checked too.
+        e = assertThrows(IOException.class, () ->
+                JsonUtil.fromJsonString("{\n\"a\\udc00\":1}", Object.class));
+        assertEquals(String.format(JsonUtil.MESSAGE_UNPAIRED_SURROGATE, 0xDC00, 2, 1), e.getMessage());
+        assertThrows(IOException.class, () -> JsonUtil.fromJsonString("[\"ok\", \"\\ud800\"]", Object.class));
+        assertThrows(IOException.class, () -> JsonUtil.fromJsonString("\"\\ud800\"", Object.class));
+    }
+
+    @Test
+    public void fromJsonString_escapedSurrogatePair_success() throws IOException {
+        // EP: an emoji written as an escaped pair is valid text and still loads.
+        SerializableTestClass result = JsonUtil.fromJsonString("{\"name\":\"Blk 5 \\ud83c\\udfe0 Road\"}",
+                SerializableTestClass.class);
+        assertEquals("Blk 5 \uD83C\uDFE0 Road", result.getName());
+    }
+
+    @Test
     public void fromJsonString_trailingContent_messageGivesLocation() {
         // A second value: the location is where that value starts.
         IOException e = assertThrows(IOException.class, () ->
@@ -166,6 +225,16 @@ public class JsonUtilTest {
     }
 
     @Test
+    public void fromJsonString_slashAfterValue_messageGivesLocationOfSlash() {
+        // EP: a comment or a lone slash. Jackson reports these at the closing brace, not at the slash.
+        assertTrailingContentLocation("{\"persons\":[]}\n\n// note", 3, 1);
+        assertTrailingContentLocation("{\"persons\":[]}\n\n/", 3, 1);
+        assertTrailingContentLocation("{\"persons\":[]} /* note */", 1, 16);
+        assertTrailingContentLocation("{}\r\n\t//", 2, 2);
+        assertTrailingContentLocation("{}\r\r/", 3, 1);
+    }
+
+    @Test
     public void fromJsonString_singleValue_success() throws IOException {
         assertTestValues(JsonUtil.fromJsonString(VALID_JSON, SerializableTestClass.class));
         assertEquals(Integer.valueOf(5), JsonUtil.fromJsonString(" 5 \n", Integer.class));
@@ -175,6 +244,11 @@ public class JsonUtilTest {
         Path filePath = testFolder.resolve("data.json");
         Files.writeString(filePath, content);
         return JsonUtil.readJsonFile(filePath, SerializableTestClass.class).get();
+    }
+
+    private static void assertTrailingContentLocation(String json, int line, int column) {
+        IOException e = assertThrows(IOException.class, () -> JsonUtil.fromJsonString(json, Object.class));
+        assertEquals(String.format(JsonUtil.MESSAGE_TRAILING_CONTENT, line, column), e.getMessage());
     }
 
     private void assertTrailingContentRejected(String content) {

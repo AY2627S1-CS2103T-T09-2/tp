@@ -38,6 +38,8 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
    * `note 2 nt/Discussed hospital coverage with client` : Adds an interaction note to the 2nd displayed contact.
 
    * `history 2` : Shows the interaction history of the 2nd displayed contact.
+  
+   * `contacted 2 d/27-10-2026` : Updates the last contact date of the 2nd displayed contact.
 
    * `clear confirm` : Deletes all contacts after confirmation.
 
@@ -129,16 +131,19 @@ The contact list shows blue, green, and grey badges respectively for these statu
 
 <box type="tip" seamless>
 
-**Follow-up date:** `f/FOLLOW_UP_DATE` is optional. Use the `DD-MM-YYYY` format, e.g. `f/25-12-2026`. The date must be a real calendar date (`31-02-2026` is rejected). A date in the past is accepted, so you can record a follow-up you already did, but Easy-Insurance shows a note reminding you that it is in the past. The follow-up date appears on the contact's card.
+**Follow-up date:** `f/FOLLOW_UP_DATE` is optional. Use the `DD-MM-YYYY` format, e.g. `f/25-12-2026`. The date must be a real calendar date (`31-02-2026` is rejected). The follow-up date appears on the contact's card. A date in the past is accepted, but Easy-Insurance shows a note reminding you that it is in the past. It is still saved as a pending follow-up, so the card shows it in red with `(overdue)` and `due` lists it until you mark it done with `done`.
 </box>
 
 <box type="tip" seamless>
 
 **Tags:** A contact can have any number of tags, including zero. Each tag is a single word of letters and digits,
 up to 50 characters long, such as `t/referral` or `t/lifePolicy2`. Accented and non-English letters are accepted
-(`t/café`), but spaces and symbols are not, so `t/high value` and `t/high-value` are rejected; write `t/highValue`
-instead. Digits must be decimal digits (0 to 9, or the same digits in another script, such as `٣`), so number
-symbols like `½`, `²` and `①` are rejected.
+(`t/café`, `t/ज़िंदगी`), but spaces, symbols and invisible characters are not, so `t/high value` and `t/high-value`
+are rejected; write `t/highValue` instead. Each letter can carry up to 5 accents or marks, which is enough for words
+in scripts such as Hindi, Burmese and Hebrew, so only piled-up stacks of marks are rejected. The 50 characters are
+counted after letters and accents are combined, so an accent that merges into its letter, such as the one in `é`,
+does not count separately, while other marks do. Digits must be decimal digits (0 to 9, or the same digits in
+another script, such as `٣`), so number symbols like `½`, `²` and `①` are rejected.
 Tags ignore case, so `t/VIP` and `t/vip` are the same tag and a contact keeps only one of them.
 </box>
 
@@ -281,6 +286,31 @@ Examples:
 * `list` followed by `done 2` completes the second displayed contact's follow-up, if it has one.
 * `find John` followed by `done 1` completes the first matching contact's follow-up, if it has one.
 
+### Updating the last contact date: `contacted`
+
+Updates the date on which an existing contact was last contacted.
+
+Format: `contacted INDEX d/DD-MM-YYYY`
+
+* The index refers to the number shown in the displayed contact list.
+* The index must be a positive integer and refer to a displayed contact.
+* `d/DD-MM-YYYY` is required.
+* The date must be a valid calendar date in `DD-MM-YYYY` format. For example, `31-02-2026` is rejected.
+* Year `0000` and signed years are rejected.
+* The last contact date cannot be in the future. Today's date and past dates are accepted.
+* If the contact already has a last contact date, the existing date is replaced.
+* The contact's other details, follow-up and interaction notes remain unchanged.
+* The contact card displays `Last contacted: DD-MM-YYYY`. Contacts without a recorded last contact date display `Last contacted: Never`.
+
+On success, the result is:
+
+`Updated last contact date for <name> to <date>.`
+
+Examples:
+
+* `contacted 1 d/27-10-2026`
+* `find John` followed by `contacted 1 d/27-10-2026` updates the first displayed matching contact.
+
 ### Adding an interaction note: `note`
 
 Adds a note about an interaction with an existing contact.
@@ -311,15 +341,16 @@ Format: `history INDEX`
 
 * The index refers to the number shown in the displayed contact list.
 * The index must be a positive integer and refer to a displayed contact.
-* Notes are shown in the order they were recorded, with the oldest note first.
+* Notes are shown newest first.
+* Each note is displayed with the date and time it was recorded.
 * `history` does not modify the contact or its notes.
 
 If notes have been recorded, the result is shown in this format:
 
 ```text
 Interaction history for John Tan:
-1. Called client
-2. Discussed renewal options
+1. [29-10-2026 07:09] Discussed renewal options
+2. [29-10-2026 07:05] Called client
 ```
 
 If the contact has no interaction notes, the result is:
@@ -331,7 +362,24 @@ Examples:
 * `history 1`
 * `find John` followed by `history 1` shows the interaction history of the first displayed matching contact.
 
+### Deleting an interaction note: `deletenote`
+
+Deletes an interaction note from an existing contact.
+
+Format: `deletenote CONTACT_INDEX NOTE_INDEX`
+
+* `CONTACT_INDEX` refers to the contact's index in the currently displayed list.
+* `NOTE_INDEX` refers to the note number shown by the `history` command.
+* Both indices must be positive integers.
+* Deleting a note does not modify the contact's other details.
+
+Example:
+
+* `deletenote 1 2` deletes note 2 from the first displayed contact.
+
 ### Viewing follow-ups that are due: `due`
+
+Shows contacts whose follow-up date is today or earlier, or within the next `DAYS` days if given, earliest first.
 
 Format: `due [DAYS]`
 
@@ -343,9 +391,11 @@ Format: `due [DAYS]`
 * The result reports how many follow-ups are due, for example `3 follow-ups due by 28-10-2026.`
   If none are due, the result is `No follow-ups due by 28-10-2026.` and the displayed list is empty.
 * The index numbers follow this sorted list, so `done 1` after `due` completes the earliest follow-up.
+* After `done`, the contact leaves the due list because it no longer has a follow-up. Use `list` to see it again.
 * `list` shows all contacts again in their usual order.
 
 On the contact cards, a follow-up date that has already passed is shown in red with `(overdue)` after it.
+If you leave Easy-Insurance open past midnight, the cards update by themselves just after midnight (or within a minute of your computer waking from sleep), so a follow-up that has just become overdue is marked without running a command. An open `due` list keeps the date shown in its result and does not add follow-ups that come into range on the new day. Run `due` again to update it.
 
 Examples:
 
@@ -394,8 +444,8 @@ Easy-Insurance data is saved automatically as a JSON file `data/addressbook.json
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid (including anything other than spaces or blank lines after its final closing `}`), Easy-Insurance copies it to `addressbook.json.bak` in the same `data` folder and then starts with an empty contact list. The invalid `addressbook.json` is overwritten after your next successful command that changes contact data, but the `.bak` copy is kept. To recover, close the app, fix the `.bak` file and rename it back to `addressbook.json`. A later backup replaces the previous `.bak` file, so we still recommend keeping your own copy before editing.<br>
-If Easy-Insurance cannot make the backup, it stops starting and leaves `addressbook.json` unchanged. Check that the `data` folder is writable and that `addressbook.json.bak` is not a folder, then try again.<br>
+If your changes make the data file invalid (including anything other than spaces, tabs or line breaks after its final closing `}`, or saving it in an encoding other than UTF-8; UTF-8 with or without a byte order mark is fine), Easy-Insurance copies it to `addressbook.json.bak` in the same `data` folder and then starts with an empty contact list. The result box tells you this, names the `.bak` copy and gives the reason, such as `Contact 3 is invalid.` followed by the rule that contact breaks (contacts are counted from the top of the file). The invalid `addressbook.json` is overwritten after your next successful command that changes contact data, but the `.bak` copy is kept. To recover, close the app, fix the `.bak` file and rename it back to `addressbook.json`. A later backup replaces the previous `.bak` file, so we still recommend keeping your own copy before editing.<br>
+If Easy-Insurance cannot make the backup, it stops starting and leaves `addressbook.json` unchanged. Check that `addressbook.json` is a readable file and not a folder, that the `data` folder is writable, that `addressbook.json.bak` is not a folder and that `addressbook.json` is not a link to `addressbook.json.bak`, then try again.<br>
 Two contacts whose names differ only in case or extra spaces also make the data file invalid and cause it to load as an empty contact list.<br>
 Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
@@ -414,6 +464,7 @@ Furthermore, certain edits can cause Easy-Insurance to behave in unexpected ways
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
 2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
 3. **If you run two copies of Easy-Insurance from the same folder at once**, or edit `data/addressbook.json` while the app is open, whichever copy saves last overwrites the other's changes. The remedy is to run only one copy at a time and to close the app before editing the data file.
+4. **Some data files saved by v1.4 do not load in v1.5**, because these values are no longer accepted: names ending in `.` or another punctuation mark, phone numbers with two or more spaces or dashes in a row (e.g., `6123 - 4567`), phone numbers over 30 characters, email addresses over 254 characters, tags over 50 characters and follow-up dates in the year `0000`. The whole file is then copied to `data/addressbook.json.bak` and the app starts with an empty contact list, as described in [Editing the data file](#editing-the-data-file). The remedy is to close the app, fix those values in the `.bak` file and rename it back to `addressbook.json`.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -423,6 +474,7 @@ Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...` <br> e.g., `add n/Sarah Lim p/98765432 e/sarahlim@example.com a/10 Tampines St 11 st/PROSPECT f/25-12-2026 t/referral`
 **Clear**  | `clear` to request confirmation<br>`clear confirm` to clear all contacts
+**Contacted** | `contacted INDEX d/DD-MM-YYYY`<br> e.g., `contacted 2 d/27-10-2026`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Due**    | `due [DAYS]`<br> e.g., `due 7`
@@ -431,5 +483,6 @@ Action     | Format, Examples
 **List**   | `list [st/STATUS] [t/TAG]`<br> e.g., `list st/CLIENT t/referral`
 **History**| `history INDEX`<br> e.g., `history 2`
 **Note**   | `note INDEX nt/NOTE`<br> e.g., `note 2 nt/Discussed hospital coverage`
+**DeleteNote** | `deletenote CONTACT_INDEX NOTE_INDEX`<br> e.g., `deletenote 1 2`
 **Help**   | `help`
 **Exit**   | `exit`

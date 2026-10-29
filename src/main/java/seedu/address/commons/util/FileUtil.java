@@ -1,6 +1,12 @@
 package seedu.address.commons.util;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -9,7 +15,11 @@ import java.nio.file.Path;
  */
 public class FileUtil {
 
-    private static final String CHARSET = "UTF-8";
+    public static final String MESSAGE_INVALID_UTF8 =
+            "File %s is not valid UTF-8 text: invalid byte sequence at byte %d";
+
+    private static final Charset CHARSET = StandardCharsets.UTF_8;
+    private static final String BYTE_ORDER_MARK = "\uFEFF";
 
     /**
      * Creates a file if it does not exist along with its missing parent directories.
@@ -37,10 +47,26 @@ public class FileUtil {
     }
 
     /**
-     * Assumes file exists
+     * Returns the contents of {@code file} decoded as UTF-8. Assumes file exists.
+     * One leading byte order mark is removed, so a file saved as "UTF-8 with BOM" (Windows Notepad,
+     * PowerShell 5) reads the same as one without it. A U+FEFF anywhere else is kept as text.
+     *
+     * @throws IOException if the file cannot be read or is not valid UTF-8. Invalid bytes are
+     *     reported instead of being replaced with U+FFFD, which would otherwise be saved over the
+     *     original text the next time the file is written.
      */
     public static String readFromFile(Path file) throws IOException {
-        return new String(Files.readAllBytes(file), CHARSET);
+        ByteBuffer bytes = ByteBuffer.wrap(Files.readAllBytes(file));
+        CharsetDecoder decoder = CHARSET.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT);
+        try {
+            String text = decoder.decode(bytes).toString();
+            return text.startsWith(BYTE_ORDER_MARK) ? text.substring(BYTE_ORDER_MARK.length()) : text;
+        } catch (CharacterCodingException e) {
+            // The decoder stops with the buffer positioned at the start of the invalid sequence.
+            throw new IOException(String.format(MESSAGE_INVALID_UTF8, file, bytes.position()), e);
+        }
     }
 
     /**

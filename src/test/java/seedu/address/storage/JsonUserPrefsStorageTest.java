@@ -12,6 +12,7 @@ import static seedu.address.storage.JsonUserPrefsStorage.MESSAGE_MISSING_GUI_SET
 import static seedu.address.testutil.Assert.assertThrows;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -183,6 +184,32 @@ public class JsonUserPrefsStorageTest {
 
         storage.saveUserPrefs(new UserPrefs());
         assertEquals(new UserPrefs(), storage.readUserPrefs().get());
+    }
+
+    @Test
+    public void readUserPrefs_invalidUtf8_defaultsCanBeSavedAndReadBack() throws Exception {
+        // EP: a byte that is not valid UTF-8 inside a key is rejected, so the app falls back to defaults.
+        Path prefsFilePath = testFolder.resolve("prefs.json");
+        byte[] validPrefs = Files.readAllBytes(TEST_DATA_FOLDER.resolve("TypicalUserPref.json"));
+        int splitAt = new String(validPrefs, StandardCharsets.ISO_8859_1).indexOf("windowWidth") + "window".length();
+        byte[] content = new byte[validPrefs.length + 1];
+        System.arraycopy(validPrefs, 0, content, 0, splitAt);
+        content[splitAt] = (byte) 0xFF;
+        System.arraycopy(validPrefs, splitAt, content, splitAt + 1, validPrefs.length - splitAt);
+        Files.write(prefsFilePath, content);
+        JsonUserPrefsStorage storage = new JsonUserPrefsStorage(prefsFilePath);
+
+        assertThrows(DataLoadingException.class, storage::readUserPrefs);
+
+        storage.saveUserPrefs(new UserPrefs());
+        assertEquals(new UserPrefs(), storage.readUserPrefs().get());
+    }
+
+    @Test
+    public void readUserPrefs_leadingByteOrderMark_successfullyRead() throws Exception {
+        // EP: a preferences file saved as "UTF-8 with BOM" keeps its values instead of falling back to defaults.
+        String validPrefs = Files.readString(TEST_DATA_FOLDER.resolve("TypicalUserPref.json"));
+        assertEquals(readUserPrefs("TypicalUserPref.json"), readUserPrefsJson("\uFEFF" + validPrefs));
     }
 
     @Test

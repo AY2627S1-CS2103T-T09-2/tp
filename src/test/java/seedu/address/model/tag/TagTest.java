@@ -93,6 +93,10 @@ public class TagTest {
         assertFalse(Tag.isValidTagName("a\u180Db"));
         assertFalse(Tag.isValidTagName("a\u180Eb")); // Mongolian vowel separator
         assertFalse(Tag.isValidTagName("a\u180Fb")); // Mongolian free variation selector four
+        assertFalse(Tag.isValidTagName("vip\u17B4")); // Khmer vowel inherent aq
+        assertFalse(Tag.isValidTagName("vip\u17B5")); // Khmer vowel inherent aa
+        assertFalse(Tag.isValidTagName("\u1780\u17B4")); // Khmer letter ka with an inherent vowel
+        assertFalse(Tag.isValidTagName("\u1780\u17B5"));
 
         // EP: number symbols that are not decimal digits.
         assertFalse(Tag.isValidTagName("\u00BD")); // vulgar fraction one half
@@ -103,19 +107,111 @@ public class TagTest {
     }
 
     @Test
-    public void isValidTagName_combiningMarks_atMostTwoPerLetter() {
-        // Boundary value: two marks on one letter is the most allowed. "x" has no precomposed accented
-        // forms, so NFC normalization keeps every mark separate.
+    public void isValidTagName_combiningMarks_atMostFivePerLetter() {
+        // Boundary value: five marks on one letter is the most allowed. "x" has no precomposed accented
+        // forms, so every mark stays separate.
         assertTrue(Tag.isValidTagName("x\u0301"));
-        assertTrue(Tag.isValidTagName("x\u0301\u0302"));
-        assertTrue(Tag.isValidTagName("x\u0301\u0302y\u0303\u0304"));
+        assertTrue(Tag.isValidTagName("x\u0301\u0302\u0303"));
+        assertTrue(Tag.isValidTagName("x\u0301\u0302\u0303\u0304\u0306"));
+        assertTrue(Tag.isValidTagName("x\u0301\u0302\u0303\u0304\u0306y\u0301\u0302\u0303\u0304\u0306"));
 
-        // Boundary value: three marks on one letter is one too many.
-        assertFalse(Tag.isValidTagName("x\u0301\u0302\u0303"));
-        assertFalse(Tag.isValidTagName("ab\u0301\u0302\u0303c"));
+        // Boundary value: six marks on one letter is one too many.
+        assertFalse(Tag.isValidTagName("x\u0301\u0302\u0303\u0304\u0306\u0307"));
+        assertFalse(Tag.isValidTagName("ab\u0301\u0302\u0303\u0304\u0306\u0307c"));
+
+        // EP: an accent that NFC builds into the letter, such as the acute in "á", still counts.
+        assertTrue(Tag.isValidTagName("a\u0301\u0302\u0303\u0304\u0306"));
+        assertFalse(Tag.isValidTagName("a\u0301\u0302\u0303\u0304\u0306\u0307"));
+        assertTrue(Tag.isValidTagName("\u00E1\u0302\u0303\u0304\u0306"));
+        assertFalse(Tag.isValidTagName("\u00E1\u0302\u0303\u0304\u0306\u0307"));
+        // Vietnamese "ệ" already carries two marks, a circumflex and a dot below.
+        assertTrue(Tag.isValidTagName("\u1EC7\u0301\u0302\u0303"));
+        assertFalse(Tag.isValidTagName("\u1EC7\u0301\u0302\u0303\u0304"));
+        assertFalse(Tag.isValidTagName("\u1EC7\u0301\u0302\u0303\u0304\u0306"));
+
+        // EP: spacing marks count towards the limit too.
+        assertTrue(Tag.isValidTagName("\u1000" + "\u102C".repeat(Tag.MAX_MARKS_PER_LETTER)));
+        assertFalse(Tag.isValidTagName("\u1000" + "\u102C".repeat(Tag.MAX_MARKS_PER_LETTER + 1)));
 
         // EP: a tall stack of marks on one letter.
         assertFalse(Tag.isValidTagName("z" + "\u0301\u0302\u0303\u0304\u0305".repeat(6)));
+        assertFalse(Tag.isValidTagName("zalgo" + "\u0336\u0337\u0338\u0339\u033A\u033B"));
+        assertThrows(IllegalArgumentException.class, Tag.MESSAGE_CONSTRAINTS, () ->
+                new Tag("x\u0301\u0302\u0303\u0304\u0306\u0307"));
+        assertTrue(Tag.MESSAGE_CONSTRAINTS.contains(Tag.MAX_MARKS_PER_LETTER + " accents or marks"));
+    }
+
+    @Test
+    public void isValidTagName_realWordsWithSeveralMarks_returnsTrue() {
+        // EP: words that put three or more marks on one letter. Each must be accepted.
+        assertTrue(Tag.isValidTagName("ज़िंदगी")); // Hindi "life": nukta, vowel sign and anusvara on one letter
+        assertTrue(Tag.isValidTagName("\u095B\u093F\u0902\u0926\u0917\u0940")); // same, precomposed ज़
+        assertTrue(Tag.isValidTagName("ख़ुशियाँ")); // Hindi "happiness"
+        assertTrue(Tag.isValidTagName("הַשָּׁנָה")); // Hebrew "the year", with dagesh, shin dot and vowel on one letter
+        assertTrue(Tag.isValidTagName("ကြွေး")); // Burmese "debt", four marks
+        assertTrue(Tag.isValidTagName("မြို့")); // Burmese "town", four marks
+        assertTrue(Tag.isValidTagName("လျှော့")); // Burmese "reduce", five marks
+        assertTrue(Tag.isValidTagName("မျှော်လင့်")); // Burmese "hope", five marks
+
+        // EP: everyday words in other scripts, with vowel signs, viramas, tone marks or vowel points.
+        assertTrue(Tag.isValidTagName("স্বাস্থ্য")); // Bengali "health"
+        assertTrue(Tag.isValidTagName("வாழ்க்கை")); // Tamil "life"
+        assertTrue(Tag.isValidTagName("బీమా")); // Telugu "insurance"
+        assertTrue(Tag.isValidTagName("ಜೀವನ")); // Kannada "life"
+        assertTrue(Tag.isValidTagName("ഇൻഷുറൻസ്")); // Malayalam "insurance"
+        assertTrue(Tag.isValidTagName("ผู้หญิง")); // Thai "woman", vowel and tone mark on one letter
+        assertTrue(Tag.isValidTagName("အာမခံ")); // Burmese "insurance"
+        assertTrue(Tag.isValidTagName("ធានារ៉ាប់រង")); // Khmer "insurance"
+        assertTrue(Tag.isValidTagName("ស្ត្រី")); // Khmer "woman", with subscript consonants
+        assertTrue(Tag.isValidTagName("bảohiểm")); // Vietnamese "insurance"
+        assertTrue(Tag.isValidTagName("ba\u0309ohie\u0302\u0309m")); // same, with separate accents
+        assertTrue(Tag.isValidTagName("مُحَمَّد")); // Arabic with harakat
+        assertTrue(Tag.isValidTagName("שָׁלוֹם")); // Hebrew "peace", with niqqud
+    }
+
+    @Test
+    public void equals_realWordsWithSeveralMarks_consistentWithHashCode() {
+        // EP: the same word typed with a precomposed letter or with separate marks is one tag.
+        assertEqualTags("ज़िंदगी", "\u095B\u093F\u0902\u0926\u0917\u0940");
+        assertEqualTags("bảohiểm", "ba\u0309ohie\u0302\u0309m");
+        assertEqualTags("BẢOHIỂM", "ba\u0309ohie\u0302\u0309m");
+
+        // EP: words that differ only in their marks are different tags.
+        List<String> names = List.of("ज़िंदगी", "जिंदगी", "ज़िदगी", "လျှော့", "လျှော", "လျော့", "הַשָּׁנָה", "השנה",
+                "x\u0301\u0302\u0303\u0304\u0306", "x\u0301\u0302\u0303\u0304", "x");
+        for (String first : names) {
+            for (String second : names) {
+                Tag a = new Tag(first);
+                Tag b = new Tag(second);
+                assertEquals(first.equals(second), a.equals(b), first + " vs " + second);
+                assertEquals(a.equals(b), b.equals(a), first + " vs " + second);
+                if (a.equals(b)) {
+                    assertEquals(a.hashCode(), b.hashCode(), first + " vs " + second);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void isValidTagName_defaultIgnorableCharacters_returnsFalse() {
+        // Characters that Unicode says should draw nothing, from DerivedCoreProperties.txt. Each would let
+        // two tags that look the same, such as "vip" and "vip" with one of these added, both be saved.
+        int[][] defaultIgnorableRanges = {
+            {0x00AD, 0x00AD}, {0x034F, 0x034F}, {0x061C, 0x061C}, {0x115F, 0x1160}, {0x17B4, 0x17B5},
+            {0x180B, 0x180F}, {0x200B, 0x200F}, {0x202A, 0x202E}, {0x2060, 0x206F}, {0x3164, 0x3164},
+            {0xFE00, 0xFE0F}, {0xFEFF, 0xFEFF}, {0xFFA0, 0xFFA0}, {0xFFF0, 0xFFF8}, {0x1BCA0, 0x1BCA3},
+            {0x1D173, 0x1D17A}, {0xE0000, 0xE0FFF}
+        };
+        for (int[] range : defaultIgnorableRanges) {
+            for (int codePoint = range[0]; codePoint <= range[1]; codePoint++) {
+                String invisible = Character.toString(codePoint);
+                String label = String.format("U+%04X", codePoint);
+                assertFalse(Tag.isValidTagName(invisible), label);
+                assertFalse(Tag.isValidTagName("vip" + invisible), label);
+                assertFalse(Tag.isValidTagName("v" + invisible + "ip"), label);
+                assertFalse(Tag.isValidTagName("\u1780" + invisible), label); // after a Khmer letter
+            }
+        }
     }
 
     @Test
@@ -155,7 +251,15 @@ public class TagTest {
 
     @Test
     public void isValidTagName_overlyLongInputs_rejectedQuickly() {
-        // Case mapping a long run of Greek sigma takes minutes, so the length must be checked first.
+        // NFC sorts the combining marks on each letter, and sorting a long run of marks given in the wrong
+        // order takes over ten seconds here, so the raw length must be checked before normalizing.
+        String unsortedMarks = "a" + "\u0315".repeat(100_000) + "\u0300".repeat(100_000);
+        assertTimeoutPreemptively(FAST, () -> assertFalse(Tag.isValidTagName(unsortedMarks)));
+        assertTimeoutPreemptively(FAST, () -> assertThrows(IllegalArgumentException.class,
+                Tag.MESSAGE_CONSTRAINTS, () -> new Tag(unsortedMarks)));
+
+        // Lowercasing a long run of capital sigma takes over a minute, so the constructor must reject
+        // the name before it works out the case-insensitive comparison key.
         String sigmas = "\u03A3".repeat(100_000);
         assertTimeoutPreemptively(FAST, () -> assertFalse(Tag.isValidTagName(sigmas)));
         assertTimeoutPreemptively(FAST, () ->
@@ -250,8 +354,10 @@ public class TagTest {
         assertEqualTags("\u03A3", "\u03C2");
         assertEqualTags("\u03BF\u03C3", "\u039F\u03A3");
         assertEqualTags("\u03BF\u03C3", "\u03BF\u03C2");
-        // Lowercasing this capital gives a string that must be composed again to match.
+        // A capital with no precomposed form matches the precomposed small letter.
         assertEqualTags("\u03AA\u0301", "\u0390");
+        // Lowercasing this capital gives a string that must be composed again to match.
+        assertEqualTags("\u1FFC\u0342", "\u1FF7");
         // Dotless i and long s uppercase to ASCII I and S under Locale.ROOT case mapping, so they fold
         // together with i and s. This is on purpose: it matches Java's equalsIgnoreCase and keeps the
         // result the same whatever the user's default locale is.
@@ -259,6 +365,18 @@ public class TagTest {
         assertEqualTags("\u0131", "i");
         assertEqualTags("\u017F", "S");
         assertEqualTags("\u017F", "s");
+        // Uppercasing dotless i with an accent gives I and a separate accent, which must be composed again.
+        assertEqualTags("\u0131\u0300", "\u00CC");
+        assertEqualTags("\u0131\u0300", "\u00EC");
+    }
+
+    @Test
+    public void equals_sameObject_returnsTrue() {
+        // EP: a tag always equals itself, including one whose name needs the full Unicode comparison.
+        Tag asciiTag = new Tag("referral");
+        Tag accentedTag = new Tag("caf\u00E9");
+        assertTrue(asciiTag.equals(asciiTag));
+        assertTrue(accentedTag.equals(accentedTag));
     }
 
     @Test

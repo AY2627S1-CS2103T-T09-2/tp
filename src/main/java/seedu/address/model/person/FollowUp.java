@@ -3,6 +3,7 @@ package seedu.address.model.person;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -85,10 +86,18 @@ public class FollowUp {
     }
 
     /**
-     * Returns true if this follow-up date is before today.
+     * Returns true if this follow-up date is before today, using the system clock and time zone.
      */
     public boolean isPast() {
-        return isBefore(LocalDate.now());
+        return isPast(Clock.systemDefaultZone());
+    }
+
+    /**
+     * Returns true if this follow-up date is before today, as given by {@code clock}.
+     */
+    public boolean isPast(Clock clock) {
+        requireNonNull(clock);
+        return isBefore(LocalDate.now(clock));
     }
 
     /**

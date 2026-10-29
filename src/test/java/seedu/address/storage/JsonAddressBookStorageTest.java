@@ -16,6 +16,7 @@ import static seedu.address.testutil.TypicalPersons.IDA;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
@@ -666,6 +667,90 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
+    public void readAddressBookWithBackup_invalidUtf8InAddress_backupCreatedWithSameBytes() throws Exception {
+        Path filePath = testFolder.resolve("addressbook.json");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        // EP: invalid byte, overlong encoding, encoded surrogate and cut-off character inside an address.
+        for (byte[] badBytes : List.of(new byte[] {(byte) 0xFF}, new byte[] {(byte) 0xC0, (byte) 0xAF},
+                new byte[] {(byte) 0xED, (byte) 0xA0, (byte) 0x80}, new byte[] {(byte) 0xE4, (byte) 0xB8})) {
+            storage.saveAddressBook(getTypicalAddressBook());
+            byte[] corruptedBytes = insertAfter(Files.readAllBytes(filePath), "Jurong", badBytes);
+            Files.write(filePath, corruptedBytes);
+
+            // Without strict decoding the file loaded and the next save kept U+FFFD for good.
+            assertThrows(DataLoadingException.class, storage::readAddressBookWithBackup);
+
+            assertArrayEquals(corruptedBytes, Files.readAllBytes(filePath));
+            assertArrayEquals(corruptedBytes, Files.readAllBytes(JsonAddressBookStorage.getBackupFilePath(filePath)));
+        }
+    }
+
+    @Test
+    public void readAddressBookWithBackup_escapedUnpairedSurrogate_backupCreatedWithSameBytes() throws Exception {
+        Path filePath = testFolder.resolve("addressbook.json");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        // EP: half of an emoji pair written as a JSON escape. The bytes are valid UTF-8, but the text is not,
+        // and saving it would have replaced it with '?' for good.
+        for (String escape : List.of("\\ud83c", "\\udc00")) {
+            storage.saveAddressBook(getTypicalAddressBook());
+            byte[] escapeBytes = (" " + escape).getBytes(StandardCharsets.UTF_8);
+            byte[] corruptedBytes = insertAfter(Files.readAllBytes(filePath), "Jurong", escapeBytes);
+            Files.write(filePath, corruptedBytes);
+
+            assertThrows(DataLoadingException.class, storage::readAddressBookWithBackup);
+
+            assertArrayEquals(corruptedBytes, Files.readAllBytes(filePath));
+            assertArrayEquals(corruptedBytes, Files.readAllBytes(JsonAddressBookStorage.getBackupFilePath(filePath)));
+        }
+    }
+
+    @Test
+    public void readAndSaveAddressBook_nonAsciiText_bytesUnchanged() throws Exception {
+        // EP: valid UTF-8 with emoji, CJK, Tamil and a combining accent must keep loading and saving as is.
+        Path filePath = testFolder.resolve("addressbook.json");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+        String address = "Blk 1 \uD83C\uDFE0 \u4E1C\u6D77\u8DEF \u0B9A\u0BC6\u0BA9\u0BCD\u0BA9\u0BC8 Jose\u0301 Road";
+        Person person = new PersonBuilder().withName("\u9648\u5927\u6587 \u0B95\u0BC1\u0BAE\u0BBE\u0BB0\u0BCD")
+                .withAddress(address).build();
+        AddressBook addressBook = new AddressBook();
+        addressBook.addPerson(person);
+        storage.saveAddressBook(addressBook);
+        byte[] savedBytes = Files.readAllBytes(filePath);
+
+        ReadOnlyAddressBook readBack = storage.readAddressBookWithBackup().get();
+        assertEquals(address, readBack.getPersonList().get(0).getAddress().value);
+        storage.saveAddressBook(readBack);
+
+        assertArrayEquals(savedBytes, Files.readAllBytes(filePath));
+        assertFalse(Files.exists(JsonAddressBookStorage.getBackupFilePath(filePath)));
+    }
+
+    @Test
+    public void readAndSaveAddressBook_leadingByteOrderMark_loadsAllAndSavesWithoutMark() throws Exception {
+        // EP: a valid file saved as "UTF-8 with BOM" (Notepad, PowerShell 5) used to load as an empty list.
+        Path filePath = testFolder.resolve("addressbook.json");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+        storage.saveAddressBook(getTypicalAddressBook());
+        byte[] savedBytes = Files.readAllBytes(filePath);
+        byte[] withMark = new byte[savedBytes.length + 3];
+        withMark[0] = (byte) 0xEF;
+        withMark[1] = (byte) 0xBB;
+        withMark[2] = (byte) 0xBF;
+        System.arraycopy(savedBytes, 0, withMark, 3, savedBytes.length);
+        Files.write(filePath, withMark);
+
+        ReadOnlyAddressBook readBack = storage.readAddressBookWithBackup().get();
+        assertEquals(getTypicalAddressBook(), new AddressBook(readBack));
+        assertFalse(Files.exists(JsonAddressBookStorage.getBackupFilePath(filePath)));
+
+        // The next save drops the mark and keeps every contact.
+        storage.saveAddressBook(readBack);
+        assertArrayEquals(savedBytes, Files.readAllBytes(filePath));
+    }
+
+    @Test
     public void readAddressBookWithBackup_existingBackup_backupReplaced() throws Exception {
         // EP: a backup already exists; the newest unreadable file replaces it.
         Path backupPath = testFolder.resolve("addressbook.json.bak");
@@ -744,6 +829,67 @@ public class JsonAddressBookStorageTest {
         assertFalse(Files.exists(JsonAddressBookStorage.getBackupFilePath(folder)));
     }
 
+    @Test
+    @EnabledOnOs({OS.LINUX, OS.MAC})
+    public void readAddressBookWithBackup_dataFileLinksToBackup_preservesOnlyCopy() throws Exception {
+        // EP: the data file is a link to its own backup, so copying it there would copy nothing.
+        Path filePath = testFolder.resolve("addressbook.json");
+        Path backupPath = JsonAddressBookStorage.getBackupFilePath(filePath);
+        Files.copy(TEST_DATA_FOLDER.resolve("notJsonFormatAddressBook.json"), backupPath);
+        byte[] original = Files.readAllBytes(backupPath);
+        Files.createSymbolicLink(filePath, backupPath.getFileName());
+
+        assertBackupRefusedAndOnlyCopyKept(filePath, original);
+        assertTrue(Files.isSymbolicLink(filePath));
+    }
+
+    @Test
+    public void readAddressBookWithBackup_dataFileHardLinkedToBackup_preservesOnlyCopy() throws Exception {
+        // EP: the data file and the backup are two names for the same file.
+        Path filePath = testFolder.resolve("addressbook.json");
+        Path backupPath = JsonAddressBookStorage.getBackupFilePath(filePath);
+        Files.copy(TEST_DATA_FOLDER.resolve("notJsonFormatAddressBook.json"), backupPath);
+        byte[] original = Files.readAllBytes(backupPath);
+        try {
+            Files.createLink(filePath, backupPath);
+        } catch (UnsupportedOperationException | IOException e) {
+            assumeTrue(false, "Hard links are not supported here: " + e);
+        }
+
+        assertBackupRefusedAndOnlyCopyKept(filePath, original);
+    }
+
+    @Test
+    @EnabledOnOs({OS.LINUX, OS.MAC})
+    public void readAddressBookWithBackup_backupLinksToDataFile_replacesLinkWithCopy() throws Exception {
+        // EP: the backup path is a link to the data file; the copy replaces the link, not the data file.
+        Path filePath = testFolder.resolve("addressbook.json");
+        Files.copy(TEST_DATA_FOLDER.resolve("notJsonFormatAddressBook.json"), filePath);
+        byte[] original = Files.readAllBytes(filePath);
+        Path backupPath = JsonAddressBookStorage.getBackupFilePath(filePath);
+        Files.createSymbolicLink(backupPath, filePath.getFileName());
+
+        assertThrows(DataLoadingException.class, new JsonAddressBookStorage(filePath)::readAddressBookWithBackup);
+
+        assertFalse(Files.isSymbolicLink(backupPath));
+        assertArrayEquals(original, Files.readAllBytes(filePath));
+        assertArrayEquals(original, Files.readAllBytes(backupPath));
+    }
+
+    /**
+     * Checks that reading the unreadable {@code filePath}, which is the same file as its backup, stops
+     * with a {@link DataBackupException}, so startup ends before a save could replace {@code original}.
+     */
+    private static void assertBackupRefusedAndOnlyCopyKept(Path filePath, byte[] original) throws IOException {
+        Path backupPath = JsonAddressBookStorage.getBackupFilePath(filePath);
+
+        assertFalse(JsonAddressBookStorage.backUpFile(filePath).isPresent());
+        assertThrows(DataBackupException.class, new JsonAddressBookStorage(filePath)::readAddressBookWithBackup);
+
+        assertArrayEquals(original, Files.readAllBytes(filePath));
+        assertArrayEquals(original, Files.readAllBytes(backupPath));
+    }
+
     /**
      * Writes {@code content} to a temporary data file, reads it with backup, and checks that the
      * read fails, the data file is untouched and the backup matches it byte for byte.
@@ -758,6 +904,21 @@ public class JsonAddressBookStorageTest {
 
         assertArrayEquals(original, Files.readAllBytes(filePath));
         assertArrayEquals(original, Files.readAllBytes(JsonAddressBookStorage.getBackupFilePath(filePath)));
+    }
+
+    /**
+     * Returns a copy of {@code original} with {@code inserted} placed right after the first {@code marker}.
+     */
+    private static byte[] insertAfter(byte[] original, String marker, byte[] inserted) {
+        // ISO-8859-1 maps each byte to one char, so the index found is also the byte offset.
+        int markerIndex = new String(original, StandardCharsets.ISO_8859_1).indexOf(marker);
+        assertTrue(markerIndex >= 0, "Marker not found: " + marker);
+        int splitAt = markerIndex + marker.length();
+        byte[] result = new byte[original.length + inserted.length];
+        System.arraycopy(original, 0, result, 0, splitAt);
+        System.arraycopy(inserted, 0, result, splitAt, inserted.length);
+        System.arraycopy(original, splitAt, result, splitAt + inserted.length, original.length - splitAt);
+        return result;
     }
 
     /**

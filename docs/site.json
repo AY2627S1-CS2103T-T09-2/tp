@@ -2,7 +2,7 @@
   "baseUrl": "",
   "titlePrefix": "Easy-Insurance",
   "titleSuffix": "",
-  "faviconPath": "images/SeEduLogo.png",
+  "faviconPath": "images/appIcon.png",
   "style": {
     "codeTheme": "light"
   },

@@ -12,6 +12,7 @@ import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.Command;
+import seedu.address.logic.commands.ContactedCommand;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.DeleteNoteCommand;
 import seedu.address.logic.commands.DoneCommand;
@@ -78,6 +79,9 @@ public class CommandInputParser {
 
             case DoneCommand.COMMAND_WORD ->
                 new DoneCommandParser().parse(arguments);
+
+            case ContactedCommand.COMMAND_WORD ->
+                new ContactedCommandParser().parse(arguments);
 
             case DueCommand.COMMAND_WORD ->
                 new DueCommandParser().parse(arguments);

@@ -9,6 +9,7 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import seedu.address.model.person.FollowUp;
+import seedu.address.model.person.LastContact;
 import seedu.address.model.person.Person;
 
 /**
@@ -22,12 +23,16 @@ public class PersonCard extends UiPart<Region> {
     private static final String OVERDUE_SUFFIX = " (overdue)";
     private static final String OVERDUE_STYLE_CLASS = "follow_up_overdue";
 
+    private static final String LAST_CONTACT_LABEL_PREFIX = "Last contacted: ";
+    private static final String NO_LAST_CONTACT_TEXT = "Never";
+
     /**
      * Note: Certain keywords such as "location" and "resources" are reserved keywords in JavaFX.
      * As a consequence, UI elements' variable names cannot be set to such keywords
      * or an exception will be thrown by JavaFX during runtime.
      *
-     * @see <a href="https://github.com/se-edu/addressbook-level4/issues/336">The issue on AddressBook level 4</a>
+     * @see <a href="https://github.com/se-edu/addressbook-level4/issues/336">
+     *     The issue on AddressBook level 4</a>
      */
 
     public final Person person;
@@ -49,6 +54,8 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label followUp;
     @FXML
+    private Label lastContact;
+    @FXML
     private FlowPane tags;
 
     /**
@@ -57,21 +64,44 @@ public class PersonCard extends UiPart<Region> {
     public PersonCard(Person person, int displayedIndex) {
         super(FXML);
         this.person = person;
+
         id.setText(displayedIndex + ". ");
         name.setText(person.getName().fullName);
         phone.setText(person.getPhone().value);
         address.setText(person.getAddress().value);
         email.setText(person.getEmail().value);
+
         status.setText(person.getStatus().name());
-        status.getStyleClass().add("status_" + person.getStatus().name().toLowerCase(Locale.ROOT));
-        String followUpDate = person.getFollowUp().map(FollowUp::toString).orElse(NO_FOLLOW_UP_TEXT);
-        boolean isFollowUpOverdue = person.getFollowUp().map(FollowUp::isPast).orElse(false);
-        followUp.setText(FOLLOW_UP_LABEL_PREFIX + followUpDate + (isFollowUpOverdue ? OVERDUE_SUFFIX : ""));
+        status.getStyleClass().add(
+                "status_" + person.getStatus().name().toLowerCase(Locale.ROOT));
+
+        String followUpDate = person.getFollowUp()
+                .map(FollowUp::toString)
+                .orElse(NO_FOLLOW_UP_TEXT);
+
+        boolean isFollowUpOverdue = person.getFollowUp()
+                .map(FollowUp::isPast)
+                .orElse(false);
+
+        followUp.setText(
+                FOLLOW_UP_LABEL_PREFIX
+                        + followUpDate
+                        + (isFollowUpOverdue ? OVERDUE_SUFFIX : ""));
+
         if (isFollowUpOverdue) {
             followUp.getStyleClass().add(OVERDUE_STYLE_CLASS);
         }
+
+        String lastContactDate = person.getLastContact()
+                .map(LastContact::toString)
+                .orElse(NO_LAST_CONTACT_TEXT);
+
+        lastContact.setText(
+                LAST_CONTACT_LABEL_PREFIX + lastContactDate);
+
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
-                .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));
+                .forEach(tag ->
+                        tags.getChildren().add(new Label(tag.tagName)));
     }
 }

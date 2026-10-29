@@ -44,7 +44,9 @@ public class AddCommandParser implements Parser<AddCommand> {
                 ArgumentTokenizer.tokenize(args, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS,
                         PREFIX_STATUS, PREFIX_TAG, PREFIX_FOLLOW_UP);
 
-        if (!argMultimap.getPreamble().isEmpty()) {
+        // Text before the first prefix is most likely a name typed without n/. In that case the missing-field
+        // message below says that n/NAME is missing. If n/ is given, the text cannot be explained that way.
+        if (!argMultimap.getPreamble().isEmpty() && argMultimap.getValue(PREFIX_NAME).isPresent()) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
         }
 

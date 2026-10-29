@@ -148,6 +148,104 @@ public class DueCommandTest {
     }
 
     @Test
+    public void execute_sameDate_spacesSeparateWords() {
+        // EP: a shorter first word sorts before a longer word it starts, even when the next word would not.
+        assertSameDayOrder(List.of("Li Mei", "Lim Bo"), "Lim Bo", "Li Mei");
+        assertSameDayOrder(List.of("Tan Wei", "Tanaka"), "Tanaka", "Tan Wei");
+    }
+
+    @Test
+    public void execute_sameDate_accentAndCaseVariantsSortWordByWord() {
+        // EP: accented and lowercase names are still ordered word by word, next to their base letters.
+        assertSameDayOrder(List.of("Émile Tan", "Lé Mei", "li mei", "Lim Bo", "Zack Lim"),
+                "Zack Lim", "Lim Bo", "li mei", "Lé Mei", "Émile Tan");
+    }
+
+    @Test
+    public void execute_sameDate_laterWordOutranksAccentAndCase() {
+        // EP: first words differ only by accent or case, so the next word decides the order.
+        assertSameDayOrder(List.of("Emile Ann", "Émile Bo", "émile Zoe"),
+                "émile Zoe", "Émile Bo", "Emile Ann");
+    }
+
+    @Test
+    public void execute_sameDate_strokeLettersSortNextToBaseLetter() {
+        // EP: letters with a stroke, which the collator alone puts after Z, sort next to their base letter.
+        assertSameDayOrder(List.of("Dang Mei", "\u0110\u1eb7ng V\u0103n H\u00f9ng", "Zack Lim"),
+                "\u0110\u1eb7ng V\u0103n H\u00f9ng", "Zack Lim", "Dang Mei");
+        assertSameDayOrder(List.of("Lukas Ong", "\u0141ukasz Nowak", "Zack Lim"),
+                "Zack Lim", "\u0141ukasz Nowak", "Lukas Ong");
+        assertSameDayOrder(List.of("Hana Lee", "\u0126elena Vella", "Ian Tan", "\u00d8ystein Berg", "Paul Ng"),
+                "Paul Ng", "\u00d8ystein Berg", "Ian Tan", "\u0126elena Vella", "Hana Lee");
+    }
+
+    @Test
+    public void execute_sameDate_strokeLetterAfterBaseLetterOnTie() {
+        // EP: names that match once strokes are ignored keep a fixed order: the plain letter first.
+        assertSameDayOrder(List.of("Dang Mei", "\u0110ang Mei"), "\u0110ang Mei", "Dang Mei");
+        assertSameDayOrder(List.of("Dang Mei", "\u0110ang Mei"), "Dang Mei", "\u0110ang Mei");
+        assertSameDayOrder(List.of("lukas Ong", "\u0141ukas Ong"), "\u0141ukas Ong", "lukas Ong");
+        // The next word still outranks the stroke.
+        assertSameDayOrder(List.of("\u0141ee Ann", "Lee Bo"), "Lee Bo", "\u0141ee Ann");
+    }
+
+    @Test
+    public void execute_sameDate_hyphensSeparateWords() {
+        // EP: a hyphen splits a name into words just like a space does.
+        assertSameDayOrder(List.of("Mary-Ann Lee", "Mary Tan", "Maryann Lim"),
+                "Maryann Lim", "Mary Tan", "Mary-Ann Lee");
+    }
+
+    @Test
+    public void execute_sameDate_commasSeparateWords() {
+        // EP: a comma, with or without a space after it, splits a name into words.
+        assertSameDayOrder(List.of("Tan,Ann", "Tan, Ann", "Tan Wei Ming", "Tan Zed"),
+                "Tan Wei Ming", "Tan Zed", "Tan, Ann", "Tan,Ann");
+        assertSameDayOrder(List.of("Tan,Ann", "Tan, Ann", "Tan Wei Ming", "Tan Zed"),
+                "Tan,Ann", "Tan Zed", "Tan, Ann", "Tan Wei Ming");
+        assertSameDayOrder(List.of("Tan,Wei", "Tanaka"), "Tanaka", "Tan,Wei");
+    }
+
+    @Test
+    public void execute_sameDate_periodsSeparateWords() {
+        // EP: a period, with or without a space after it, splits a name into words, so initials sort as words.
+        // Names with the same words fall back to the whole-name collator, whatever order they were added in.
+        assertSameDayOrder(List.of("J.Tan", "J. Tan", "J. Zed", "J Zed"),
+                "J Zed", "J. Tan", "J. Zed", "J.Tan");
+        assertSameDayOrder(List.of("J.Tan", "J. Tan", "J. Zed", "J Zed"),
+                "J.Tan", "J. Zed", "J. Tan", "J Zed");
+        assertSameDayOrder(List.of("Tan.Wei", "Tanaka"), "Tanaka", "Tan.Wei");
+    }
+
+    @Test
+    public void execute_sameDate_equivalentNamesHaveFixedOrder() {
+        // EP: names with the same words, split differently, still get one order whatever order they were added.
+        // Fully identical names cannot both be stored, as they are duplicate contacts.
+        assertSameDayOrder(List.of("Mary Ann Tan", "Mary-Ann Tan"), "Mary Ann Tan", "Mary-Ann Tan");
+        assertSameDayOrder(List.of("Mary Ann Tan", "Mary-Ann Tan"), "Mary-Ann Tan", "Mary Ann Tan");
+    }
+
+    /**
+     * Adds contacts with the given names, all due today, and checks that {@code due} lists them in
+     * {@code expectedOrder}.
+     */
+    private static void assertSameDayOrder(List<String> expectedOrder, String... namesInInsertionOrder) {
+        AddressBook addressBook = new AddressBook();
+        for (int i = 0; i < namesInInsertionOrder.length; i++) {
+            addressBook.addPerson(new PersonBuilder().withName(namesInInsertionOrder[i])
+                    .withPhone("9111000" + i).withEmail("person" + i + "@example.com")
+                    .withFollowUp("21-10-2026").build());
+        }
+        Model sameDayModel = new ModelManager(addressBook, new UserPrefs());
+
+        new DueCommand(0, TODAY).execute(sameDayModel);
+
+        List<String> actualOrder = sameDayModel.getFilteredPersonList().stream()
+                .map(person -> person.getName().fullName).toList();
+        assertEquals(expectedOrder, actualOrder);
+    }
+
+    @Test
     public void execute_thenList_restoresOriginalOrder() {
         // EP: list is run after due has applied a filter and sort; the stored order must be restored.
         new DueCommand(365, TODAY).execute(model);
