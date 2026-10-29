@@ -48,9 +48,7 @@ public class DeleteNoteCommandParserTest {
     public void parse_invalidContactIndex_showsContactIndexError() {
         // EP: a non-positive contact index with a valid note index.
         // Boundary value: 0 is immediately below the minimum index of 1.
-        ParseException exception = assertThrows(
-                ParseException.class,
-                () -> parser.parse("0 1"));
+        ParseException exception = assertThrows(ParseException.class, () -> parser.parse("0 1"));
 
         assertEquals(
                 DeleteNoteCommandParser.MESSAGE_INVALID_CONTACT_INDEX,
@@ -61,9 +59,7 @@ public class DeleteNoteCommandParserTest {
     public void parse_invalidNoteIndex_showsNoteIndexError() {
         // EP: a non-positive note index with a valid contact index.
         // Boundary value: 0 is immediately below the minimum index of 1.
-        ParseException exception = assertThrows(
-                ParseException.class,
-                () -> parser.parse("1 0"));
+        ParseException exception = assertThrows(ParseException.class, () -> parser.parse("1 0"));
 
         assertEquals(
                 DeleteNoteCommandParser.MESSAGE_INVALID_NOTE_INDEX,
