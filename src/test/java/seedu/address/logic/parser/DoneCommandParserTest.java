@@ -64,6 +64,9 @@ public class DoneCommandParserTest {
         // EP: missing index; the empty string is the zero-argument boundary.
         assertLoggedParseFailure("", usageMessage, "expected a single index");
 
+        // EP: whitespace-only input, which is trimmed to the zero-argument case.
+        assertLoggedParseFailure(" \t ", usageMessage, "expected a single index");
+
         // EP: more than one argument; two arguments are the first invalid argument count.
         assertLoggedParseFailure("1 extra", usageMessage, "expected a single index");
     }
