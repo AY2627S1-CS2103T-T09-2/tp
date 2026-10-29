@@ -17,22 +17,22 @@ import seedu.address.testutil.PersonBuilder;
 public class HistoryCommandTest {
 
     @Test
-    public void execute_notesExist_showsNewestFirstWithTimestamps()
+    public void execute_notesExist_showsNewestFirstByInsertionOrder()
             throws CommandException {
 
-        // EP: the contact has multiple notes with distinct timestamps.
-        // Store the older note first to check that display order follows timestamps, not storage order.
-        InteractionNote olderNote = new InteractionNote(
+        // Simulates a time-zone change:
+        // the later-added note has an earlier-looking local timestamp.
+        InteractionNote firstNote = new InteractionNote(
                 "Discussed hospital coverage",
-                LocalDateTime.of(2026, 10, 26, 20, 30));
-
-        InteractionNote newerNote = new InteractionNote(
-                "Client requested a quotation",
                 LocalDateTime.of(2026, 10, 26, 21, 10));
+
+        InteractionNote secondNote = new InteractionNote(
+                "Client requested a quotation",
+                LocalDateTime.of(2026, 10, 26, 20, 30));
 
         Person person = new PersonBuilder()
                 .withName("John Tan")
-                .withInteractionNotes(olderNote, newerNote)
+                .withInteractionNotes(firstNote, secondNote)
                 .build();
 
         Model model = new ModelManager();
@@ -46,8 +46,8 @@ public class HistoryCommandTest {
         String expected = String.join(
                 System.lineSeparator(),
                 "Interaction history for John Tan:",
-                "1. [26-10-2026 21:10] Client requested a quotation",
-                "2. [26-10-2026 20:30] Discussed hospital coverage");
+                "1. [26-10-2026 20:30] Client requested a quotation",
+                "2. [26-10-2026 21:10] Discussed hospital coverage");
 
         assertEquals(expected, result.getFeedbackToUser());
     }
@@ -56,8 +56,6 @@ public class HistoryCommandTest {
     public void execute_noNotes_showsNoNotesMessage()
             throws CommandException {
 
-        // EP: the contact has no notes, so show the empty-history message.
-        // Boundary value: zero notes is the smallest possible history size.
         Person person = new PersonBuilder()
                 .withName("John Tan")
                 .build();
