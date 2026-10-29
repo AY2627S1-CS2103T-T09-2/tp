@@ -3,6 +3,9 @@ package seedu.address.logic.parser;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.index.Index;
@@ -10,8 +13,7 @@ import seedu.address.logic.commands.ContactedCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.LastContact;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+public class ContactedCommandParserTest {
 
 public class ContactedCommandParserTest {
 
