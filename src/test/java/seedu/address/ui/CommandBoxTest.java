@@ -69,6 +69,20 @@ public class CommandBoxTest {
         assertFalse(CommandBox.isHistoryKey(typed, true));
     }
 
+    @Test
+    public void isBlankCommand_whitespaceOnly_returnsTrue() {
+        assertTrue(CommandBox.isBlankCommand("   "));
+        assertTrue(CommandBox.isBlankCommand("\u2028"));
+        assertTrue(CommandBox.isBlankCommand("\u2029"));
+        assertTrue(CommandBox.isBlankCommand(" \u2028\u2029 "));
+    }
+
+    @Test
+    public void isBlankCommand_containsVisibleText_returnsFalse() {
+        assertFalse(CommandBox.isBlankCommand("help"));
+        assertFalse(CommandBox.isBlankCommand("  help  "));
+    }
+
     private KeyEvent keyPressed(KeyCode code) {
         return new KeyEvent(KeyEvent.KEY_PRESSED, "", "", code, false, false, false, false);
     }
