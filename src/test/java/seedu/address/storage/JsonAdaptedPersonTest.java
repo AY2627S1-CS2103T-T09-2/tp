@@ -174,8 +174,27 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
-    public void toModelType_invalidFollowUp_throwsIllegalValueException() {
-        // EP: the follow-up has the correct shape but names an impossible calendar date.
+    public void toModelType_invalidFollowUpFormat_throwsIllegalValueException() {
+        // EP: the follow-up is not in the DD-MM-YYYY shape.
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(
+                        VALID_NAME,
+                        VALID_PHONE,
+                        VALID_EMAIL,
+                        VALID_ADDRESS,
+                        null,
+                        VALID_TAGS,
+                        "2099-12-25");
+        assertThrows(
+                IllegalValueException.class,
+                FollowUp.MESSAGE_CONSTRAINTS,
+                person::toModelType);
+    }
+
+    @Test
+    public void toModelType_impossibleFollowUpDate_throwsNotARealDate() {
+        // EP: the follow-up has the correct shape but names an impossible calendar date,
+        // so the message matches the one the add and edit commands give.
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(
                         VALID_NAME,
@@ -187,7 +206,7 @@ public class JsonAdaptedPersonTest {
                         "31-02-2099");
         assertThrows(
                 IllegalValueException.class,
-                FollowUp.MESSAGE_CONSTRAINTS,
+                String.format(FollowUp.MESSAGE_NOT_A_REAL_DATE, "31-02-2099"),
                 person::toModelType);
     }
 
