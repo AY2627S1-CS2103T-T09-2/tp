@@ -49,10 +49,49 @@ public class FileUtilTest {
     }
 
     @Test
-    public void readFromFile_leadingByteOrderMark_keptAsCharacter() throws Exception {
-        // Documents existing behaviour: a UTF-8 byte order mark is valid UTF-8 and is not stripped here.
+    public void readFromFile_leadingByteOrderMark_stripped() throws Exception {
+        // EP: "UTF-8 with BOM" from Notepad or PowerShell 5 is still UTF-8, so the mark must not reach the parser.
         Path file = writeBytes(bytes(0xEF, 0xBB, 0xBF, 'a'));
+        assertEquals("a", FileUtil.readFromFile(file));
+    }
+
+    @Test
+    public void readFromFile_onlyByteOrderMark_emptyString() throws Exception {
+        // Boundary: a file holding just the mark reads like an empty file.
+        Path file = writeBytes(bytes(0xEF, 0xBB, 0xBF));
+        assertEquals("", FileUtil.readFromFile(file));
+    }
+
+    @Test
+    public void readFromFile_twoLeadingByteOrderMarks_onlyFirstStripped() throws Exception {
+        // Boundary: only one mark is an encoding signature; a second one is file content and is kept.
+        Path file = writeBytes(bytes(0xEF, 0xBB, 0xBF, 0xEF, 0xBB, 0xBF, 'a'));
         assertEquals("\uFEFFa", FileUtil.readFromFile(file));
+    }
+
+    @Test
+    public void readFromFile_byteOrderMarkAfterStart_kept() throws Exception {
+        // EP: U+FEFF anywhere other than the very start is text, not an encoding signature.
+        Path file = writeBytes(concat("a", bytes(0xEF, 0xBB, 0xBF), "b"));
+        assertEquals("a\uFEFFb", FileUtil.readFromFile(file));
+    }
+
+    @Test
+    public void readFromFile_invalidByteAfterByteOrderMark_offsetCountsMark() throws Exception {
+        // EP: the reported offset is still the byte offset in the file, including the 3 mark bytes.
+        Path file = writeBytes(concat(bytes(0xEF, 0xBB, 0xBF), "ab", bytes(0xFF)));
+        assertInvalidUtf8(file, 5);
+    }
+
+    @Test
+    public void writeToFile_text_noByteOrderMarkWritten() throws Exception {
+        // EP: saving never adds a mark, so a file read with one is written back without it.
+        Path source = writeBytes(concat(bytes(0xEF, 0xBB, 0xBF), "{}"));
+        Path copy = testFolder.resolve("copy.json");
+
+        FileUtil.writeToFile(copy, FileUtil.readFromFile(source));
+
+        assertArrayEquals("{}".getBytes(StandardCharsets.UTF_8), Files.readAllBytes(copy));
     }
 
     @Test

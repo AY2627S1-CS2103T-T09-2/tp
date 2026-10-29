@@ -708,6 +708,29 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
+    public void readAndSaveAddressBook_leadingByteOrderMark_loadsAllAndSavesWithoutMark() throws Exception {
+        // EP: a valid file saved as "UTF-8 with BOM" (Notepad, PowerShell 5) used to load as an empty list.
+        Path filePath = testFolder.resolve("addressbook.json");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+        storage.saveAddressBook(getTypicalAddressBook());
+        byte[] savedBytes = Files.readAllBytes(filePath);
+        byte[] withMark = new byte[savedBytes.length + 3];
+        withMark[0] = (byte) 0xEF;
+        withMark[1] = (byte) 0xBB;
+        withMark[2] = (byte) 0xBF;
+        System.arraycopy(savedBytes, 0, withMark, 3, savedBytes.length);
+        Files.write(filePath, withMark);
+
+        ReadOnlyAddressBook readBack = storage.readAddressBookWithBackup().get();
+        assertEquals(getTypicalAddressBook(), new AddressBook(readBack));
+        assertFalse(Files.exists(JsonAddressBookStorage.getBackupFilePath(filePath)));
+
+        // The next save drops the mark and keeps every contact.
+        storage.saveAddressBook(readBack);
+        assertArrayEquals(savedBytes, Files.readAllBytes(filePath));
+    }
+
+    @Test
     public void readAddressBookWithBackup_existingBackup_backupReplaced() throws Exception {
         // EP: a backup already exists; the newest unreadable file replaces it.
         Path backupPath = testFolder.resolve("addressbook.json.bak");

@@ -206,6 +206,13 @@ public class JsonUserPrefsStorageTest {
     }
 
     @Test
+    public void readUserPrefs_leadingByteOrderMark_successfullyRead() throws Exception {
+        // EP: a preferences file saved as "UTF-8 with BOM" keeps its values instead of falling back to defaults.
+        String validPrefs = Files.readString(TEST_DATA_FOLDER.resolve("TypicalUserPref.json"));
+        assertEquals(readUserPrefs("TypicalUserPref.json"), readUserPrefsJson("\uFEFF" + validPrefs));
+    }
+
+    @Test
     public void readUserPrefs_whitespaceAfterJson_successfullyRead() throws Exception {
         String validPrefs = Files.readString(TEST_DATA_FOLDER.resolve("TypicalUserPref.json"));
         assertEquals(readUserPrefs("TypicalUserPref.json"), readUserPrefsJson(validPrefs + "\n\n \t\r\n"));
