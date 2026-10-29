@@ -115,4 +115,14 @@ public class PhoneTest {
         // different values -> returns false
         assertFalse(phone.equals(new Phone("995")));
     }
+
+    @Test
+    public void constructor_repeatedSeparators_messageExplainsSingleSeparator() {
+        // EP: two separators in a row; the error must explain the rule the input breaks.
+        String expectedMessage = "Phone numbers must have at least 3 digits and at most " + Phone.MAX_LENGTH
+                + " characters, may start with +, and may separate digits with a single space or dash, "
+                + "e.g. +65 9123-4567.";
+        assertThrows(IllegalArgumentException.class, expectedMessage, () -> new Phone("9123  4567"));
+        assertThrows(IllegalArgumentException.class, expectedMessage, () -> new Phone("9123 - 4567"));
+    }
 }

@@ -152,7 +152,8 @@ Names must start with a letter, including accented letters, and end with a lette
 appear at the end of a name. Names may then contain letters, digits, spaces, hyphens (`-`), apostrophes (`'`),
 periods (`.`), commas (`,`), and slashes (`/`), so names such as
 `Anne-Marie`, `O'Connor`, and `Raj s/o Kumar` are accepted. Phone numbers must contain at least three
-digits. They may start with `+` and include spaces or dashes between digits, for example `+65 9123-4567`.
+digits. They may start with `+` and use a single space or dash between digits, for example `+65 9123-4567`.
+Two in a row, as in `9123--4567` or `9123 - 4567`, are rejected.
 A phone number can be at most 30 characters long and an email at most 254 characters long.
 Phone numbers are saved exactly as entered. If a name is already in the contact list, Easy-Insurance
 shows that contact's name and phone number.
