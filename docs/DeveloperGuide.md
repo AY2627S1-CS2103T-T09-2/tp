@@ -15,6 +15,9 @@ pageNav: 3
 
 * This project is based on the [AddressBook-Level3](https://github.com/se-edu/addressbook-level3) project created by the [SE-EDU initiative](https://se-education.org).
 * Libraries used: [JavaFX](https://openjfx.io/), [Jackson](https://github.com/FasterXML/jackson), [JUnit5](https://github.com/junit-team/junit5)
+* Tommy Quak used AI coding assistants (Claude and Codex) to help with parts of his coding, testing and documentation.
+  He reviewed all of the resulting code himself, and every change was also reviewed by a teammate, built and tested
+  before it was merged.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -185,7 +188,8 @@ reads it once at startup by calling `Storage#readAddressBookWithBackup()`, which
    * `requireNoTrailingContent` rejects anything other than whitespace after the JSON value, because Jackson stops
      reading after the first value and would drop the rest without an error.
 
-   `readJsonFile` also rejects a file that contains only `null`.
+   `readJsonFile` also rejects a file that contains only `null`, and an empty file, which Jackson would report
+   without a useful message.
 4. `JsonSerializableAddressBook#toModelType` converts each `JsonAdaptedPerson`, which checks every field with the
    same model methods that the commands use, such as `Name#isValidName`. Null entries and duplicate contacts are
    rejected. A missing or blank `status` becomes `PROSPECT` and a missing `followUp` means no follow-up, so files
@@ -196,7 +200,9 @@ reads it once at startup by calling `Storage#readAddressBookWithBackup()`, which
    `MainApp` logs a warning and starts with an empty `AddressBook`. It also keeps a notice from
    `StartupNotice#forUnloadableDataFile`, which `UiManager` shows in the result box once the window opens. The
    notice names the data file, the `.bak` copy and the reason. `JsonSerializableAddressBook` starts the reason with
-   the position of the invalid contact, e.g. `Contact 3 is invalid.`, so the user knows where to look.
+   the position of the invalid contact, e.g. `Contact 3 is invalid.`, so the user knows where to look. Jackson's
+   own messages name internal classes and quote the file, so `StartupNotice` replaces them with a plain reason and
+   the line number only, because Jackson's column is not always right.
 6. If the data file is not a regular file, such as a folder, or the copy cannot be made, `readAddressBookWithBackup`
    throws a `DataBackupException` instead. `MainApp#initModelManager` rethrows it as an `IllegalStateException`, so
    the app does not open. The message names the data file and the backup path and says that the original file was
@@ -269,6 +275,12 @@ through the `Storage` interface; the model does not call storage directly.
 
 These validation failures leave the contact unchanged. Execution stops before `Model.setPerson` and
 `Storage.saveAddressBook` are called.
+
+Before executing a command, `LogicManager` snapshots the current `AddressBook`. Copying a concrete
+`AddressBook` takes linear time: it copies the already-validated list and shares its immutable `Person`
+values, without repeating pairwise duplicate checks. The snapshot has its own list, so later additions,
+edits and deletions do not change it. Other read-only implementations and subclasses still undergo
+duplicate validation when copied.
 
 If saving fails with an `IOException` (including `AccessDeniedException`), `LogicManager` restores the
 pre-command address book, filter and sort order, then throws a `CommandException` with a save-error message.
@@ -913,4 +925,4 @@ The items below are known flaws in the current version. Each item describes the 
 
 1. **Make email and address optional when adding a contact.**
    `add` requires `e/` and `a/`, so a prospect known only by name and phone cannot be added. For example, `add n/Jane Doe p/98765432` gives `Missing required field(s): e/EMAIL, a/ADDRESS`. The only workaround is a made-up email and address, which then appear on the contact card and in the data file as if they were real.<br>
-   We plan to make `e/EMAIL` and `a/ADDRESS` optional in `add`, like `st/`, `f/` and `t/`. A contact added without them has no email or address: the contact card leaves out those lines and the data file stores no value for them. `add n/Jane Doe p/98765432` then gives `New contact added: Jane Doe (PROSPECT)`. `edit 1 e/jane@example.com` adds an email later, and `edit 1 e/` removes it again. Name and phone stay required, and a given `e/` or `a/` value must still be valid, so `add n/Jane Doe p/98765432 e/jane` still shows the email format error.
+   We plan to make `e/EMAIL` and `a/ADDRESS` optional in `add`, like `st/`, `f/` and `t/`. A contact added without them has no email or address: the contact card leaves out those lines and the data file stores no value for them. `add n/Jane Doe p/98765432` then gives `New contact added: Jane Doe (PROSPECT)`. Name and phone stay required, and a given `e/` or `a/` value must still be valid, so `add n/Jane Doe p/98765432 e/jane` still shows the email format error.
