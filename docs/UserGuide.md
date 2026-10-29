@@ -67,6 +67,13 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
+* In `add` and `edit`, a prefix belonging to another command is rejected with a message naming it.<br>
+  For example, `add n/Bob Lim nt/Met at roadshow p/92345678 e/bob@example.com a/2 Road` shows
+  `nt/ is not used by add. Use note INDEX nt/NOTE to add a note.` and adds nothing.<br>
+  In `find`, only `p/` is supported; other app prefixes are rejected, while prefix-like name forms such as `a/l`,
+  `a/p`, and `d/o` remain valid name keywords.
+  `s/o` and `d/o` inside a name are not prefixes, so a name such as `Aisha d/o Rahman` is accepted.
+
 * `help` and `exit` accept no parameters.<br>
   Extra parameters are rejected with an error naming the command.<br>
   For example, `help 123` shows `The help command does not accept additional parameters.`
@@ -151,7 +158,8 @@ Names must start with a letter, including accented letters, and end with a lette
 appear at the end of a name. Names may then contain letters, digits, spaces, hyphens (`-`), apostrophes (`'`),
 periods (`.`), commas (`,`), and slashes (`/`), so names such as
 `Anne-Marie`, `O'Connor`, and `Raj s/o Kumar` are accepted. Phone numbers must contain at least three
-digits. They may start with `+` and include spaces or dashes between digits, for example `+65 9123-4567`.
+digits. They may start with `+` and use a single space or dash between digits, for example `+65 9123-4567`.
+Two in a row, as in `9123--4567` or `9123 - 4567`, are rejected.
 A phone number can be at most 30 characters long and an email at most 254 characters long.
 Phone numbers are saved exactly as entered. If a name is already in the contact list, Easy-Insurance
 shows that contact's name and phone number.
@@ -216,6 +224,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] 
 * `f/FOLLOW_UP_DATE` changes the follow-up date. The date must be real and in `DD-MM-YYYY` format.
 * Past follow-up dates are accepted with a warning.
 * To clear an existing follow-up, enter `f/` without a date after it.
+* A contact cannot be renamed to another contact's name, ignoring case and extra spaces. For example, with the sample data, `edit 2 n/john tan` shows `This contact already exists: John Tan (91234567).` and changes nothing.
 * When editing tags, all of the contact's existing tags are removed; adding tags is not cumulative.
 * To remove all of a contact's tags, enter `t/` without a tag after it.
 * The success message always includes tags and the follow-up date. Empty fields show `Tags: none` or `Follow-up: none`. Multiple tags are separated by spaces, for example `Tags: [a] [b]`, in the same order as on the contact card.
@@ -230,19 +239,21 @@ Examples:
 
 ### Finding contacts by name or phone: `find`
 
-Finds contacts whose names start with any of the given keywords, or whose phone numbers contain the given digits.
+Finds contacts whose names contain a word starting with any of the given keywords, or whose phone numbers contain the given digits.
 
-Format: `find KEYWORD [MORE_KEYWORDS]` or `find p/PHONE_DIGITS`
+Format: `find KEYWORD [MORE_KEYWORDS]...` or `find p/PHONE_DIGITS`
 
-* Name searches are case-insensitive and match the start of any word; for example, `han` matches `Hans`.
-* Any keyword may match; for example, `find Hans Bo` returns contacts whose names contain either `Hans` or `Bo`.
+* Name searches are case-insensitive and match the start of any word; for example, `wo` matches `Mei Ling Wong`.
+* Any keyword may match; for example, `find John Priya` returns contacts whose names have a word starting with `John` or `Priya`.
 * Phone searches match contacts whose phone number contains the supplied digits; for example, `find p/9123`.
 * If no keyword is provided, Easy-Insurance shows: `Please enter at least one name keyword to search for. Example: find alice tan`.
 * If no phone digits are provided, Easy-Insurance shows: `Please enter at least one phone digit to search for. Example: find p/9123`.
+* `find` takes no prefix other than `p/`. To filter by status or tag, use `list st/STATUS` or `list t/TAG` instead. For example, `find st/CLIENT` shows: `st/ is not used by find. It only searches names, or phone numbers with p/, e.g. find John or find p/9123. To filter by status or tag, use list st/STATUS or list t/TAG.`
 
 Examples:
-* `find John` returns `john` and `John Doe`
-* `find alex david` returns contacts matching either `alex` or `david`.
+* `find John` returns `John Tan`.
+* `find mei priya` returns `Mei Ling Wong` and `Priya Nair`.
+* `find p/9123` returns `John Tan`, whose phone number is `91234567`.
 
 ### Deleting a contact: `delete`
 
@@ -478,7 +489,7 @@ Action     | Format, Examples
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Due**    | `due [DAYS]`<br> e.g., `due 7`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...`<br> e.g., `edit 2 n/James Lee st/CLIENT f/25-12-2026`
-**Find**   | `find KEYWORD [MORE_KEYWORDS]` or `find p/PHONE_DIGITS`<br> e.g., `find James Jake` or `find p/9123`
+**Find**   | `find KEYWORD [MORE_KEYWORDS]...` or `find p/PHONE_DIGITS`<br> e.g., `find John Priya` or `find p/9123`
 **List**   | `list [st/STATUS] [t/TAG]`<br> e.g., `list st/CLIENT t/referral`
 **History**| `history INDEX`<br> e.g., `history 2`
 **Note**   | `note INDEX nt/NOTE`<br> e.g., `note 2 nt/Discussed hospital coverage`

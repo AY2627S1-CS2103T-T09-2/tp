@@ -288,4 +288,22 @@ public class EditCommandParserTest {
         assertParseFailure(parser, userInput,
                 Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_FOLLOW_UP));
     }
+
+    @Test
+    public void parse_prefixFromOtherCommand_failure() {
+        // EP: nt/ after the name would otherwise be saved as part of the name.
+        assertParseFailure(parser, "1" + NAME_DESC_AMY + " nt/Called client",
+                "nt/ is not used by edit. Use note INDEX nt/NOTE to add a note.");
+
+        // EP: d/ as the only field.
+        assertParseFailure(parser, "1 d/27-10-2026",
+                "d/ is not used by edit. Use contacted INDEX d/DD-MM-YYYY to record the last contact date.");
+    }
+
+    @Test
+    public void parse_nameWithSlashWord_success() {
+        // EP: d/o in a name is not a prefix, so the whole name is kept.
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName("Aisha d/o Rahman").build();
+        assertParseSuccess(parser, "1 n/Aisha d/o Rahman", new EditCommand(INDEX_FIRST_PERSON, descriptor));
+    }
 }

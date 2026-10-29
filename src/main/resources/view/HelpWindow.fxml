@@ -214,7 +214,7 @@
                           <Label text="find"
                                  styleClass="command-guide-cell, command-guide-name"
                                  maxWidth="Infinity" />
-                          <Label text="find KEYWORD [MORE_KEYWORDS]&#10;or find p/PHONE_DIGITS"
+                          <Label text="find KEYWORD [MORE_KEYWORDS]...&#10;or find p/PHONE_DIGITS"
                                  styleClass="command-guide-cell, command-guide-code, command-guide-format"
                                  maxWidth="Infinity" />
                           <Label text="find ta&#10;find p/9123"
