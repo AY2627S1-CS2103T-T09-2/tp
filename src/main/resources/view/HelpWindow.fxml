@@ -251,6 +251,26 @@
 
                       <GridPane hgap="20.0" vgap="6.0" styleClass="command-guide-row">
                         <children>
+                          <Label text="deletenote"
+                                 styleClass="command-guide-cell, command-guide-name"
+                                 maxWidth="Infinity" />
+                          <Label text="deletenote CONTACT_INDEX NOTE_INDEX"
+                                 styleClass="command-guide-cell, command-guide-code, command-guide-format"
+                                 maxWidth="Infinity" />
+                          <Label text="deletenote 1 2"
+                                 styleClass="command-guide-cell, command-guide-code, command-guide-example"
+                                 maxWidth="Infinity" />
+                          <Label text="Format"
+                                 styleClass="command-guide-cell, command-guide-caption, command-guide-format"
+                                 visible="false" managed="false" />
+                          <Label text="Example"
+                                 styleClass="command-guide-cell, command-guide-caption, command-guide-example"
+                                 visible="false" managed="false" />
+                        </children>
+                      </GridPane>
+
+                      <GridPane hgap="20.0" vgap="6.0" styleClass="command-guide-row">
+                        <children>
                           <Label text="list"
                                  styleClass="command-guide-cell, command-guide-name"
                                  maxWidth="Infinity" />
