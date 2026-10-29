@@ -73,7 +73,8 @@ end note
 
 note over DoneCommand, Model
 Construct completedPerson with Optional.empty() for the follow-up.
-Copy the name, phone, email, address, status and tags.
+Copy the name, phone, email, address, status, tags,
+last-contact date and interaction notes.
 end note
 
 DoneCommand -> Model : setPerson(personToComplete, completedPerson)
