@@ -19,23 +19,22 @@ import seedu.address.testutil.PersonBuilder;
 public class DeleteNoteCommandTest {
 
     @Test
-    public void execute_deleteDisplayedNote_preservesContactAndOtherNotes()
+    public void execute_deleteDisplayedNote_usesInsertionOrder()
             throws CommandException {
 
-        // EP: the selected contact has multiple notes, so deleting one must preserve the others.
-        // Boundary value: contact and note indexes are both 1, the first valid displayed indexes.
-        // The newest note is stored second, so deletion must use history order rather than storage order.
-        InteractionNote olderNote = new InteractionNote(
+        // Simulates a time-zone change:
+        // the later-added note has an earlier-looking local timestamp.
+        InteractionNote firstNote = new InteractionNote(
                 "Discussed hospital coverage",
-                LocalDateTime.of(2026, 10, 26, 20, 30));
-
-        InteractionNote newerNote = new InteractionNote(
-                "Client requested a quotation",
                 LocalDateTime.of(2026, 10, 26, 21, 10));
+
+        InteractionNote secondNote = new InteractionNote(
+                "Client requested a quotation",
+                LocalDateTime.of(2026, 10, 26, 20, 30));
 
         Person person = new PersonBuilder()
                 .withName("John Tan")
-                .withInteractionNotes(olderNote, newerNote)
+                .withInteractionNotes(firstNote, secondNote)
                 .build();
 
         Model model = new ModelManager();
@@ -63,7 +62,7 @@ public class DeleteNoteCommandTest {
         assertEquals(person.getFollowUp(), updatedPerson.getFollowUp());
 
         assertEquals(
-                List.of(olderNote),
+                List.of(firstNote),
                 updatedPerson.getInteractionNotes());
     }
 
