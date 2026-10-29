@@ -66,6 +66,7 @@ public class ListCommand extends Command {
 
     /**
      * Returns feedback for the configured filters and result count.
+     * The tag is shown as the user typed it, even though matching ignores case.
      */
     private String getFeedbackMessage(int numberOfContacts) {
         Optional<Status> status = predicate.getStatus();

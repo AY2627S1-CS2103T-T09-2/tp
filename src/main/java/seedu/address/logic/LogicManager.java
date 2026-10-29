@@ -2,6 +2,11 @@ package seedu.address.logic;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.function.Predicate;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javafx.collections.ObservableList;
@@ -12,6 +17,7 @@ import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.CommandInputParser;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 import seedu.address.storage.Storage;
@@ -24,6 +30,9 @@ public class LogicManager implements Logic {
 
     public static final String FILE_OPS_PERMISSION_ERROR_FORMAT =
             "Could not save data to file %s due to insufficient permissions to write to the file or the folder.";
+
+    public static final String FILE_OPS_DIRECTORY_ERROR_FORMAT =
+            "Could not save data to file %s because %s is not a folder.";
 
     private final Logger logger = LogsCenter.getLogger(LogicManager.class);
 
@@ -44,19 +53,44 @@ public class LogicManager implements Logic {
     public CommandResult execute(String commandText) throws CommandException, ParseException {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
-        CommandResult commandResult;
         Command command = commandInputParser.parseCommand(commandText);
-        commandResult = command.execute(model);
+        // Copy the contact list: keeping the live address book reference would retain failed edits too.
+        AddressBook previousData = new AddressBook(model.getAddressBook());
+        Predicate<? super Person> previousPredicate = model.getPersonListPredicate();
+        Comparator<? super Person> previousComparator = model.getPersonListComparator();
+        CommandResult commandResult = command.execute(model);
+        if (previousData.isIdenticalTo(model.getAddressBook())) {
+            return commandResult;
+        }
 
         try {
             storage.saveAddressBook(model.getAddressBook());
-        } catch (AccessDeniedException e) {
-            throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
-        } catch (IOException ioe) {
-            throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
+        } catch (IOException e) {
+            model.setAddressBook(previousData);
+            if (previousComparator == null) {
+                model.updateFilteredPersonList(previousPredicate);
+            } else {
+                model.updateFilteredPersonList(previousPredicate, previousComparator);
+            }
+            logger.log(Level.WARNING, "Save failed; restored previous contact data and displayed list.", e);
+            throw new CommandException(getSaveErrorMessage(e), e);
         }
 
         return commandResult;
+    }
+
+    /**
+     * Formats permission and folder errors with the configured data file, preserving other I/O error details.
+     */
+    private String getSaveErrorMessage(IOException exception) {
+        Path dataFile = storage.getAddressBookFilePath();
+        if (exception instanceof AccessDeniedException) {
+            return String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, dataFile);
+        }
+        if (exception instanceof NotDirectoryException directoryException) {
+            return String.format(FILE_OPS_DIRECTORY_ERROR_FORMAT, dataFile, directoryException.getFile());
+        }
+        return String.format(FILE_OPS_ERROR_FORMAT, exception.getMessage());
     }
 
     @Override

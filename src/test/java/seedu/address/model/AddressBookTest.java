@@ -7,6 +7,7 @@ import static seedu.address.logic.commands.CommandTestUtil.VALID_ADDRESS_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
+import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.util.Collection;
@@ -31,11 +32,13 @@ public class AddressBookTest {
 
     @Test
     public void resetData_null_throwsNullPointerException() {
+        // EP: the replacement address book is null.
         assertThrows(NullPointerException.class, () -> addressBook.resetData(null));
     }
 
     @Test
     public void resetData_withValidReadOnlyAddressBook_replacesData() {
+        // EP: replacement data contains distinct contact identities.
         AddressBook newData = getTypicalAddressBook();
         addressBook.resetData(newData);
         assertEquals(newData, addressBook);
@@ -43,7 +46,7 @@ public class AddressBookTest {
 
     @Test
     public void resetData_withDuplicatePersons_throwsDuplicatePersonException() {
-        // Two persons with the same identity fields
+        // EP: duplicate identities, even when addresses and tags differ.
         Person editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND)
                 .build();
         List<Person> newPersons = List.of(ALICE, editedAlice);
@@ -59,17 +62,20 @@ public class AddressBookTest {
 
     @Test
     public void hasPerson_personNotInAddressBook_returnsFalse() {
+        // EP: no stored contact shares the queried identity. An empty book is the zero-contact boundary.
         assertFalse(addressBook.hasPerson(ALICE));
     }
 
     @Test
     public void hasPerson_personInAddressBook_returnsTrue() {
+        // EP: the exact contact is present.
         addressBook.addPerson(ALICE);
         assertTrue(addressBook.hasPerson(ALICE));
     }
 
     @Test
     public void hasPerson_personWithSameIdentityFieldsInAddressBook_returnsTrue() {
+        // EP: the identity matches but other details differ; membership uses identity rather than equality.
         addressBook.addPerson(ALICE);
         Person editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND)
                 .build();
@@ -79,6 +85,50 @@ public class AddressBookTest {
     @Test
     public void getPersonList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, () -> addressBook.getPersonList().remove(0));
+    }
+
+    @Test
+    public void isIdenticalTo_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> addressBook.isIdenticalTo(null));
+    }
+
+    @Test
+    public void isIdenticalTo_sameContactsInSameOrder_returnsTrue() {
+        // EP: a copy shares every contact, and the zero-contact boundary is identical to another empty book.
+        assertTrue(addressBook.isIdenticalTo(new AddressBook()));
+        AddressBook typicalAddressBook = getTypicalAddressBook();
+        assertTrue(typicalAddressBook.isIdenticalTo(new AddressBook(typicalAddressBook)));
+
+        // EP: separately built contacts with the same fields and tag spellings.
+        addressBook.addPerson(new PersonBuilder(ALICE).withTags("VIP", "friends").build());
+        assertTrue(addressBook.isIdenticalTo(new AddressBookStub(
+                List.of(new PersonBuilder(ALICE).withTags("friends", "VIP").build()))));
+    }
+
+    @Test
+    public void isIdenticalTo_tagLetterCaseDiffers_returnsFalse() {
+        // EP: tags differ only in letter case, so the books are equal but not identical.
+        addressBook.addPerson(new PersonBuilder(ALICE).withTags("VIP", "friends").build());
+        AddressBook lowerCaseTags = new AddressBook();
+        lowerCaseTags.addPerson(new PersonBuilder(ALICE).withTags("vip", "friends").build());
+
+        assertEquals(addressBook, lowerCaseTags);
+        assertFalse(addressBook.isIdenticalTo(lowerCaseTags));
+        assertFalse(lowerCaseTags.isIdenticalTo(addressBook));
+    }
+
+    @Test
+    public void isIdenticalTo_differentContacts_returnsFalse() {
+        addressBook.addPerson(ALICE);
+        addressBook.addPerson(BENSON);
+
+        // EP: a contact is missing.
+        assertFalse(addressBook.isIdenticalTo(new AddressBookStub(List.of(ALICE))));
+        // EP: the same contacts in a different order.
+        assertFalse(addressBook.isIdenticalTo(new AddressBookStub(List.of(BENSON, ALICE))));
+        // EP: a field other than the tags differs, here only the letter case of the name.
+        Person lowerCaseAlice = new PersonBuilder(ALICE).withName("alice pauline").build();
+        assertFalse(addressBook.isIdenticalTo(new AddressBookStub(List.of(lowerCaseAlice, BENSON))));
     }
 
     @Test

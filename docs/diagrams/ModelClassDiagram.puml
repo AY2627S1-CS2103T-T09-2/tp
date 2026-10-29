@@ -45,6 +45,7 @@ Class LastContact {
   + isAfter(LocalDate) : boolean
 }
 Class Tag
+Class InteractionNote
 
 Class I #FFFFFF
 }
@@ -71,6 +72,7 @@ Person *--> Status
 Person *--> "0..1" FollowUp
 Person *--> "0..1" LastContact
 Person *--> "*" Tag
+Person *--> "*" InteractionNote
 
 Person -[hidden]up--> I
 UniquePersonList -[hidden]right-> I

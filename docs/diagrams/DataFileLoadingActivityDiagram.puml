@@ -1,0 +1,34 @@
+@startuml
+skin rose
+skinparam ActivityFontSize 15
+skinparam ArrowFontSize 12
+start
+:Easy-Insurance starts;
+
+'Since the beta syntax does not support placing the condition outside the
+'diamond we place it as the true branch instead.
+
+if () then ([data file does not exist])
+    :Load sample contacts;
+else ([else])
+    :Decode file as UTF-8,
+    parse the JSON and
+    check every contact;
+    if () then ([all checks pass])
+        :Load contacts from file;
+    else ([else])
+        :Copy data file to
+        addressbook.json.bak;
+        if () then ([copy made])
+            :Start with an empty
+            contact list;
+        else ([else])
+            :Stop with an error naming
+            the data and backup files;
+            stop
+        endif
+    endif
+endif
+:Show main window;
+stop
+@enduml
