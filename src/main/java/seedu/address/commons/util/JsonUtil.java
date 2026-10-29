@@ -29,13 +29,24 @@ public class JsonUtil {
     public static final String MESSAGE_TRAILING_CONTENT =
             "Unexpected content after the end of the JSON data at line %d, column %d";
 
+    /**
+     * Deepest nesting of objects and arrays accepted when reading. Valid data files are only a few
+     * levels deep, while deeply nested junk overflows the stack inside Jackson and crashes the app.
+     */
+    public static final int MAX_NESTING_DEPTH = 100;
+
+    public static final String MESSAGE_TOO_DEEPLY_NESTED =
+            "JSON data is nested more than " + MAX_NESTING_DEPTH + " levels deep at line %d, column %d";
+
     private static final Logger logger = LogsCenter.getLogger(JsonUtil.class);
 
     private static ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules()
             .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
-            .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+            .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
+            // A repeated key would otherwise silently replace the earlier value, e.g. drop a contact list.
+            .configure(JsonParser.Feature.STRICT_DUPLICATE_DETECTION, true);
 
     static <T> void serializeObjectToJsonFile(Path jsonFile, T objectToSerialize) throws IOException {
         FileUtil.writeToFile(jsonFile, toJsonString(objectToSerialize));
@@ -97,15 +108,46 @@ public class JsonUtil {
     /**
      * Converts a given string representation of JSON data to an instance of a class.
      * The string must hold exactly one JSON value; only whitespace may follow it.
+     * Repeated keys in an object and nesting deeper than {@link #MAX_NESTING_DEPTH} are rejected.
      * @param <T> The generic type to create an instance of
      * @return The instance of T with the specified values in the JSON string
-     * @throws IOException if the JSON is invalid or there is content after the JSON value
+     * @throws IOException if the JSON is invalid, has a repeated key, is nested too deeply,
+     *     or there is content after the JSON value
      */
     public static <T> T fromJsonString(String json, Class<T> instanceClass) throws IOException {
+        requireNestingWithinLimit(json);
         try (JsonParser parser = objectMapper.getFactory().createParser(json)) {
             T instance = objectMapper.readValue(parser, instanceClass);
             requireNoTrailingContent(parser);
             return instance;
+        }
+    }
+
+    /**
+     * Throws an {@code IOException} if the first JSON value in {@code json} nests objects and arrays
+     * deeper than {@link #MAX_NESTING_DEPTH}. Jackson's object mapping recurses once per level, so
+     * this streaming pass, which uses no recursion, has to run first. Only the first value is checked;
+     * anything after it is reported by {@link #requireNoTrailingContent(JsonParser)} instead.
+     */
+    private static void requireNestingWithinLimit(String json) throws IOException {
+        try (JsonParser parser = objectMapper.getFactory().createParser(json)) {
+            int depth = 0;
+            JsonToken token;
+            while ((token = parser.nextToken()) != null) {
+                if (token.isStructStart()) {
+                    depth++;
+                    if (depth > MAX_NESTING_DEPTH) {
+                        JsonLocation location = parser.getTokenLocation();
+                        throw new IOException(String.format(MESSAGE_TOO_DEEPLY_NESTED,
+                                location.getLineNr(), location.getColumnNr()));
+                    }
+                } else if (token.isStructEnd()) {
+                    depth--;
+                }
+                if (depth == 0) {
+                    return;
+                }
+            }
         }
     }
 
