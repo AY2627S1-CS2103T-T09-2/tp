@@ -235,6 +235,20 @@ public class CommandInputParserTest {
     }
 
     @Test
+    public void parseCommand_unicodeSeparatorInsideNote_returnsCommand()
+            throws ParseException {
+        // EP: U+2028 inside the command acts as whitespace instead of breaking command parsing.
+        NoteCommand expectedCommand = new NoteCommand(
+                INDEX_FIRST_PERSON,
+                new InteractionNote("Called client Discussed renewal"));
+
+        assertEquals(
+                expectedCommand,
+                parser.parseCommand(
+                        "note 1 nt/Called client\u2028Discussed renewal"));
+    }
+
+    @Test
     public void parseCommand_history() throws ParseException {
         // EP: a recognized history command with a valid index is dispatched to its parser.
         HistoryCommand expectedCommand =
@@ -244,6 +258,18 @@ public class CommandInputParserTest {
                 expectedCommand,
                 parser.parseCommand(
                         HistoryCommand.COMMAND_WORD + " 1"));
+    }
+
+    @Test
+    public void parseCommand_unicodeSeparatorAfterHistoryIndex_returnsCommand()
+            throws ParseException {
+        // EP: trailing U+2029 acts as whitespace after a valid history index.
+        HistoryCommand expectedCommand =
+                new HistoryCommand(INDEX_FIRST_PERSON);
+
+        assertEquals(
+                expectedCommand,
+                parser.parseCommand("history 1\u2029"));
     }
 
     @Test
