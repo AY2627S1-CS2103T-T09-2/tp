@@ -2,6 +2,9 @@ package seedu.address.logic.parser;
 
 import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_LAST_CONTACT;
+
+import java.time.LocalDate;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.ContactedCommand;
@@ -13,34 +16,34 @@ import seedu.address.model.person.LastContact;
  */
 public class ContactedCommandParser implements Parser<ContactedCommand> {
 
-    private static final String DATE_PREFIX = "d/";
-
     @Override
     public ContactedCommand parse(String args) throws ParseException {
         requireNonNull(args);
 
-        String trimmedArgs = args.trim();
+        ArgumentMultimap argMultimap =
+                ArgumentTokenizer.tokenize(args, PREFIX_LAST_CONTACT);
 
-        int prefixPosition = trimmedArgs.indexOf(DATE_PREFIX);
+        ParserUtil.verifyNoDuplicatePrefixesFor(
+                argMultimap,
+                PREFIX_LAST_CONTACT);
 
-        if (prefixPosition < 0) {
+        String indexText = argMultimap.getPreamble().trim();
+
+        if (indexText.isEmpty()
+                || indexText.matches(".*\\s+.*")
+                || argMultimap.getValue(PREFIX_LAST_CONTACT).isEmpty()) {
             throw new ParseException(
                     String.format(
                             MESSAGE_INVALID_COMMAND_FORMAT,
                             ContactedCommand.MESSAGE_USAGE));
         }
 
-        String indexText =
-                trimmedArgs.substring(0, prefixPosition).trim();
-
         String dateText =
-                trimmedArgs.substring(
-                        prefixPosition + DATE_PREFIX.length()).trim();
+                argMultimap.getValue(PREFIX_LAST_CONTACT)
+                        .orElse("")
+                        .trim();
 
-        if (indexText.isEmpty()
-                || indexText.matches(".*\\s+.*")
-                || dateText.isEmpty()
-                || dateText.matches(".*\\s+.*")) {
+        if (dateText.isEmpty()) {
             throw new ParseException(
                     String.format(
                             MESSAGE_INVALID_COMMAND_FORMAT,
@@ -54,8 +57,15 @@ public class ContactedCommandParser implements Parser<ContactedCommand> {
                     LastContact.MESSAGE_CONSTRAINTS);
         }
 
+        LastContact lastContact = new LastContact(dateText);
+
+        if (lastContact.isAfter(LocalDate.now())) {
+            throw new ParseException(
+                    LastContact.MESSAGE_FUTURE_DATE);
+        }
+
         return new ContactedCommand(
                 index,
-                new LastContact(dateText));
+                lastContact);
     }
 }
