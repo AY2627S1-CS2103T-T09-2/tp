@@ -136,7 +136,13 @@ If a box contains multiple example commands, select just the command you want to
 While an example is focused, arrow keys move its text cursor. Use **Tab** or **Shift+Tab** to return to the
 command guide for keyboard scrolling.
 
-![help message](images/helpMessage.png)
+The top of the command guide:
+
+![Help command guide showing add, clear, contacted, delete, done, due and edit](images/helpMessage.png)
+
+Scroll down to see the remaining commands. The footer below shows confirmation after copying the User Guide URL:
+
+![Help command guide showing interaction notes and the URL-copy confirmation](images/helpMessageNotes.png)
 
 Format: `help`
 
