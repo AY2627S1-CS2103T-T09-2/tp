@@ -50,7 +50,7 @@ public class DeleteNoteCommandTest {
                 model.getFilteredPersonList().get(0);
 
         assertEquals(
-                "Deleted interaction note 1 for John Tan.",
+                "Deleted interaction note 1 for John Tan: Client requested a quotation",
                 result.getFeedbackToUser());
 
         assertEquals(person.getName(), updatedPerson.getName());
@@ -92,10 +92,14 @@ public class DeleteNoteCommandTest {
                 Index.fromOneBased(1),
                 Index.fromOneBased(1));
 
-        command.execute(model);
+        CommandResult result = command.execute(model);
 
         Person updatedPerson =
                 model.getFilteredPersonList().get(0);
+
+        assertEquals(
+                "Deleted interaction note 1 for John Tan: Same",
+                result.getFeedbackToUser());
 
         assertEquals(
                 List.of(sameNote, otherNote),
