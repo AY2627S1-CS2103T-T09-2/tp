@@ -130,6 +130,40 @@ public class InteractionNoteTest {
     }
 
     @Test
+    public void isValidNote_exactlyMaximumUnicodeCharacters_returnsTrue() {
+        // Boundary value: supplementary Unicode characters count as one code point each.
+        String noteAtMaximumLength =
+                "😀".repeat(InteractionNote.MAX_LENGTH);
+
+        assertEquals(
+                InteractionNote.MAX_LENGTH * 2,
+                noteAtMaximumLength.length());
+
+        assertEquals(
+                InteractionNote.MAX_LENGTH,
+                noteAtMaximumLength.codePointCount(
+                        0,
+                        noteAtMaximumLength.length()));
+
+        assertTrue(InteractionNote.isValidNote(noteAtMaximumLength));
+    }
+
+    @Test
+    public void isValidNote_overMaximumUnicodeCharacters_returnsFalse() {
+        // Boundary value: MAX_LENGTH + 1 Unicode code points is invalid.
+        String noteOverMaximumLength =
+                "😀".repeat(InteractionNote.MAX_LENGTH + 1);
+
+        assertEquals(
+                InteractionNote.MAX_LENGTH + 1,
+                noteOverMaximumLength.codePointCount(
+                        0,
+                        noteOverMaximumLength.length()));
+
+        assertFalse(InteractionNote.isValidNote(noteOverMaximumLength));
+    }
+
+    @Test
     public void constructor_controlCharacter_throwsIllegalArgumentException() {
         // EP: control characters are not allowed in interaction note text.
         assertThrows(IllegalArgumentException.class, () ->
