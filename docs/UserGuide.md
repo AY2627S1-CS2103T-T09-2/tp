@@ -136,9 +136,11 @@ The contact list shows blue, green, and grey badges respectively for these statu
 
 **Tags:** A contact can have any number of tags, including zero. Each tag is a single word of letters and digits,
 up to 50 characters long, such as `t/referral` or `t/lifePolicy2`. Accented and non-English letters are accepted
-(`t/café`), but spaces and symbols are not, so `t/high value` and `t/high-value` are rejected; write `t/highValue`
-instead. Digits must be decimal digits (0 to 9, or the same digits in another script, such as `٣`), so number
-symbols like `½`, `²` and `①` are rejected.
+(`t/café`, `t/ज़िंदगी`), but spaces, symbols and invisible characters are not, so `t/high value` and `t/high-value`
+are rejected; write `t/highValue` instead. Each letter can carry up to 5 accents or marks, which is enough for words
+in scripts such as Hindi, Burmese and Hebrew, so only piled-up stacks of marks are rejected. Digits must be decimal
+digits (0 to 9, or the same digits in another script, such as `٣`), so number symbols like `½`, `²` and `①` are
+rejected.
 Tags ignore case, so `t/VIP` and `t/vip` are the same tag and a contact keeps only one of them.
 </box>
 
