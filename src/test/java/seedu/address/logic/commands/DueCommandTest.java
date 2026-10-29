@@ -180,6 +180,16 @@ public class DueCommandTest {
     }
 
     @Test
+    public void execute_sameDate_accentedStrokeLettersSortNextToBaseLetter() {
+        // EP: a stroke letter that also has an accent, typed as one character (Ǿ, ǿ), sorts like the plain one.
+        assertSameDayOrder(List.of("\u00d8rn Ann", "\u01fern Bo", "Paul Ng", "Zack Lim"),
+                "Zack Lim", "\u01fern Bo", "Paul Ng", "\u00d8rn Ann");
+        assertSameDayOrder(List.of("Orn Ann", "\u01ffrn Bo", "Paul Ng"), "Paul Ng", "\u01ffrn Bo", "Orn Ann");
+        // The accent still comes after the plain stroke letter when everything else ties.
+        assertSameDayOrder(List.of("\u00d8rn Ann", "\u01fern Ann"), "\u01fern Ann", "\u00d8rn Ann");
+    }
+
+    @Test
     public void execute_sameDate_strokeLetterAfterBaseLetterOnTie() {
         // EP: names that match once strokes are ignored keep a fixed order: the plain letter first.
         assertSameDayOrder(List.of("Dang Mei", "\u0110ang Mei"), "\u0110ang Mei", "Dang Mei");

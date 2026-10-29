@@ -98,7 +98,7 @@ The sequence diagram below illustrates the interactions within the `Logic` compo
 
 <puml src="diagrams/DeleteSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `delete 1` Command" />
 
-The sequence diagram below illustrates how the `find` command filters contacts by name keywords.
+The sequence diagram below illustrates how the `find` command filters contacts by name keywords or phone digits.
 
 <puml src="diagrams/FindSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `find` Command" />
 
@@ -259,7 +259,8 @@ follow-up. Individual field getters and the internal calls within `Model` and `S
    contact. It then checks that the selected contact has a pending follow-up.
 4. The command constructs a replacement `Person`, copying the other contact details and setting the
    follow-up to `Optional.empty()`. It calls `Model.setPerson` to replace the original contact in memory.
-5. The command returns a `CommandResult` containing `Marked follow-up for <name> as completed.`.
+5. The command returns a `CommandResult` with the original contact's name and scheduled date:
+   `Marked follow-up for <name> as completed (scheduled for <DD-MM-YYYY>).`
    `LogicManager` obtains the updated address book from `Model` and passes it to `Storage.saveAddressBook`.
    After the save succeeds, `LogicManager` returns the result to its caller.
 
@@ -434,7 +435,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. Agent enters `find KEYWORD [MORE_KEYWORDS]` or `find p/PHONE_DIGITS`.
+1. Agent enters `find KEYWORD [MORE_KEYWORDS]...` or `find p/PHONE_DIGITS`.
 2. System ignores leading and trailing spaces and checks that the search value is present.
    A phone search must contain digits only.
 3. For a name search, the system matches the start of any word in a contact's name against any supplied keyword,
@@ -455,6 +456,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   * Use case ends without changing the contact list.
 * 2c. A phone search contains non-digit characters.
   * 2c1. System explains that the phone search must contain digits only.
+  * Use case ends without changing the contact list.
+* 2d. The search contains a prefix other than `p/`, such as `n/`, `st/` or `t/`.
+  * 2d1. System names the prefix, explains that `find` only searches names or phone numbers, and points to `list st/STATUS` or `list t/TAG` for filtering.
   * Use case ends without changing the contact list.
 * 3a. No contact matches the name keywords or phone digits.
   * 3a1. System shows an empty result list and reports `0 contacts listed.`
@@ -482,6 +486,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 3b. The follow-up date is in the past.
   * 3b1. System saves the date and warns the agent that it is in the past.
   * Use case resumes at step 4.
+* 3c. The new name matches another contact's name, ignoring case and extra spaces.
+  * 3c1. System shows `This contact already exists: NAME (PHONE).` with that contact's name and phone number, and does not change the contact.
+  * Use case ends.
 * 4a. The selected contact is not in the displayed list.
   * 4a1. System explains that the contact reference is invalid.
   * Use case ends without changing any contacts.
@@ -575,7 +582,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Inactive**: A contact the agent is no longer actively pursuing but keeps in the app.
 * **Follow-up**: The date on which the agent intends to next contact a prospect or client. A past date is accepted with a warning and is treated as an overdue follow-up until it is marked done.
 * **Pending follow-up**: A follow-up date that is still recorded on a contact. Marking it done removes the date.
-* **Duplicate contact**: A contact whose name matches an existing contact's name after ignoring letter case and extra spaces. Easy-Insurance refuses to add a duplicate.
+* **Duplicate contact**: A contact whose name matches an existing contact's name after ignoring letter case and extra spaces. Easy-Insurance refuses to add a duplicate or to rename a contact to another contact's name.
 * **Index**: The number shown next to a contact in the currently displayed list. Commands such as `edit`, `delete` and `done` refer to contacts by index.
 * **Name keyword**: Non-empty text used by `find` to match the start of any word in a contact's name, ignoring letter case.
 * **Phone search digits**: A non-empty sequence of digits used by `find p/PHONE_DIGITS` to match consecutive digits in a phone number, ignoring stored formatting.
@@ -789,7 +796,7 @@ testers are expected to do more *exploratory* testing.
       Run `find Followup` and check that only this contact is shown.
 
    1. Test case: `done 1`<br>
-      Expected: The result shows `Marked follow-up for Followup Test as completed.`
+      Expected: The result shows `Marked follow-up for Followup Test as completed (scheduled for 25-12-2099).`
       The card shows `Follow-up: None`. The contact's name, phone, email, address, status and tags remain unchanged.
 
    1. Test case: Run `done 1` again.<br>
@@ -799,8 +806,9 @@ testers are expected to do more *exploratory* testing.
       Expected: The result shows `There is no contact 2. The list shows 1 contact.` No contact details change.
 
    1. Other incorrect commands to try: `done`, `done 0`, `done x`, `done 1 extra`<br>
-      Expected: `done 0` and `done x` show `Index must be a positive integer.` Other malformed forms show the
-      invalid-command-format error with `done INDEX`. No contact details change.
+      Expected: `done 0` and `done x` show `Index must be a positive integer.` Commands such as `done`
+      and `done 1 extra` show the invalid-command-format error followed by the full `done` usage:
+      a description, index parameter guidance and an example. No contact details change.
 
 1. Saving a completed follow-up
 
@@ -921,7 +929,7 @@ The items below are known flaws in the current version. Each item describes the 
 
 1. **Say that `find` cannot search by name and phone at the same time.**
    `find alice p/9123` and `find p/9123 alice` give `Phone search keywords must contain digits only. Example: find p/9123`, although `9123` is all digits. The real problem is that a name keyword and a phone search are mixed.<br>
-   We plan to give this case its own message when there is a name keyword before `p/` or a word after the phone digits: `Search by name or by phone, not both. Use find KEYWORD [MORE_KEYWORDS] or find p/PHONE_DIGITS.` A phone search with a non-digit value, such as `find p/9a23`, keeps the current message.
+   We plan to give this case its own message when there is a name keyword before `p/` or a word after the phone digits: `Search by name or by phone, not both. Use find KEYWORD [MORE_KEYWORDS]... or find p/PHONE_DIGITS.` A phone search with a non-digit value, such as `find p/9a23`, keeps the current message.
 
 1. **Make email and address optional when adding a contact.**
    `add` requires `e/` and `a/`, so a prospect known only by name and phone cannot be added. For example, `add n/Jane Doe p/98765432` gives `Missing required field(s): e/EMAIL, a/ADDRESS`. The only workaround is a made-up email and address, which then appear on the contact card and in the data file as if they were real.<br>

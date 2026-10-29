@@ -10,9 +10,10 @@ import static seedu.address.storage.JsonUserPrefsStorage.MESSAGE_INVALID_WINDOW_
 import static seedu.address.storage.JsonUserPrefsStorage.MESSAGE_INVALID_WINDOW_SIZE;
 import static seedu.address.storage.JsonUserPrefsStorage.MESSAGE_MISSING_GUI_SETTINGS;
 import static seedu.address.testutil.Assert.assertThrows;
+import static seedu.address.testutil.TestUtil.bytes;
+import static seedu.address.testutil.TestUtil.insertAfter;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -191,12 +192,7 @@ public class JsonUserPrefsStorageTest {
         // EP: a byte that is not valid UTF-8 inside a key is rejected, so the app falls back to defaults.
         Path prefsFilePath = testFolder.resolve("prefs.json");
         byte[] validPrefs = Files.readAllBytes(TEST_DATA_FOLDER.resolve("TypicalUserPref.json"));
-        int splitAt = new String(validPrefs, StandardCharsets.ISO_8859_1).indexOf("windowWidth") + "window".length();
-        byte[] content = new byte[validPrefs.length + 1];
-        System.arraycopy(validPrefs, 0, content, 0, splitAt);
-        content[splitAt] = (byte) 0xFF;
-        System.arraycopy(validPrefs, splitAt, content, splitAt + 1, validPrefs.length - splitAt);
-        Files.write(prefsFilePath, content);
+        Files.write(prefsFilePath, insertAfter(validPrefs, "window", bytes(0xFF)));
         JsonUserPrefsStorage storage = new JsonUserPrefsStorage(prefsFilePath);
 
         assertThrows(DataLoadingException.class, storage::readUserPrefs);

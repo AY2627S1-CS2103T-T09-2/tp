@@ -171,9 +171,8 @@ public class JsonUtil {
                     if (token == JsonToken.END_OBJECT) {
                         keysOfOpenObjects.pop();
                     }
-                } else if (token == JsonToken.FIELD_NAME && !keysOfOpenObjects.peek().add(parser.getCurrentName())) {
-                    throw new IOException(formatWithLocation(MESSAGE_DUPLICATE_KEY, parser,
-                            parser.getCurrentName()));
+                } else if (token == JsonToken.FIELD_NAME) {
+                    requireUniqueKey(keysOfOpenObjects, parser);
                 }
                 if (token == JsonToken.FIELD_NAME || token == JsonToken.VALUE_STRING) {
                     requireNoUnpairedSurrogate(parser);
@@ -182,6 +181,19 @@ public class JsonUtil {
                     return;
                 }
             }
+        }
+    }
+
+    /**
+     * Throws an {@code IOException} if the field name at the current token of {@code parser} was
+     * already used in the innermost open object, whose keys so far are on top of {@code keysOfOpenObjects}.
+     */
+    private static void requireUniqueKey(Deque<Set<String>> keysOfOpenObjects, JsonParser parser)
+            throws IOException {
+        assert !keysOfOpenObjects.isEmpty() : "A field name can only appear inside an object";
+        String key = parser.getCurrentName();
+        if (!keysOfOpenObjects.peek().add(key)) {
+            throw new IOException(formatWithLocation(MESSAGE_DUPLICATE_KEY, parser, key));
         }
     }
 

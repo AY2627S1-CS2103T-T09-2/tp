@@ -69,7 +69,9 @@ class JsonSerializableAddressBook {
         Person person;
         try {
             person = jsonAdaptedPerson.toModelType();
-        } catch (IllegalValueException e) {
+        } catch (IllegalValueException | IllegalArgumentException e) {
+            // A model constructor can still reject a value that passed the raw check, e.g. an address of
+            // control characters is blank once trimmed. That is invalid data too, so the file gets backed up.
             throw new IllegalValueException(String.format(MESSAGE_CONTACT_POSITION, position, e.getMessage()), e);
         }
         if (addressBook.hasPerson(person)) {

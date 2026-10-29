@@ -16,8 +16,8 @@ public class InteractionNote {
     public static final int MAX_LENGTH = 2000;
 
     public static final String MESSAGE_CONSTRAINTS =
-            "Interaction notes must not be blank and must not exceed "
-                    + MAX_LENGTH + " characters.";
+            "Interaction notes must not be blank, must not contain control characters, "
+                    + "and must not exceed " + MAX_LENGTH + " characters.";
 
     private final String value;
     private final LocalDateTime createdAt;
@@ -69,7 +69,24 @@ public class InteractionNote {
         }
 
         String trimmedNote = test.trim();
-        return trimmedNote.codePointCount(0, trimmedNote.length()) <= MAX_LENGTH;
+        return trimmedNote.codePointCount(0, trimmedNote.length()) <= MAX_LENGTH
+                && test.chars().noneMatch(Character::isISOControl);
+    }
+  
+    /**
+     * Returns true if the text contains only whitespace or invisible spacing characters.
+     */
+    private static boolean isVisuallyBlank(String text) {
+        return text.codePoints().allMatch(InteractionNote::isInvisibleSpacing);
+    }
+
+    /**
+     * Returns true if the code point is treated as invisible spacing in an interaction note.
+     */
+    private static boolean isInvisibleSpacing(int codePoint) {
+        return Character.isWhitespace(codePoint)
+                || Character.isSpaceChar(codePoint)
+                || codePoint == 0x200B;
     }
 
     @Override

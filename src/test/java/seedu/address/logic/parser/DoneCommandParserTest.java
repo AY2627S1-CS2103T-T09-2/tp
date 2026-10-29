@@ -57,9 +57,15 @@ public class DoneCommandParserTest {
             assertLoggedParseFailure(args, expectedMessage, "invalid index");
         }
 
-        String usageMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, DoneCommand.MESSAGE_USAGE);
+        String usageMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT,
+                "done: Marks the pending follow-up of the contact identified by the displayed index as completed.\n"
+                        + "Parameters: INDEX (must be a positive integer)\n"
+                        + "Example: done 1");
         // EP: missing index; the empty string is the zero-argument boundary.
         assertLoggedParseFailure("", usageMessage, "expected a single index");
+
+        // EP: whitespace-only input, which is trimmed to the zero-argument case.
+        assertLoggedParseFailure(" \t ", usageMessage, "expected a single index");
 
         // EP: more than one argument; two arguments are the first invalid argument count.
         assertLoggedParseFailure("1 extra", usageMessage, "expected a single index");

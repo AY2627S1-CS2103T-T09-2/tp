@@ -32,11 +32,17 @@ public class PhoneTest {
         assertThrows(NullPointerException.class, () -> Phone.isValidPhone(null));
 
         // EP: blank input with no digits.
-        assertFalse(Phone.isValidPhone("")); // Boundary value: zero characters.
+        // Boundary value: zero characters.
+        // @@author kaseyho-reused
+        assertFalse(Phone.isValidPhone(""));
+        // @@author
         assertFalse(Phone.isValidPhone(" ")); // spaces only
 
         // EP: fewer than the required three digits.
-        assertFalse(Phone.isValidPhone("91")); // Boundary value: one digit below the minimum.
+        // Boundary value: one digit below the minimum.
+        // @@author kaseyho-reused
+        assertFalse(Phone.isValidPhone("91"));
+        // @@author
 
         // EP: alphabetic characters, whether alone or mixed with digits.
         assertFalse(Phone.isValidPhone("phone")); // non-numeric
@@ -58,7 +64,10 @@ public class PhoneTest {
         assertFalse(Phone.isValidPhone("9123  4567"));
 
         // EP: digit-only numbers with at least three digits; longer values are also supported.
-        assertTrue(Phone.isValidPhone("911")); // Boundary value: minimum of three digits.
+        // Boundary value: minimum of three digits.
+        // @@author kaseyho-reused
+        assertTrue(Phone.isValidPhone("911"));
+        // @@author
         assertTrue(Phone.isValidPhone("93121534"));
         assertTrue(Phone.isValidPhone("124293842033123")); // long phone numbers
 
@@ -114,5 +123,15 @@ public class PhoneTest {
 
         // different values -> returns false
         assertFalse(phone.equals(new Phone("995")));
+    }
+
+    @Test
+    public void constructor_repeatedSeparators_messageExplainsSingleSeparator() {
+        // EP: two separators in a row; the error must explain the rule the input breaks.
+        String expectedMessage = "Phone numbers must have at least 3 digits and at most " + Phone.MAX_LENGTH
+                + " characters, may start with +, and may separate digits with a single space or dash, "
+                + "e.g. +65 9123-4567.";
+        assertThrows(IllegalArgumentException.class, expectedMessage, () -> new Phone("9123  4567"));
+        assertThrows(IllegalArgumentException.class, expectedMessage, () -> new Phone("9123 - 4567"));
     }
 }

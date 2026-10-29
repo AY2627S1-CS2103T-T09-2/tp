@@ -35,11 +35,20 @@ public class ClearCommand extends Command {
 
         if (!isConfirmed) {
             int contactCount = model.getAddressBook().getPersonList().size();
-            String contactNoun = contactCount == 1 ? "contact" : "contacts";
-            return new CommandResult(String.format(MESSAGE_CONFIRM_CLEAR, contactCount, contactNoun));
+            String contactNoun =
+                    contactCount == 1 ? "contact" : "contacts";
+
+            return new CommandResult(
+                    String.format(
+                            MESSAGE_CONFIRM_CLEAR,
+                            contactCount,
+                            contactNoun));
         }
 
         model.setAddressBook(new AddressBook());
+        model.updateFilteredPersonList(
+                Model.PREDICATE_SHOW_ALL_PERSONS);
+
         return new CommandResult(MESSAGE_SUCCESS);
     }
 }
