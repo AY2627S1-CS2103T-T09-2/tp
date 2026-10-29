@@ -82,6 +82,13 @@ public class CommandBox extends UiPart<Region> {
     }
 
     /**
+     * Returns whether the command contains only whitespace.
+     */
+    static boolean isBlankCommand(String commandText) {
+        return commandText.strip().isEmpty();
+    }
+
+    /**
      * Sets the command box style to use the default style.
      */
     private void setStyleToDefault() {
