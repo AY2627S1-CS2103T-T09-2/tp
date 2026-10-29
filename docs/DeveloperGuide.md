@@ -205,6 +205,8 @@ These validation failures leave the contact unchanged. Execution stops before `M
 
 If saving fails with an `IOException` (including `AccessDeniedException`), `LogicManager` restores the
 pre-command address book, filter and sort order, then throws a `CommandException` with a save-error message.
+Permission errors name the configured data file rather than an internal temporary file. If a file blocks a
+required parent folder, the error names both the data file and the blocking path.
 The restored contact still has its pending follow-up, and the displayed indexes return to their previous order.
 No success result is returned. This rollback applies to commands that change contact data, including
 interaction notes. `LogicManager` compares the address book before and after execution and skips saving
