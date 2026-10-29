@@ -806,8 +806,9 @@ testers are expected to do more *exploratory* testing.
       Expected: The result shows `There is no contact 2. The list shows 1 contact.` No contact details change.
 
    1. Other incorrect commands to try: `done`, `done 0`, `done x`, `done 1 extra`<br>
-      Expected: `done 0` and `done x` show `Index must be a positive integer.` Other malformed forms show the
-      invalid-command-format error with `done INDEX`. No contact details change.
+      Expected: `done 0` and `done x` show `Index must be a positive integer.` Commands such as `done`
+      and `done 1 extra` show the invalid-command-format error followed by the full `done` usage:
+      a description, index parameter guidance and an example. No contact details change.
 
 1. Saving a completed follow-up
 
