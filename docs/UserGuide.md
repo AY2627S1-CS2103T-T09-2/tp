@@ -309,7 +309,9 @@ Format: `done INDEX`
 * The index refers to the number shown in the displayed contact list.
 * The index must be a positive integer and refer to a displayed contact.
 * The contact must have a pending follow-up.
-* The contact's other details remain unchanged. Its card shows `Follow-up: None` after completion.
+* The contact's other details remain unchanged. If still displayed, its card shows `Follow-up: None` after completion.
+* When viewing the `due` list, the completed contact disappears from that view because it no longer has a follow-up.
+  The contact is retained; run `list` to see it again.
 
 On success, the result includes the original scheduled date:
 `Marked follow-up for <name> as completed (scheduled for <DD-MM-YYYY>).`
