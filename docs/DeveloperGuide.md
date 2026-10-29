@@ -168,6 +168,72 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 ## **Implementation**
 
+### Loading and backing up the data file
+
+Contact data is stored in `data/addressbook.json`, in the folder the app is launched from. `MainApp#initModelManager`
+reads it once at startup by calling `Storage#readAddressBookWithBackup()`, which `StorageManager` passes on to
+`JsonAddressBookStorage`. The activity diagram below shows the possible outcomes.
+
+<puml src="diagrams/DataFileLoadingActivityDiagram.puml" alt="Loading the data file at startup" />
+
+1. If the data file does not exist, `JsonUtil.readJsonFile` returns `Optional.empty()` and `MainApp` loads the
+   sample contacts from `SampleDataUtil`. The file is created the first time a command changes contact data.
+2. Otherwise, `FileUtil.readFromFile` reads the bytes and decodes them as UTF-8 with a decoder that reports invalid
+   bytes instead of replacing them with the character U+FFFD. Replaced characters would be written back on the next
+   save, so the original text would be lost. The error gives the byte offset of the first invalid sequence.
+3. `JsonUtil.fromJsonString` parses the text in three steps:
+   * `requireValidStructure` reads the tokens without recursion. It rejects a key that appears twice in one object,
+     and objects or arrays nested more than 100 levels deep (`MAX_NESTING_DEPTH`), giving the line and column.
+     A repeated key would otherwise replace the earlier value, and deep nesting would overflow the stack inside
+     Jackson.
+   * Jackson maps the JSON value to a `JsonSerializableAddressBook`. Unknown fields are ignored.
+   * `requireNoTrailingContent` rejects anything other than whitespace after the JSON value, because Jackson stops
+     reading after the first value and would drop the rest without an error.
+
+   `readJsonFile` also rejects a file that contains only `null`.
+4. `JsonSerializableAddressBook#toModelType` converts each `JsonAdaptedPerson`, which checks every field with the
+   same model methods that the commands use, such as `Name#isValidName`. Null entries and duplicate contacts are
+   rejected. A missing or blank `status` becomes `PROSPECT` and a missing `followUp` means no follow-up, so data
+   files from older versions still load.
+5. A failure in any of steps 2 to 4 causes a `DataLoadingException`. `readAddressBookWithBackup` copies the data
+   file to `addressbook.json.bak` in the same folder, replacing any older backup, and rethrows the exception.
+   `MainApp` logs a warning and starts with an empty `AddressBook`.
+6. If the data file is not a regular file, such as a folder, or the copy fails, `readAddressBookWithBackup` throws
+   a `DataBackupException` instead. `MainApp#initModelManager` rethrows it as an `IllegalStateException`, so the
+   app does not open. The message names the data file and the backup path and says that the original file was
+   not changed.
+
+Starting with an empty list does not save anything. The invalid data file stays on disk until the first command
+that changes contact data replaces it, because `LogicManager` skips saving when the data is unchanged.
+From then on, the `.bak` copy is the only copy of the old data.
+
+#### Design considerations
+
+**Aspect: What to do when the data file cannot be loaded**
+
+* **Alternative 1 (current choice):** Back up the file, then start with an empty contact list.
+  * Pros: The app always opens, and the user's data is kept in full in the `.bak` file for recovery.
+  * Cons: The next change replaces the invalid file, so the user must recover from the `.bak` file. A later
+    failed load replaces that backup too.
+* **Alternative 2:** Refuse to start until the file is fixed.
+  * Pros: The invalid file can never be overwritten.
+  * Cons: The agent cannot use the app at all until they find and fix the problem in the JSON by hand. We keep
+    this behaviour only for the case where the backup cannot be made, because starting then would put the only
+    copy of the data at risk.
+
+**Aspect: How strictly to read the file**
+
+* **Alternative 1 (current choice):** Reject invalid UTF-8, repeated keys, deep nesting, trailing content and
+  invalid field values. Accept unknown fields and missing optional fields.
+  * Pros: Nothing in the file is dropped or changed without the user knowing, and a rejected file is backed up
+    whole. Files from older versions still load.
+  * Cons: One bad value makes the whole file load as an empty list, instead of skipping only the bad contact.
+* **Alternative 2:** Read leniently, for example by skipping invalid contacts, keeping the last of repeated keys
+  and replacing bad bytes.
+  * Pros: More of the data appears straight away.
+  * Cons: The skipped contacts and replaced text are lost for good on the next save, with no backup and no
+    warning, so the user may not notice until much later.
+
 ### Completing a follow-up
 
 The `done INDEX` command clears the pending follow-up of the contact at the specified index in the currently
@@ -431,6 +497,34 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 3b. The selected contact is not in the displayed list.
   * 3b1. System explains that the contact reference is invalid.
   * Use case ends without changing any contacts.
+
+**Use case: Review due follow-ups**
+
+**MSS**
+
+1. Agent requests to see the follow-ups due within a given number of days from today.
+2. System works out the cutoff date, which is today plus that number of days.
+3. System shows only the contacts whose follow-up date is on or before the cutoff date, including overdue ones,
+   earliest date first. Contacts with the same date are sorted by name.
+4. System reports how many follow-ups are due and the cutoff date.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. Agent does not give a number of days.
+  * 1a1. System uses 0 days, so the cutoff date is today.
+  * Use case resumes at step 3.
+* 1b. The number of days is not a whole number from 0 to 365.
+  * 1b1. System shows `Number of days must be a whole number from 0 to 365, e.g. due 7.`
+  * Use case ends without changing the displayed list.
+* 3a. No contact has a follow-up on or before the cutoff date.
+  * 3a1. System shows an empty list and reports that no follow-ups are due by the cutoff date.
+  * Use case ends.
+* 4a. Agent completes one of the listed follow-ups, referring to it by its position in the sorted list.
+  * 4a1. System clears that follow-up as in the use case *Complete a follow-up*, and removes the contact from
+    the list because it no longer has a follow-up.
+  * Use case ends.
 
 **Use case: Delete a contact**
 
