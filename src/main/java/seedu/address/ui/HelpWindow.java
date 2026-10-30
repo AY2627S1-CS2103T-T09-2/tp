@@ -221,14 +221,8 @@ public class HelpWindow extends UiPart<Stage> {
     public void show(Window mainWindow) {
         fitToScreen(mainWindow);
         copyStatus.setText("");
-        Rectangle2D bounds = new Rectangle2D(getRoot().getX(), getRoot().getY(),
-                getRoot().getWidth(), getRoot().getHeight());
+        // JavaFX applies the fitted bounds when showing the native window.
         getRoot().show();
-        // The native window manager may adjust the bounds while showing a previously hidden window.
-        getRoot().setX(bounds.getMinX());
-        getRoot().setY(bounds.getMinY());
-        getRoot().setWidth(bounds.getWidth());
-        getRoot().setHeight(bounds.getHeight());
         commandGuideScrollPane.requestFocus();
         logger.fine("Showing command guide.");
     }
