@@ -51,7 +51,8 @@ public class LogicManager implements Logic {
 
     @Override
     public CommandResult execute(String commandText) throws CommandException, ParseException {
-        logger.info("----------------[USER COMMAND][" + commandText.strip().split("\\s+", 2)[0] + "]");
+        String commandWord = commandText.replaceFirst("^[\\h\\v]+", "").split("[\\h\\v]+", 2)[0];
+        logger.info("----------------[USER COMMAND][" + commandWord + "]");
 
         Command command = commandInputParser.parseCommand(commandText);
         // Copy the contact list: keeping the live address book reference would retain failed edits too.

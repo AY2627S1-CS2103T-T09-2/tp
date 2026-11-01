@@ -312,11 +312,16 @@ public class LogicManagerTest {
         try {
             logic.execute(AddCommand.COMMAND_WORD + NAME_DESC_AMY + PHONE_DESC_AMY + EMAIL_DESC_AMY
                     + ADDRESS_DESC_AMY);
+            // A non-breaking space after the command word is accepted by the parser, so it must split here too.
+            assertThrows(ParseException.class, () -> logic.execute("\u00A0find\u00A0" + VALID_NAME_AMY
+                    + "\u00A0" + VALID_PHONE_AMY + " p/"));
+            logic.execute("find\u00A0" + VALID_NAME_AMY);
         } finally {
             logger.removeHandler(handler);
         }
 
         assertTrue(messages.stream().anyMatch(message -> message.contains("[USER COMMAND][add]")));
+        assertTrue(messages.stream().anyMatch(message -> message.contains("[USER COMMAND][find]")));
         assertTrue(messages.stream().noneMatch(message -> message.contains(VALID_NAME_AMY)
                 || message.contains(VALID_PHONE_AMY)));
     }
