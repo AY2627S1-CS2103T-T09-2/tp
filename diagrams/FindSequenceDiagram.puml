@@ -12,15 +12,15 @@ participant "r:CommandResult" as CommandResult LOGIC_COLOR
 end box
 
 box Model MODEL_COLOR_T1
-participant "p:NameContainsKeywordsPredicate" as NamePredicate MODEL_COLOR
-participant "p:PhoneContainsKeywordPredicate" as PhonePredicate MODEL_COLOR
+participant "np:NameContainsKeywordsPredicate" as NamePredicate MODEL_COLOR
+participant "pp:PhoneContainsKeywordPredicate" as PhonePredicate MODEL_COLOR
 participant "m:Model" as Model MODEL_COLOR
 end box
 
-[-> LogicManager : execute("find alice")
+[-> LogicManager : execute(commandText)
 activate LogicManager
 
-LogicManager -> CommandInputParser : parseCommand("find alice")
+LogicManager -> CommandInputParser : parseCommand(commandText)
 activate CommandInputParser
 
 create FindCommandParser
@@ -30,16 +30,16 @@ activate FindCommandParser
 FindCommandParser --> CommandInputParser
 deactivate FindCommandParser
 
-CommandInputParser -> FindCommandParser : parse("alice")
+CommandInputParser -> FindCommandParser : parse(arguments)
 activate FindCommandParser
 
-alt no p/ prefix
+alt find alice (no p/ prefix)
     create NamePredicate
     FindCommandParser -> NamePredicate : NameContainsKeywordsPredicate(["alice"])
     activate NamePredicate
     NamePredicate --> FindCommandParser
     deactivate NamePredicate
-else p/ prefix given
+else find p/9123
     create PhonePredicate
     FindCommandParser -> PhonePredicate : PhoneContainsKeywordPredicate("9123")
     activate PhonePredicate
@@ -48,7 +48,7 @@ else p/ prefix given
 end
 
 create FindCommand
-FindCommandParser -> FindCommand : FindCommand(predicate)
+FindCommandParser -> FindCommand : FindCommand(np or pp)
 activate FindCommand
 FindCommand --> FindCommandParser
 deactivate FindCommand
@@ -64,7 +64,7 @@ deactivate CommandInputParser
 LogicManager -> FindCommand : execute(m)
 activate FindCommand
 
-FindCommand -> Model : updateFilteredPersonList(predicate)
+FindCommand -> Model : updateFilteredPersonList(np or pp)
 activate Model
 Model --> FindCommand
 deactivate Model
