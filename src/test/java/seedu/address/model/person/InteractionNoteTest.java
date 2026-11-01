@@ -97,9 +97,22 @@ public class InteractionNoteTest {
     }
 
     @Test
+    public void isValidNote_invisibleFormatCharactersOnly_returnsFalse() {
+        // EP: other invisible format characters, alone or mixed with spaces, draw nothing on screen.
+        assertFalse(InteractionNote.isValidNote("\u2060"));
+        assertFalse(InteractionNote.isValidNote("\uFEFF"));
+        assertFalse(InteractionNote.isValidNote("\u200C"));
+        assertFalse(InteractionNote.isValidNote("\u200D"));
+        assertFalse(InteractionNote.isValidNote(" \u2060\u00A0\uFEFF "));
+    }
+
+    @Test
     public void isValidNote_visibleTextWithInvisibleSpacing_returnsTrue() {
         // EP: invisible spacing is allowed when the note still contains visible text.
         assertTrue(InteractionNote.isValidNote("\u200BMet client\u00A0"));
+        // Joiners are needed inside some scripts and emoji, so they stay allowed next to visible text.
+        assertTrue(InteractionNote.isValidNote("Met \uD83D\uDC68\u200D\uD83D\uDC69 family"));
+        assertTrue(InteractionNote.isValidNote("\u2060Called client"));
     }
 
     @Test
