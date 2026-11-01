@@ -97,7 +97,7 @@ public class JsonUtil {
         try {
             jsonFile = deserializeObjectFromJsonFile(filePath, classOfObjectToDeserialize);
         } catch (IOException e) {
-            logger.warning("Error reading from jsonFile file " + filePath + ": " + e);
+            logger.warning("Error reading from jsonFile file " + filePath + ": " + e.getClass().getSimpleName());
             throw new DataLoadingException(e);
         }
 

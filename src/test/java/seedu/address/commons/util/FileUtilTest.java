@@ -3,6 +3,7 @@ package seedu.address.commons.util;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TestUtil.bytes;
 import static seedu.address.testutil.TestUtil.concat;
@@ -29,6 +30,21 @@ public class FileUtilTest {
         // EP: valid UTF-8 with 2, 3 and 4 byte sequences and combining marks.
         Path file = writeBytes(NON_ASCII_TEXT.getBytes(StandardCharsets.UTF_8));
         assertEquals(NON_ASCII_TEXT, FileUtil.readFromFile(file));
+    }
+
+    @Test
+    public void writeToFile_symbolicLink_refusesAndKeepsTarget() throws Exception {
+        // EP: a link planted at the save path must not let the app overwrite the file it points to.
+        Path target = writeBytes("unrelated user file".getBytes(StandardCharsets.UTF_8));
+        Path link = testFolder.resolve("preferences.json");
+        try {
+            Files.createSymbolicLink(link, target);
+        } catch (IOException | UnsupportedOperationException e) {
+            assumeTrue(false, "Symbolic links are not available: " + e.getMessage());
+        }
+
+        assertThrows(IOException.class, () -> FileUtil.writeToFile(link, "{}"));
+        assertEquals("unrelated user file", Files.readString(target));
     }
 
     @Test
