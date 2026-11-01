@@ -538,7 +538,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 1. Agent views the contact to edit.
 2. Agent provides one or more replacement details, including an optional status or follow-up date.
-3. System validates the replacement details.
+3. System validates the selected contact reference and the replacement details.
 4. System updates the contact and confirms its updated details. If the current view filters it out, the agent can run `list` to show it.
 
    Use case ends.
@@ -546,20 +546,20 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **Extensions**
 
 * 2a. Agent provides an empty follow-up date.
-  * 2a1. System clears the contact's follow-up date.
-  * Use case resumes at step 4.
+  * 2a1. System treats the empty date as a request to clear the follow-up as part of the edit, without changing the contact yet.
+  * Use case resumes at step 3.
 * 3a. A replacement detail is invalid.
   * 3a1. System shows the relevant validation error and does not change the contact.
   * Use case ends.
-* 3b. The follow-up date is in the past.
-  * 3b1. System saves the date and warns the agent that it is in the past.
-  * Use case resumes at step 4.
-* 3c. The new name matches another contact's name, ignoring case and extra spaces.
-  * 3c1. System shows `This contact already exists: NAME (PHONE).` with that contact's name and phone number, and does not change the contact.
+* 3b. The new name matches another contact's name, ignoring case and extra spaces.
+  * 3b1. System shows `This contact already exists: NAME (PHONE).` with that contact's name and phone number, and does not change the contact.
   * Use case ends.
-* 4a. The selected contact is not in the displayed list.
-  * 4a1. System explains that the contact reference is invalid.
+* 3c. The selected contact is not in the displayed list.
+  * 3c1. System explains that the contact reference is invalid.
   * Use case ends without changing any contacts.
+* 4a. The agent supplied a past follow-up date.
+  * 4a1. After the successful update, System warns the agent that the saved follow-up date is in the past.
+  * Use case ends.
 
 **Use case: Complete a follow-up**
 
