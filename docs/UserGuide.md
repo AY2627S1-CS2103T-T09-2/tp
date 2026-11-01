@@ -125,7 +125,7 @@ The full URL is shown below the command guide. After copying, a message confirms
 
 When Help opens, the command guide has keyboard focus:
 
-* Press **Up/Down** or **Page Up/Page Down** to scroll the guide.
+* Press **Up/Down** or **Page Up/Page Down** to scroll the guide one line at a time.
 * Press **Tab** to move through the examples and **Copy User Guide URL**; **Shift+Tab** moves backwards.
   Press **Space** when the URL button is focused to copy the link.
 * Press **Esc** to close Help.
@@ -180,7 +180,7 @@ Names with extra spaces are saved with single spaces. A contact cannot be added 
 This also prevents two different people who share a full name from being stored under that same name. Use a fuller
 distinguishing name when available. Reordering a person's name is not recognised as a duplicate, so check the list
 before adding a contact under a different name order.
-Names can be at most 1000 characters long. They must start with a letter, including accented letters, and end with a
+Names can be at most 1000 characters long. A few rare characters, such as some Chinese characters outside the common set, count as 2 towards this limit. Names must start with a letter, including accented letters, and end with a
 letter or digit, possibly followed by combining marks used in some scripts. Punctuation cannot
 appear at the end of a name. Names may then contain letters, digits, spaces, hyphens (`-`), apostrophes (`'`),
 periods (`.`), commas (`,`), and slashes (`/`), so names such as
@@ -232,7 +232,7 @@ Examples:
 * `list` shows all contacts and reports `Listed all contacts.`
 * `list st/CLIENT` shows only clients.
 * `list t/referral` shows contacts tagged `referral`, regardless of the tag's case.
-* `list st/CLIENT t/referral` shows clients with the referral tag.
+* `list st/CLIENT t/lifePolicy` shows clients with the lifePolicy tag.
 * `list t/REFERRAL st/client` applies the same combined filter.
 
 ### Editing a contact: `edit`
@@ -517,13 +517,13 @@ Action     | Format, Examples
 **Clear**  | `clear` to request confirmation<br>`clear confirm` to clear all contacts
 **Contacted** | `contacted INDEX d/DD-MM-YYYY`<br> e.g., `contacted 2 d/27-10-2026`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
+**DeleteNote** | `deletenote CONTACT_INDEX NOTE_INDEX`<br> e.g., `deletenote 1 2`
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Due**    | `due [DAYS]`<br> e.g., `due 7`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [st/STATUS] [f/FOLLOW_UP_DATE] [t/TAG]...`<br> e.g., `edit 2 n/James Lee st/CLIENT f/25-12-2026`
-**Find**   | `find KEYWORD [MORE_KEYWORDS]...` or `find p/PHONE_DIGITS`<br> e.g., `find John Priya` or `find p/9123`
-**List**   | `list [st/STATUS] [t/TAG]`<br> e.g., `list st/CLIENT t/referral`
-**History**| `history INDEX`<br> e.g., `history 2`
-**Note**   | `note INDEX nt/NOTE`<br> e.g., `note 2 nt/Discussed hospital coverage`
-**DeleteNote** | `deletenote CONTACT_INDEX NOTE_INDEX`<br> e.g., `deletenote 1 2`
-**Help**   | `help`
 **Exit**   | `exit`
+**Find**   | `find KEYWORD [MORE_KEYWORDS]...` or `find p/PHONE_DIGITS`<br> e.g., `find John Priya` or `find p/9123`
+**Help**   | `help`
+**History**| `history INDEX`<br> e.g., `history 2`
+**List**   | `list [st/STATUS] [t/TAG]`<br> e.g., `list st/CLIENT t/lifePolicy`
+**Note**   | `note INDEX nt/NOTE`<br> e.g., `note 2 nt/Discussed hospital coverage`

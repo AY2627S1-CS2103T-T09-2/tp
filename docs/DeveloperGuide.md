@@ -99,6 +99,8 @@ The sequence diagram below illustrates the interactions within the `Logic` compo
 <puml src="diagrams/DeleteSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `delete 1` Command" />
 
 The sequence diagram below illustrates how the `find` command filters contacts by name keywords or phone digits.
+The `alt` frame shows the two kinds of input: `find alice` creates a `NameContainsKeywordsPredicate`, while
+`find p/9123` creates a `PhoneContainsKeywordPredicate`.
 
 <puml src="diagrams/FindSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `find` Command" />
 
@@ -301,11 +303,6 @@ intact. It deletes the temporary file on failure; if cleanup also fails, that ex
 original failure for diagnosis. If the file system does not support atomic replacement, saving fails safely
 instead of falling back to an operation that could damage the existing file.
 
-Future undo integration must record a change only after saving succeeds. A failed undo save must restore the
-data and view from before that attempt and retain the undo entry for retry. The current rollback tests verify
-that interaction note text, order and timestamps are preserved. Last-contact dates are already stored in
-`Person` and included in the address-book snapshot. Undo is not implemented.
-
 ### Managing interaction notes
 
 The `note`, `history` and `deletenote` commands record, display and remove a contact's interaction notes.
@@ -341,13 +338,15 @@ For `note INDEX nt/NOTE`:
 #### Viewing and deleting notes
 
 `history INDEX` is parsed by `HistoryCommandParser`. `HistoryCommand` selects the displayed contact and
-sorts a copy of its notes by stored creation timestamp in descending order. It returns a `CommandResult`
+reverses a copy of its stored note list, so the most recently added note is shown first. The stored creation
+timestamps are only displayed, not used for ordering, so a clock or time-zone change cannot reorder notes. It
+returns a `CommandResult`
 containing numbered notes with timestamps formatted as `dd-MM-yyyy HH:mm`, or a message that the contact
 has no notes. It does not change the stored note order or contact data, so `LogicManager` skips saving.
 
 `deletenote CONTACT_INDEX NOTE_INDEX` is parsed by `DeleteNoteCommandParser`, which validates both positive
-indexes using `ParserUtil.parseIndex`. `DeleteNoteCommand` selects the displayed contact and uses the same
-timestamp ordering as `HistoryCommand` to resolve `NOTE_INDEX`. It removes that note from a copy of the
+indexes using `ParserUtil.parseIndex`. `DeleteNoteCommand` selects the displayed contact and counts `NOTE_INDEX` from the
+end of the stored list, the same newest-added-first order that `history` shows. It removes that note from a copy of the
 stored list, preserving the relative order of the remaining notes, then replaces the contact and lets
 `LogicManager` save it. The success result identifies the contact, note index and deleted text.
 
