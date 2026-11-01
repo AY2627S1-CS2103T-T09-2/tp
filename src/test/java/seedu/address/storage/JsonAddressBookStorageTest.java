@@ -82,6 +82,49 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
+    public void readAddressBookWithBackup_unreadableFolder_stopsWithoutChangingFile() throws Exception {
+        // EP: the data file exists, but its folder cannot be opened, so it must not be treated as missing.
+        Path folder = Files.createDirectory(testFolder.resolve("data"));
+        Path filePath = folder.resolve("addressbook.json");
+        new JsonAddressBookStorage(filePath).saveAddressBook(getTypicalAddressBook());
+        byte[] originalBytes = Files.readAllBytes(filePath);
+        assumeTrue(Files.getFileAttributeView(folder, PosixFileAttributeView.class) != null);
+
+        Set<PosixFilePermission> originalPermissions = Files.getPosixFilePermissions(folder);
+        try {
+            Files.setPosixFilePermissions(folder, Set.of());
+            assumeFalse(Files.exists(filePath), "Elevated users can open folders without permissions");
+            JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+            assertThrows(DataLoadingException.class, storage::readAddressBook);
+            assertThrows(DataBackupException.class, storage::readAddressBookWithBackup);
+        } finally {
+            Files.setPosixFilePermissions(folder, originalPermissions);
+        }
+        assertArrayEquals(originalBytes, Files.readAllBytes(filePath));
+        assertFalse(Files.exists(JsonAddressBookStorage.getBackupFilePath(filePath)));
+    }
+
+    @Test
+    public void readAddressBookWithBackup_brokenLink_stopsWithoutReplacingLink() throws Exception {
+        // EP: the data file is a link whose target is missing; it is not the same as no data file.
+        Path filePath = testFolder.resolve("addressbook.json");
+        Path missingTarget = testFolder.resolve("missing.json");
+        try {
+            Files.createSymbolicLink(filePath, missingTarget);
+        } catch (IOException | UnsupportedOperationException e) {
+            assumeTrue(false, "Symbolic links are not available: " + e.getMessage());
+        }
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        assertThrows(DataLoadingException.class, storage::readAddressBook);
+        assertThrows(DataBackupException.class, storage::readAddressBookWithBackup);
+        assertTrue(Files.isSymbolicLink(filePath));
+        assertEquals(missingTarget, Files.readSymbolicLink(filePath));
+        assertFalse(Files.exists(missingTarget));
+    }
+
+    @Test
     public void read_notJsonFormat_exceptionThrown() {
         // EP: the file exists but its syntax is not valid JSON.
         assertThrows(DataLoadingException.class, () -> readAddressBook("notJsonFormatAddressBook.json"));
