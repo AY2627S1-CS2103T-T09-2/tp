@@ -7,7 +7,6 @@
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.image.Image?>
-<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
@@ -38,14 +37,16 @@
                          text="Easy-Insurance Command Guide"
                          minWidth="0.0" maxWidth="Infinity" wrapText="true"
                          styleClass="command-guide-title" />
-                  <FlowPane fx:id="commandGuideLegend" hgap="24.0" vgap="6.0" minWidth="0.0">
+                  <HBox fx:id="commandGuideLegend" alignment="TOP_LEFT" spacing="24.0" minWidth="0.0">
                     <children>
                       <Label text="Fields in [brackets] are optional."
+                             minWidth="0.0" maxWidth="Infinity" HBox.hgrow="ALWAYS"
                              wrapText="true" styleClass="command-guide-hint" />
                       <Label text="... means repeatable."
+                             minWidth="0.0" alignment="TOP_RIGHT" textAlignment="RIGHT"
                              wrapText="true" styleClass="command-guide-hint" />
                     </children>
-                  </FlowPane>
+                  </HBox>
                 </children>
               </VBox>
 
