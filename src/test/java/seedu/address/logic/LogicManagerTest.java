@@ -316,12 +316,14 @@ public class LogicManagerTest {
             assertThrows(ParseException.class, () -> logic.execute("\u00A0find\u00A0" + VALID_NAME_AMY
                     + "\u00A0" + VALID_PHONE_AMY + " p/"));
             logic.execute("find\u00A0" + VALID_NAME_AMY);
+            // A first word that is not a command, such as a pasted phone number, must not be logged either.
+            assertThrows(ParseException.class, () -> logic.execute(VALID_PHONE_AMY + " " + VALID_NAME_AMY));
         } finally {
             logger.removeHandler(handler);
         }
 
-        assertTrue(messages.stream().anyMatch(message -> message.contains("[USER COMMAND][add]")));
-        assertTrue(messages.stream().anyMatch(message -> message.contains("[USER COMMAND][find]")));
+        assertTrue(messages.stream().anyMatch(message -> message.contains("[USER COMMAND][AddCommand]")));
+        assertTrue(messages.stream().anyMatch(message -> message.contains("[USER COMMAND][FindCommand]")));
         assertTrue(messages.stream().noneMatch(message -> message.contains(VALID_NAME_AMY)
                 || message.contains(VALID_PHONE_AMY)));
     }

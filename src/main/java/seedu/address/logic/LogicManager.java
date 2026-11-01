@@ -51,10 +51,8 @@ public class LogicManager implements Logic {
 
     @Override
     public CommandResult execute(String commandText) throws CommandException, ParseException {
-        String commandWord = commandText.replaceFirst("^[\\h\\v]+", "").split("[\\h\\v]+", 2)[0];
-        logger.info("----------------[USER COMMAND][" + commandWord + "]");
-
         Command command = commandInputParser.parseCommand(commandText);
+        logger.info("----------------[USER COMMAND][" + command.getClass().getSimpleName() + "]");
         // Copy the contact list: keeping the live address book reference would retain failed edits too.
         AddressBook previousData = new AddressBook(model.getAddressBook());
         Predicate<? super Person> previousPredicate = model.getPersonListPredicate();

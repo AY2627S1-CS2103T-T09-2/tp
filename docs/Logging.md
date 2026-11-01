@@ -20,8 +20,8 @@
 
 These feature logs record reasons and safe metadata. They do not include contact names, phone numbers,
 email addresses, addresses, raw arguments or tag values. At `INFO`, the shared command logs record only the
-command word and whether the command succeeded, and a data file that cannot be read is logged with the error
-type only, so contact details and notes are not copied into `easyinsurance.log.0`.
+type of a recognised command (e.g. `AddCommand`) and whether it succeeded, and a data file that cannot be read
+is logged with the error type only, so contact details and notes are not copied into `easyinsurance.log.0`.
 
 To inspect the detailed diagnostics locally:
 
