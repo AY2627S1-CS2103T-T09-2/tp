@@ -176,6 +176,10 @@ reads it once at startup by calling `Storage#readAddressBookWithBackup()`, which
 
 1. If the data file does not exist, `JsonUtil.readJsonFile` returns `Optional.empty()` and `MainApp` loads the
    sample contacts from `SampleDataUtil`. The file is created the first time a command changes contact data.
+   `JsonAddressBookStorage#readAddressBook` first checks that the file is really absent. If its folder cannot be
+   opened, or the file is a link to a missing file, it throws a `DataLoadingException` instead, which leads to
+   step 6. Treating these cases as a missing file would load the sample contacts, and the next save would replace
+   the real data with them.
 2. Otherwise, `FileUtil.readFromFile` reads the bytes and decodes them as UTF-8 with a decoder that reports invalid
    bytes instead of replacing them with the character U+FFFD. Replaced characters would be written back on the next
    save, so the original text would be lost. The error gives the byte offset of the first invalid sequence.

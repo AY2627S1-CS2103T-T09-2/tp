@@ -56,6 +56,9 @@ public class JsonAddressBookStorage {
      */
     public Optional<ReadOnlyAddressBook> readAddressBook(Path filePath) throws DataLoadingException {
         requireNonNull(filePath);
+        if (!Files.exists(filePath) && !Files.notExists(filePath, LinkOption.NOFOLLOW_LINKS)) {
+            throw new DataLoadingException(new IOException("Cannot open data file " + filePath));
+        }
 
         Optional<JsonSerializableAddressBook> jsonAddressBook = JsonUtil.readJsonFile(
                 filePath, JsonSerializableAddressBook.class);
