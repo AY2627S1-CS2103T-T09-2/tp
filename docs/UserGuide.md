@@ -125,7 +125,7 @@ The full URL is shown below the command guide. After copying, a message confirms
 
 When Help opens, the command guide has keyboard focus:
 
-* Press **Up/Down** or **Page Up/Page Down** to scroll the guide one line at a time.
+* Press **Up/Down** or **Page Up/Page Down** to scroll the guide.
 * Press **Tab** to move through the examples and **Copy User Guide URL**; **Shift+Tab** moves backwards.
   Press **Space** when the URL button is focused to copy the link.
 * Press **Esc** to close Help.
@@ -233,7 +233,7 @@ Examples:
 * `list st/CLIENT` shows only clients.
 * `list t/referral` shows contacts tagged `referral`, regardless of the tag's case.
 * `list st/CLIENT t/lifePolicy` shows clients with the lifePolicy tag.
-* `list t/REFERRAL st/client` applies the same combined filter.
+* `list t/lifePolicy st/client` applies the same combined filter.
 
 ### Editing a contact: `edit`
 
