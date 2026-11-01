@@ -86,7 +86,7 @@ public class InteractionNote {
     private static boolean isInvisibleSpacing(int codePoint) {
         return Character.isWhitespace(codePoint)
                 || Character.isSpaceChar(codePoint)
-                || codePoint == 0x200B;
+                || Character.getType(codePoint) == Character.FORMAT;
     }
 
     @Override
