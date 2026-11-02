@@ -18,6 +18,9 @@ pageNav: 3
 * Tommy Quak used AI coding assistants (Claude and Codex) to help with parts of his coding, testing and documentation.
   He reviewed all of the resulting code himself, and every change was also reviewed by a teammate, built and tested
   before it was merged.
+* Kasey Ho used Codex to assist with implementation, regression tests and
+  documentation. All code was reviewed by himself, and all pull requests were
+  also reviewed by teammates, built and approved before being merged.
 
 --------------------------------------------------------------------------------------------------------------------
 
