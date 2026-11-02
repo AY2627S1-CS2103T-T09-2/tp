@@ -634,12 +634,10 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 ### Non-Functional Requirements
 
 1. Easy-Insurance should run on Windows, macOS, and Linux with Java `25` or above installed.
-2. With up to 1000 contacts, listing and finding contacts should complete within two seconds on a typical laptop.
-3. An agent should be able to add, find, edit, and view contacts and manage follow-ups using the keyboard alone.
-4. The app should work without an internet connection and should not transmit contact details to a network service.
-5. An agent who knows the commands should be able to complete common contact tasks faster by typing than by using the mouse.
-6. Contact data should be stored locally as human-editable JSON.
-7. The app should be distributed as a single JAR of at most 100 MB, with no installer required.
+2. An agent should be able to add, find, edit, and view contacts and manage follow-ups using the keyboard alone.
+3. The app should work without an internet connection and should not transmit contact details to a network service.
+4. Contact data should be stored locally as human-editable JSON.
+5. The app should be distributed as a single JAR of at most 100 MB, with no installer required.
 
 ### Glossary
 
