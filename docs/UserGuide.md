@@ -64,8 +64,10 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
 * Items followed by `...` can appear zero or more times.<br>
   For example, `[t/TAG]... ` may be omitted, or written as `t/friend` or `t/friend t/family`.
 
-* Parameters can be in any order.<br>
-  For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
+* Prefixed fields can be reordered, but positional arguments such as `INDEX` must stay where the command format shows them.<br>
+  For example, `edit 1 n/John Doe p/91234567` and `edit 1 p/91234567 n/John Doe` make the same changes.<br>
+  In `contacted INDEX d/DD-MM-YYYY`, keep the index before `d/`.<br>
+  `contacted 1 d/01-01-2020` has the correct order; `contacted d/01-01-2020 1` is rejected.
 
 * In `add` and `edit`, a prefix belonging to another command is rejected with a message naming it.<br>
   For example, `add n/Bob Lim nt/Met at roadshow p/92345678 e/bob@example.com a/2 Road` shows
