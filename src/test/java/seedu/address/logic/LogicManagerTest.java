@@ -1,22 +1,32 @@
 package seedu.address.logic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_NAME_AMY;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_PHONE_AMY;
 import static seedu.address.testutil.Assert.assertThrows;
-import static seedu.address.testutil.TypicalPersons.AMY;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.ListCommand;
@@ -35,6 +45,9 @@ import seedu.address.testutil.PersonBuilder;
 public class LogicManagerTest {
     private static final IOException DUMMY_IO_EXCEPTION = new IOException("dummy IO exception");
     private static final IOException DUMMY_AD_EXCEPTION = new AccessDeniedException("dummy access denied exception");
+    private static final String ADD_TAG_TEST_COMMAND =
+            "add n/Tag Test p/91234567 e/tag@example.com a/1 Road t/VIP";
+    private static final String EDIT_TAG_TO_LOWER_CASE_COMMAND = "edit 1 t/vip";
 
     @TempDir
     public Path temporaryFolder;
@@ -53,12 +66,14 @@ public class LogicManagerTest {
 
     @Test
     public void execute_invalidCommandFormat_throwsParseException() {
+        // EP: unknown command words fail during parsing, before command execution.
         String invalidCommand = "uicfhmowqewca";
         assertParseException(invalidCommand, MESSAGE_UNKNOWN_COMMAND);
     }
 
     @Test
     public void execute_commandExecutionError_throwsCommandException() {
+        // EP: recognized commands with an invalid displayed index fail during execution.
         String deleteCommand = "delete 9";
         assertCommandException(deleteCommand,
                 Messages.getInvalidPersonDisplayedIndexMessage(9, model.getFilteredPersonList().size()));
@@ -66,25 +81,129 @@ public class LogicManagerTest {
 
     @Test
     public void execute_validCommand_success() throws Exception {
+        // EP: a valid read-only command succeeds without needing to save contact data.
         String listCommand = ListCommand.COMMAND_WORD;
         assertCommandSuccess(listCommand, ListCommand.MESSAGE_SUCCESS, model);
     }
 
     @Test
     public void execute_storageThrowsIoException_throwsCommandException() {
+        // EP: execution succeeds but saving fails with a general I/O error.
         assertCommandFailureForExceptionFromStorage(DUMMY_IO_EXCEPTION, String.format(
                 LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()));
     }
 
     @Test
     public void execute_storageThrowsAdException_throwsCommandException() {
+        // EP: saving fails because of permissions; this requires a different error message.
         assertCommandFailureForExceptionFromStorage(DUMMY_AD_EXCEPTION, String.format(
-                LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, DUMMY_AD_EXCEPTION.getMessage()));
+                LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, temporaryFolder.resolve("ExceptionAddressBook.json")));
+    }
+
+    @Test
+    public void execute_storageDeniesTemporaryFile_reportsConfiguredDataFile() {
+        // EP: a permission error describes an internal temporary file, with or without extra filesystem details.
+        Path temporaryFile = temporaryFolder.resolve(".addressbook-123456.tmp");
+        Path dataFile = temporaryFolder.resolve("ExceptionAddressBook.json");
+        assertCommandFailureForExceptionFromStorage(new AccessDeniedException(temporaryFile.toString()),
+                String.format(LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, dataFile));
+        assertCommandFailureForExceptionFromStorage(new AccessDeniedException(temporaryFile.toString(),
+                dataFile.toString(), "Permission denied"),
+                String.format(LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, dataFile));
+    }
+
+    @Test
+    public void execute_storageReportsBlockedFolder_namesDataFileAndFolder() {
+        // EP: storage identifies an existing file blocking a required data folder.
+        Path folder = temporaryFolder.resolve("blocked data");
+        String expectedMessage = "Could not save data to file " + temporaryFolder.resolve("ExceptionAddressBook.json")
+                + " because " + folder + " is not a folder.";
+        assertCommandFailureForExceptionFromStorage(new NotDirectoryException(folder.toString()), expectedMessage);
+    }
+
+    @Test
+    public void execute_storageCannotReplaceExistingTarget_preservesIoError() {
+        // EP: an existing target can prevent replacement without any parent folder being blocked.
+        IOException failure = new FileAlreadyExistsException(temporaryFolder.resolve("addressbook.json").toString(),
+                null, "Replacement not supported");
+        assertCommandFailureForExceptionFromStorage(failure,
+                String.format(LogicManager.FILE_OPS_ERROR_FORMAT, failure.getMessage()));
+    }
+
+    @Test
+    public void execute_editTagLetterCaseOnly_savesNewSpelling() throws Exception {
+        // EP: only the letter case of a tag changes. Tags compare case-insensitively, but the data file
+        // keeps the exact spelling, so the edit must still be saved and survive a reload.
+        logic.execute(ADD_TAG_TEST_COMMAND);
+        logic.execute(EDIT_TAG_TO_LOWER_CASE_COMMAND);
+
+        assertEquals(List.of("vip"), getTagNames(model.getAddressBook().getPersonList().get(0)));
+        ReadOnlyAddressBook reloaded = new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"))
+                .readAddressBook().orElseThrow();
+        assertEquals(List.of("vip"), getTagNames(reloaded.getPersonList().get(0)));
+    }
+
+    @Test
+    public void execute_commandsThatChangeNoData_doNotSave() throws Exception {
+        // EP: read-only commands, and edits that set every field to its current value, leave the data
+        // unchanged, so nothing is written. A tag letter case change is then saved exactly once.
+        model.addPerson(buildTagTestPerson());
+        int[] saveCount = {0};
+        JsonAddressBookStorage countingStorage =
+                new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json")) {
+                    @Override
+                    public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
+                        saveCount[0]++;
+                        super.saveAddressBook(addressBook);
+                    }
+                };
+        logic = new LogicManager(model, new StorageManager(countingStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"))));
+
+        for (String command : List.of("find Tag", "due", "help", "list", "edit 1 n/Tag Test", "edit 1 t/VIP")) {
+            logic.execute(command);
+            assertEquals(0, saveCount[0], "Unexpected save after: " + command);
+        }
+
+        logic.execute(EDIT_TAG_TO_LOWER_CASE_COMMAND);
+        assertEquals(1, saveCount[0]);
+    }
+
+    @Test
+    public void execute_tagLetterCaseEditSaveFails_restoresOriginalSpelling() {
+        // EP: a tag letter case edit reaches storage, so a save failure reports an error and rolls back.
+        model.addPerson(buildTagTestPerson());
+        JsonAddressBookStorage failingStorage =
+                new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json")) {
+                    @Override
+                    public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
+                        throw DUMMY_IO_EXCEPTION;
+                    }
+                };
+        logic = new LogicManager(model, new StorageManager(failingStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"))));
+
+        assertThrows(CommandException.class,
+                String.format(LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()), () ->
+                        logic.execute(EDIT_TAG_TO_LOWER_CASE_COMMAND));
+        assertEquals(List.of("VIP"), getTagNames(model.getAddressBook().getPersonList().get(0)));
     }
 
     @Test
     public void getFilteredPersonList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, () -> logic.getFilteredPersonList().remove(0));
+    }
+
+    private static Person buildTagTestPerson() {
+        return new PersonBuilder().withName("Tag Test").withPhone("91234567").withEmail("tag@example.com")
+                .withAddress("1 Road").withTags("VIP").build();
+    }
+
+    /**
+     * Returns the exact tag spellings of {@code person}, sorted so the result does not depend on set order.
+     */
+    private static List<String> getTagNames(Person person) {
+        return person.getTags().stream().map(tag -> tag.tagName).sorted().toList();
     }
 
     /**
@@ -147,10 +266,10 @@ public class LogicManagerTest {
      * @param expectedMessage the message expected inside exception thrown by the Logic component
      */
     private void assertCommandFailureForExceptionFromStorage(IOException e, String expectedMessage) {
-        Path prefPath = temporaryFolder.resolve("ExceptionUserPrefs.json");
+        Path dataPath = temporaryFolder.resolve("ExceptionAddressBook.json");
 
         // Inject LogicManager with a JsonAddressBookStorage that throws the IOException e when saving
-        JsonAddressBookStorage addressBookStorage = new JsonAddressBookStorage(prefPath) {
+        JsonAddressBookStorage addressBookStorage = new JsonAddressBookStorage(dataPath) {
             @Override
             public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
                 throw e;
@@ -166,9 +285,46 @@ public class LogicManagerTest {
         // Triggers the saveAddressBook method by executing an add command
         String addCommand = AddCommand.COMMAND_WORD + NAME_DESC_AMY + PHONE_DESC_AMY
                 + EMAIL_DESC_AMY + ADDRESS_DESC_AMY;
-        Person expectedPerson = new PersonBuilder(AMY).withTags().build();
-        ModelManager expectedModel = new ModelManager();
-        expectedModel.addPerson(expectedPerson);
+        ModelManager expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
         assertCommandFailure(addCommand, CommandException.class, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_commandWithPersonalData_logsOnlyCommandWord() throws Exception {
+        // EP: contact details typed in a command must not be copied into the log file.
+        Logger logger = LogsCenter.getLogger(LogicManager.class);
+        List<String> messages = new ArrayList<>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord logRecord) {
+                messages.add(logRecord.getMessage());
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+        logger.addHandler(handler);
+        try {
+            logic.execute(AddCommand.COMMAND_WORD + NAME_DESC_AMY + PHONE_DESC_AMY + EMAIL_DESC_AMY
+                    + ADDRESS_DESC_AMY);
+            // A non-breaking space after the command word is accepted by the parser, so it must split here too.
+            assertThrows(ParseException.class, () -> logic.execute("\u00A0find\u00A0" + VALID_NAME_AMY
+                    + "\u00A0" + VALID_PHONE_AMY + " p/"));
+            logic.execute("find\u00A0" + VALID_NAME_AMY);
+            // A first word that is not a command, such as a pasted phone number, must not be logged either.
+            assertThrows(ParseException.class, () -> logic.execute(VALID_PHONE_AMY + " " + VALID_NAME_AMY));
+        } finally {
+            logger.removeHandler(handler);
+        }
+
+        assertTrue(messages.stream().anyMatch(message -> message.contains("[USER COMMAND][AddCommand]")));
+        assertTrue(messages.stream().anyMatch(message -> message.contains("[USER COMMAND][FindCommand]")));
+        assertTrue(messages.stream().noneMatch(message -> message.contains(VALID_NAME_AMY)
+                || message.contains(VALID_PHONE_AMY)));
     }
 }

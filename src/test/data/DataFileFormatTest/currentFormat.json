@@ -1,0 +1,24 @@
+{
+  "persons" : [ {
+    "name" : "Clara Tan",
+    "phone" : "91234567",
+    "email" : "clara@example.com",
+    "address" : "10 Anson Road, #20-01",
+    "status" : "CLIENT",
+    "tags" : [ "family", "vip" ],
+    "followUp" : "25-12-2099",
+    "interactionNotes" : [ {
+      "text" : "Asked about a hospital plan",
+      "createdAt" : "2026-10-20T14:30:15"
+    }, {
+      "text" : "Sent the hospital plan brochure",
+      "createdAt" : "2026-10-22T09:05:00.123456"
+    } ]
+  }, {
+    "name" : "Daniel Lim",
+    "phone" : "87654321",
+    "email" : "daniel@example.com",
+    "address" : "5 Jurong West Street 41",
+    "tags" : [ "friends" ]
+  } ]
+}

@@ -1,5 +1,7 @@
 package seedu.address.model.person;
 
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -12,8 +14,13 @@ import seedu.address.commons.util.ToStringBuilder;
 public class NameContainsKeywordsPredicate implements Predicate<Person> {
     private final List<String> keywords;
 
+    /**
+     * Creates a name filter with keywords in the same Unicode NFC form as stored names.
+     */
     public NameContainsKeywordsPredicate(List<String> keywords) {
-        this.keywords = keywords;
+        this.keywords = keywords.stream()
+                .map(keyword -> Normalizer.normalize(keyword, Form.NFC))
+                .toList();
     }
 
     @Override

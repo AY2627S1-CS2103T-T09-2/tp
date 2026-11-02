@@ -26,12 +26,14 @@ public class UiPartTest {
 
     @Test
     public void constructor_nullFileUrl_throwsNullPointerException() {
+        // EP: the URL reference is null; test both constructor overloads.
         assertThrows(NullPointerException.class, () -> new TestUiPart<Object>((URL) null));
         assertThrows(NullPointerException.class, () -> new TestUiPart<Object>((URL) null, new Object()));
     }
 
     @Test
     public void constructor_missingFileUrl_throwsAssertionError() throws Exception {
+        // EP: a non-null URL points to no file, unlike a null URL argument.
         URL missingFileUrl = new URL(testFolder.toUri().toURL(), MISSING_FILE_PATH);
         assertThrows(AssertionError.class, () -> new TestUiPart<Object>(missingFileUrl));
         assertThrows(AssertionError.class, () -> new TestUiPart<Object>(missingFileUrl, new Object()));
@@ -39,6 +41,7 @@ public class UiPartTest {
 
     @Test
     public void constructor_invalidFileUrl_throwsAssertionError() {
+        // EP: the file exists but contains invalid FXML.
         URL invalidFileUrl = getTestFileUrl(INVALID_FILE_PATH);
         assertThrows(AssertionError.class, () -> new TestUiPart<Object>(invalidFileUrl));
         assertThrows(AssertionError.class, () -> new TestUiPart<Object>(invalidFileUrl, new Object()));
@@ -46,12 +49,14 @@ public class UiPartTest {
 
     @Test
     public void constructor_validFileUrl_loadsFile() {
+        // EP: valid FXML declares its own root object.
         URL validFileUrl = getTestFileUrl(VALID_FILE_PATH);
         assertEquals(VALID_FILE_ROOT, new TestUiPart<TestFxmlObject>(validFileUrl).getRoot());
     }
 
     @Test
     public void constructor_validFileWithFxRootUrl_loadsFile() {
+        // EP: valid FXML uses fx:root and requires the caller to supply the root object.
         URL validFileUrl = getTestFileUrl(VALID_FILE_WITH_FX_ROOT_PATH);
         TestFxmlObject root = new TestFxmlObject();
         assertEquals(VALID_FILE_ROOT, new TestUiPart<TestFxmlObject>(validFileUrl, root).getRoot());
@@ -59,18 +64,21 @@ public class UiPartTest {
 
     @Test
     public void constructor_nullFileName_throwsNullPointerException() {
+        // EP: the resource name itself is null; test both constructor overloads.
         assertThrows(NullPointerException.class, () -> new TestUiPart<Object>((String) null));
         assertThrows(NullPointerException.class, () -> new TestUiPart<Object>((String) null, new Object()));
     }
 
     @Test
     public void constructor_missingFileName_throwsNullPointerException() {
+        // EP: a resource name resolves to no URL, so the failure differs from a missing file URL.
         assertThrows(NullPointerException.class, () -> new TestUiPart<Object>(MISSING_FILE_PATH));
         assertThrows(NullPointerException.class, () -> new TestUiPart<Object>(MISSING_FILE_PATH, new Object()));
     }
 
     @Test
     public void constructor_invalidFileName_throwsAssertionError() {
+        // EP: the resource resolves to an existing file with invalid FXML.
         assertThrows(AssertionError.class, () -> new TestUiPart<Object>(INVALID_FILE_PATH));
         assertThrows(AssertionError.class, () -> new TestUiPart<Object>(INVALID_FILE_PATH, new Object()));
     }

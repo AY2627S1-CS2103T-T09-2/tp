@@ -2,6 +2,7 @@ package seedu.address.model.person;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
@@ -27,39 +28,111 @@ public class NameTest {
 
     @Test
     public void constructor_decomposedUnicode_normalizesToNfc() {
-        Name decomposedName = new Name("Jose\u0301 Núñez");
+        // EP: decomposed Latin accents are stored in the same form as their composed equivalents.
+        Name decomposedName = new Name("Jose\u0301 Nu\u0301n\u0303ez");
+        Name composedName = new Name("José Núñez");
 
         assertEquals("José Núñez", decomposedName.fullName);
-        assertEquals(new Name("José Núñez"), decomposedName);
+        assertEquals(composedName, decomposedName);
+        assertEquals(composedName.hashCode(), decomposedName.hashCode());
+
+        // EP: canonical composition also applies to non-Latin scripts, such as Hangul syllables.
+        Name decomposedHangul = new Name("\u1100\u1161 Kim");
+        assertEquals("\uac00 Kim", decomposedHangul.fullName);
+        assertEquals(new Name("\uac00 Kim"), decomposedHangul);
+        assertEquals(new Name("\uac00 Kim").hashCode(), decomposedHangul.hashCode());
+    }
+
+    @Test
+    public void equals_differentCaseOrAccents_returnsFalse() {
+        Name name = new Name("José Núñez");
+
+        // EP: normalization preserves accents and the existing case-sensitive value equality.
+        assertNotEquals(name, new Name("Jose Núñez"));
+        assertNotEquals(name, new Name("JOSÉ NÚÑEZ"));
     }
 
     @Test
     public void isValidName() {
-        // null name
+        // EP: null input, which violates the method's non-null contract.
         assertThrows(NullPointerException.class, () -> Name.isValidName(null));
 
-        // invalid name
-        assertFalse(Name.isValidName("")); // empty string
+        // EP: blank input with no starting letter.
+        // Boundary value: zero characters.
+        // @@author kaseyho-reused
+        assertFalse(Name.isValidName(""));
+        // @@author
         assertFalse(Name.isValidName(" ")); // spaces only
+
+        // EP: characters outside the permitted letters, digits, spaces and name punctuation.
         assertFalse(Name.isValidName("^"));
         assertFalse(Name.isValidName("peter*"));
+
+        // EP: otherwise permitted characters used before the required first letter.
         assertFalse(Name.isValidName("12345")); // must start with a letter
         assertFalse(Name.isValidName("-Alice"));
         assertFalse(Name.isValidName(" Alice"));
+        assertFalse(Name.isValidName("Alice-"));
+        assertFalse(Name.isValidName("Alice'"));
+        assertFalse(Name.isValidName("Alice."));
 
-        // valid name
+        // EP: names starting with a letter and containing only letters, digits and spaces.
         assertTrue(Name.isValidName("peter jack")); // alphabets only
         assertTrue(Name.isValidName("peter the 2nd")); // alphanumeric characters
         assertTrue(Name.isValidName("Capital Tan")); // with capital letters
         assertTrue(Name.isValidName("David Roger Jackson Ray Jr 2nd")); // long names
+
+        // EP: permitted punctuation inside a name, represented by each supported punctuation mark.
         assertTrue(Name.isValidName("Anne-Marie"));
         assertTrue(Name.isValidName("O'Connor"));
         assertTrue(Name.isValidName("Dr. Lee"));
         assertTrue(Name.isValidName("Tan, Alice"));
         assertTrue(Name.isValidName("Raj s/o Kumar"));
         assertTrue(Name.isValidName("Aisha d/o Rahman"));
+
+        // EP: Unicode letters, represented in both composed and decomposed forms.
         assertTrue(Name.isValidName("José Núñez"));
         assertTrue(Name.isValidName("Jose\u0301 Núñez"));
+        assertTrue(Name.isValidName("\uac00 Kim"));
+        assertTrue(Name.isValidName("\u1100\u1161 Kim"));
+
+        // EP: normalization must not make otherwise invalid names valid.
+        assertFalse(Name.isValidName("José^"));
+        assertFalse(Name.isValidName("Jose\u0301^"));
+        assertFalse(Name.isValidName("A½"));
+        assertFalse(Name.isValidName("John²"));
+        assertFalse(Name.isValidName("Alice¼"));
+        assertTrue(Name.isValidName("Ravi2"));
+        assertTrue(Name.isValidName("Ravi٢"));
+        assertTrue(Name.isValidName("கு"));
+        assertTrue(Name.isValidName("குமார்"));
+
+        // Reject pathological input before Unicode normalization or regex matching becomes expensive.
+        assertFalse(Name.isValidName("A" + "\u0315".repeat(50_000) + "\u0300".repeat(50_000)));
+        assertTrue(Name.isValidName("A".repeat(Name.MAX_INPUT_LENGTH)));
+        assertFalse(Name.isValidName("A".repeat(Name.MAX_INPUT_LENGTH + 1)));
+    }
+
+    @Test
+    public void isValidName_normalizationExpandsInput_checksNormalizedLength() {
+        // EP: NFC can expand a valid letter into a letter followed by a combining mark.
+        // Boundary values: normalized lengths of 999 and 1000 are within the limit.
+        String nameAtLimit = "\u0958".repeat(Name.MAX_INPUT_LENGTH / 2);
+        assertTrue(Name.isValidName("\u0958".repeat(Name.MAX_INPUT_LENGTH / 2 - 1) + "A"));
+        assertTrue(Name.isValidName(nameAtLimit));
+
+        // EP: short raw input becomes too long after normalization.
+        // Boundary value: 1001 is the first invalid normalized length; 1002 reproduces the report.
+        assertFalse(Name.isValidName(nameAtLimit + "A"));
+        assertFalse(Name.isValidName(nameAtLimit + "\u0958"));
+    }
+
+    @Test
+    public void constructor_normalizedNameOverLimit_throwsIllegalArgumentException() {
+        // EP: the constructor must reject a name whose stored form would fail validation on reload.
+        String nameOverLimit = "\u0958".repeat(Name.MAX_INPUT_LENGTH / 2) + "A";
+
+        assertThrows(IllegalArgumentException.class, () -> new Name(nameOverLimit));
     }
 
     @Test

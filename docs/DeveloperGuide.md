@@ -98,18 +98,24 @@ The sequence diagram below illustrates the interactions within the `Logic` compo
 
 <puml src="diagrams/DeleteSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `delete 1` Command" />
 
-The sequence diagram below illustrates how the `find` command filters contacts by name keywords or phone digits.
-The `alt` frame shows the two kinds of input: `find alice` creates a `NameContainsKeywordsPredicate`, while
-`find p/9123` creates a `PhoneContainsKeywordPredicate`.
+The sequence diagram below focuses on `FindCommand.execute(model)`, after parsing has produced a `FindCommand`.
+`FindCommandParser` supplies its predicate: `find alice` creates a `NameContainsKeywordsPredicate`, while
+`find p/9123` creates a `PhoneContainsKeywordPredicate`. Both commands follow the same execution sequence.
 
-<puml src="diagrams/FindSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `find` Command" />
+<puml src="diagrams/FindSequenceDiagram.puml" alt="Find command execution: filter contacts, obtain the list and format the result count" />
+
+`LogicManager` calls `execute(model)` and receives the returned `CommandResult`.
+The `matchingPersons` and `count` names explain the intermediate values in the chained expression
+`model.getFilteredPersonList().size()`; they are not additional fields or variables in the implementation.
+`Model` returns the list, and `FindCommand` calls `size()` on that list before calling the static method on `Messages`.
 
 How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to a `CommandInputParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a contact).<br>
-   Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
+   A command can require several interactions with the `Model` to complete the operation.
+   The sequence diagrams omit internal model operations for clarity.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -123,9 +129,15 @@ How the parsing works:
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-T09-2/tp/tree/master/src/main/java/seedu/address/model/Model.java)
 
-<puml src="diagrams/ModelClassDiagram.puml" width="450" />
+The first diagram shows the Model's main classes and the lists of contacts they maintain.
+The second expands the fields of the same `Person` class. Methods are omitted from both diagrams.
+
+<puml src="diagrams/ModelClassDiagram.puml" alt="Model overview showing all contacts and the filtered view" />
+
+<puml src="diagrams/PersonClassDiagram.puml" alt="Person fields, including one shared Status value and optional dates" />
 
 `Status.DEFAULT` is `PROSPECT`. Each `Person` stores one status, optionally one follow-up date, optionally one last-contact date, and zero or more interaction notes.
+`Status` is an enum whose values can be shared by many contacts, so its link is an ordinary association with multiplicity `1`.
 `Name` starts with a Unicode letter, ends with a letter or decimal digit (possibly carrying combining marks), and accepts common name punctuation
 between characters, up to 1000 input characters; `Phone` accepts
 an optional leading plus sign and separators between at least three digits.
@@ -546,7 +558,7 @@ storage problem is corrected, the agent can submit the request again. The system
 
 1. Agent views the contact to edit.
 2. Agent provides one or more replacement details, including an optional status or follow-up date.
-3. System validates the replacement details.
+3. System validates the selected contact reference and the replacement details.
 4. System updates the contact and confirms its updated details. If the current view filters it out, the agent can run `list` to show it.
 
    Use case ends.
@@ -554,20 +566,20 @@ storage problem is corrected, the agent can submit the request again. The system
 **Extensions**
 
 * 2a. Agent provides an empty follow-up date.
-  * 2a1. System clears the contact's follow-up date.
-  * Use case resumes at step 4.
+  * 2a1. System treats the empty date as a request to clear the follow-up as part of the edit, without changing the contact yet.
+  * Use case resumes at step 3.
 * 3a. A replacement detail is invalid.
   * 3a1. System shows the relevant validation error and does not change the contact.
   * Use case ends.
-* 3b. The follow-up date is in the past.
-  * 3b1. System saves the date and warns the agent that it is in the past.
-  * Use case resumes at step 4.
-* 3c. The new name matches another contact's name, ignoring case and extra spaces.
-  * 3c1. System shows `This contact already exists: NAME (PHONE).` with that contact's name and phone number, and does not change the contact.
+* 3b. The new name matches another contact's name, ignoring case and extra spaces.
+  * 3b1. System shows `This contact already exists: NAME (PHONE).` with that contact's name and phone number, and does not change the contact.
   * Use case ends.
-* 4a. The selected contact is not in the displayed list.
-  * 4a1. System explains that the contact reference is invalid.
+* 3c. The selected contact is not in the displayed list.
+  * 3c1. System explains that the contact reference is invalid.
   * Use case ends without changing any contacts.
+* 4a. The agent supplied a past follow-up date.
+  * 4a1. After the successful update, System warns the agent that the saved follow-up date is in the past.
+  * Use case ends.
 
 **Use case: Complete a follow-up**
 
@@ -735,12 +747,10 @@ storage problem is corrected, the agent can submit the request again. The system
 ### Non-Functional Requirements
 
 1. Easy-Insurance should run on Windows, macOS, and Linux with Java `25` or above installed.
-2. With up to 1000 contacts, listing and finding contacts should complete within two seconds on a typical laptop.
-3. An agent should be able to add, find, edit, and view contacts and manage follow-ups using the keyboard alone.
-4. The app should work without an internet connection and should not transmit contact details to a network service.
-5. An agent who knows the commands should be able to complete common contact tasks faster by typing than by using the mouse.
-6. Contact data should be stored locally as human-editable JSON.
-7. The app should be distributed as a single JAR of at most 100 MB, with no installer required.
+2. An agent should be able to add, find, edit, and view contacts and manage follow-ups using the keyboard alone.
+3. The app should work without an internet connection and should not transmit contact details to a network service.
+4. Contact data should be stored locally as human-editable JSON.
+5. The app should be distributed as a single JAR of at most 100 MB, with no installer required.
 
 ### Glossary
 

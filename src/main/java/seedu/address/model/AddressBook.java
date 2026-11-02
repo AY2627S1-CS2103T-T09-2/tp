@@ -3,6 +3,8 @@ package seedu.address.model;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javafx.collections.ObservableList;
 import seedu.address.commons.util.ToStringBuilder;
@@ -20,11 +22,19 @@ public class AddressBook implements ReadOnlyAddressBook {
     public AddressBook() {}
 
     /**
-     * Creates an AddressBook using the Persons in the {@code toBeCopied}
+     * Creates an independent address book containing the contacts in {@code toBeCopied}.
+     * Copies a concrete AddressBook's validated list in linear time, sharing immutable Person values.
+     * Other implementations and subclasses are validated through their public contact list.
      */
     public AddressBook(ReadOnlyAddressBook toBeCopied) {
         this();
-        resetData(toBeCopied);
+        requireNonNull(toBeCopied);
+        if (toBeCopied.getClass() == AddressBook.class) {
+            AddressBook source = (AddressBook) toBeCopied;
+            persons.setPersons(source.persons);
+        } else {
+            resetData(toBeCopied);
+        }
     }
 
     //// list overwrite operations
@@ -95,6 +105,39 @@ public class AddressBook implements ReadOnlyAddressBook {
     @Override
     public ObservableList<Person> getPersonList() {
         return persons.asUnmodifiableObservableList();
+    }
+
+    /**
+     * Returns true if {@code other} holds the same contacts in the same order, with every tag spelled exactly
+     * the same. This is stricter than {@link #equals(Object)}, where tags that differ only in letter case are
+     * equal. Use it to decide whether data must be saved, because the data file keeps each tag's exact spelling.
+     */
+    public boolean isIdenticalTo(ReadOnlyAddressBook other) {
+        requireNonNull(other);
+        List<Person> ownPersons = getPersonList();
+        List<Person> otherPersons = other.getPersonList();
+        if (ownPersons.size() != otherPersons.size()) {
+            return false;
+        }
+        for (int i = 0; i < ownPersons.size(); i++) {
+            Person ownPerson = ownPersons.get(i);
+            Person otherPerson = otherPersons.get(i);
+            if (ownPerson == otherPerson) {
+                // Contacts a command did not touch are shared by both lists, so this skips most comparisons.
+                continue;
+            }
+            if (!ownPerson.equals(otherPerson) || !getTagNames(ownPerson).equals(getTagNames(otherPerson))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Returns the exact spellings of the tags of {@code person}.
+     */
+    private static Set<String> getTagNames(Person person) {
+        return person.getTags().stream().map(tag -> tag.tagName).collect(Collectors.toSet());
     }
 
     @Override

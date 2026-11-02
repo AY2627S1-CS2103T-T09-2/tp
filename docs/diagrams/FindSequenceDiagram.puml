@@ -1,0 +1,44 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+skinparam SequenceMessageFontSize 16
+skinparam ParticipantFontSize 16
+skinparam NoteFontSize 15
+
+participant "f:FindCommand" as FindCommand LOGIC_COLOR
+participant "m:Model" as Model MODEL_COLOR
+participant "<<class>>\nMessages" as Messages LOGIC_COLOR
+participant "r:CommandResult" as CommandResult LOGIC_COLOR
+
+[-> FindCommand : execute(m)
+activate FindCommand
+
+FindCommand -> Model : updateFilteredPersonList(predicate)
+activate Model
+Model --> FindCommand
+deactivate Model
+
+FindCommand -> Model : getFilteredPersonList()
+activate Model
+Model --> FindCommand : matchingPersons
+deactivate Model
+
+note over FindCommand, Model
+  FindCommand obtains count by calling
+  matchingPersons.size() on the returned list.
+end note
+
+FindCommand -> Messages : getPersonListOverview(count)
+activate Messages
+Messages --> FindCommand : feedback
+deactivate Messages
+
+create CommandResult
+FindCommand -> CommandResult : CommandResult(feedback)
+activate CommandResult
+CommandResult --> FindCommand
+deactivate CommandResult
+
+[<-- FindCommand : r
+deactivate FindCommand
+@enduml

@@ -161,6 +161,19 @@ public class UniquePersonListTest {
     }
 
     @Test
+    public void setPersons_largeListWithCaseVariantAtEnd_rejectsDuplicate() {
+        List<Person> people = java.util.stream.IntStream.range(0, 5000)
+                .mapToObj(index -> new PersonBuilder().withName("Contact " + index).build())
+                .toList();
+        uniquePersonList.setPersons(people);
+        assertEquals(5000, uniquePersonList.asUnmodifiableObservableList().size());
+
+        List<Person> withDuplicate = new java.util.ArrayList<>(people);
+        withDuplicate.add(new PersonBuilder().withName("CONTACT 4999").build());
+        assertThrows(DuplicatePersonException.class, () -> uniquePersonList.setPersons(withDuplicate));
+    }
+
+    @Test
     public void asUnmodifiableObservableList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, ()
             -> uniquePersonList.asUnmodifiableObservableList().remove(0));

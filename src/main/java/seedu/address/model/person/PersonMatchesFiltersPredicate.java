@@ -2,7 +2,6 @@ package seedu.address.model.person;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -16,7 +15,7 @@ import seedu.address.model.tag.Tag;
 public class PersonMatchesFiltersPredicate implements Predicate<Person> {
 
     private final Optional<Status> status;
-    private final Optional<String> tagName;
+    private final Optional<Tag> tag;
 
     /**
      * Creates a predicate that requires every supplied filter to match.
@@ -27,8 +26,8 @@ public class PersonMatchesFiltersPredicate implements Predicate<Person> {
      */
     public PersonMatchesFiltersPredicate(Optional<Status> status, Optional<Tag> tag) {
         this.status = requireNonNull(status);
-        this.tagName = requireNonNull(tag)
-                .map(value -> value.tagName.toLowerCase(Locale.ROOT));
+        // The tag works out its case-insensitive key once here, so each check below is a plain comparison.
+        this.tag = requireNonNull(tag);
     }
 
     /**
@@ -39,10 +38,11 @@ public class PersonMatchesFiltersPredicate implements Predicate<Person> {
     }
 
     /**
-     * Returns the optional tag filter in lowercase.
+     * Returns the name of the optional tag filter, spelt as the user typed it, for showing to the user.
+     * Matching does not use this name: it ignores case through {@link Tag#equals(Object)}.
      */
     public Optional<String> getTagName() {
-        return tagName;
+        return tag.map(value -> value.tagName);
     }
 
     /**
@@ -56,8 +56,8 @@ public class PersonMatchesFiltersPredicate implements Predicate<Person> {
     public boolean test(Person person) {
         requireNonNull(person);
         boolean isStatusMatch = status.isEmpty() || person.getStatus() == status.get();
-        boolean isTagMatch = tagName.isEmpty()
-                || person.getTags().stream().anyMatch(tag -> tag.tagName.equalsIgnoreCase(tagName.get()));
+        // Tag equality and hash codes both ignore case, so a set lookup finds the tag in any case.
+        boolean isTagMatch = tag.isEmpty() || person.getTags().contains(tag.get());
         return isStatusMatch && isTagMatch;
     }
 
@@ -71,19 +71,20 @@ public class PersonMatchesFiltersPredicate implements Predicate<Person> {
             return false;
         }
 
-        return status.equals(otherPredicate.status) && tagName.equals(otherPredicate.tagName);
+        // Tags compare ignoring case, so t/STRASSE and t/straße give equal predicates.
+        return status.equals(otherPredicate.status) && tag.equals(otherPredicate.tag);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(status, tagName);
+        return Objects.hash(status, tag);
     }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this)
                 .add("status", status)
-                .add("tagName", tagName)
+                .add("tagName", getTagName())
                 .toString();
     }
 }

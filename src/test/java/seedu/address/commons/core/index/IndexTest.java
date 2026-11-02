@@ -11,28 +11,28 @@ public class IndexTest {
 
     @Test
     public void createOneBasedIndex() {
-        // invalid index
+        // EP: one-based indexes below 1. Boundary: 0 is immediately below the valid range.
         assertThrows(IndexOutOfBoundsException.class, () -> Index.fromOneBased(0));
 
-        // check equality using the same base
+        // EP: valid one-based indexes; 1 is the lower boundary and 5 is an interior value.
         assertEquals(1, Index.fromOneBased(1).getOneBased());
         assertEquals(5, Index.fromOneBased(5).getOneBased());
 
-        // convert from one-based index to zero-based index
+        // Check conversion for the same boundary and interior representatives.
         assertEquals(0, Index.fromOneBased(1).getZeroBased());
         assertEquals(4, Index.fromOneBased(5).getZeroBased());
     }
 
     @Test
     public void createZeroBasedIndex() {
-        // invalid index
+        // EP: negative zero-based indexes. Boundary: -1 is immediately below the valid range.
         assertThrows(IndexOutOfBoundsException.class, () -> Index.fromZeroBased(-1));
 
-        // check equality using the same base
+        // EP: valid zero-based indexes; 0 is the lower boundary and 5 is an interior value.
         assertEquals(0, Index.fromZeroBased(0).getZeroBased());
         assertEquals(5, Index.fromZeroBased(5).getZeroBased());
 
-        // convert from zero-based index to one-based index
+        // Check conversion for the same boundary and interior representatives.
         assertEquals(1, Index.fromZeroBased(0).getOneBased());
         assertEquals(6, Index.fromZeroBased(5).getOneBased());
     }

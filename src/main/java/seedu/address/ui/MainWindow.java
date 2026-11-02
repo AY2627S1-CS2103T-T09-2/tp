@@ -11,6 +11,7 @@ import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.Logic;
@@ -70,6 +71,7 @@ public class MainWindow extends UiPart<Stage> {
         setAccelerators();
 
         helpWindow = new HelpWindow();
+        helpWindow.getRoot().initOwner(primaryStage);
     }
 
     public Stage getPrimaryStage() {
@@ -116,6 +118,7 @@ public class MainWindow extends UiPart<Stage> {
     void fillInnerParts() {
         personListPanel = new PersonListPanel(logic.getFilteredPersonList());
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
+        primaryStage.addEventHandler(WindowEvent.WINDOW_HIDDEN, event -> personListPanel.stopMidnightRefresh());
 
         resultDisplay = new ResultDisplay();
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
@@ -125,6 +128,13 @@ public class MainWindow extends UiPart<Stage> {
 
         CommandBox commandBox = new CommandBox(this::executeCommand);
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
+    }
+
+    /**
+     * Shows {@code feedback} in the result box. Must be called after {@link #fillInnerParts()}.
+     */
+    void showFeedback(String feedback) {
+        resultDisplay.setFeedbackToUser(feedback);
     }
 
     /**
@@ -145,7 +155,7 @@ public class MainWindow extends UiPart<Stage> {
     @FXML
     public void handleHelp() {
         if (!helpWindow.isShowing()) {
-            helpWindow.show();
+            helpWindow.show(primaryStage);
         } else {
             helpWindow.focus();
         }
@@ -179,8 +189,9 @@ public class MainWindow extends UiPart<Stage> {
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
         try {
             CommandResult commandResult = logic.execute(commandText);
-            logger.info("Result: " + commandResult.getFeedbackToUser());
+            logger.info("Command succeeded.");
             resultDisplay.setFeedbackToUser(commandResult.getFeedbackToUser());
+            commandResult.getIndexToScrollTo().ifPresent(personListPanel::scrollTo);
 
             if (commandResult.isShowHelp()) {
                 handleHelp();
@@ -192,7 +203,7 @@ public class MainWindow extends UiPart<Stage> {
 
             return commandResult;
         } catch (CommandException | ParseException e) {
-            logger.info("An error occurred while executing command: " + commandText);
+            logger.info("Command failed: " + e.getClass().getSimpleName());
             resultDisplay.setFeedbackToUser(e.getMessage());
             throw e;
         }

@@ -3,6 +3,9 @@ package seedu.address.logic.parser;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 
+import java.util.logging.Logger;
+
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.DoneCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -11,6 +14,8 @@ import seedu.address.logic.parser.exceptions.ParseException;
  * Parses input arguments and creates a new {@code DoneCommand}.
  */
 public class DoneCommandParser implements Parser<DoneCommand> {
+
+    private static final Logger logger = LogsCenter.getLogger(DoneCommandParser.class);
 
     /**
      * Parses the given arguments and returns a {@code DoneCommand} for execution.
@@ -25,12 +30,14 @@ public class DoneCommandParser implements Parser<DoneCommand> {
         requireNonNull(args);
         String trimmedArgs = args.trim();
         if (trimmedArgs.isEmpty() || trimmedArgs.matches(".*\\s+.*")) {
+            logger.fine("Rejected done arguments; expected a single index");
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, DoneCommand.MESSAGE_USAGE));
         }
         try {
             Index index = ParserUtil.parseIndex(args);
             return new DoneCommand(index);
         } catch (ParseException exception) {
+            logger.fine("Rejected done arguments; invalid index");
             throw exception;
         }
     }
