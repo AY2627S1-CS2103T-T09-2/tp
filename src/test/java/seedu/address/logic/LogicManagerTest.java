@@ -1,11 +1,14 @@
 package seedu.address.logic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_NAME_AMY;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_PHONE_AMY;
 import static seedu.address.testutil.Assert.assertThrows;
 
 import java.io.IOException;
@@ -13,12 +16,17 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.ListCommand;
@@ -279,5 +287,44 @@ public class LogicManagerTest {
                 + EMAIL_DESC_AMY + ADDRESS_DESC_AMY;
         ModelManager expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
         assertCommandFailure(addCommand, CommandException.class, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_commandWithPersonalData_logsOnlyCommandWord() throws Exception {
+        // EP: contact details typed in a command must not be copied into the log file.
+        Logger logger = LogsCenter.getLogger(LogicManager.class);
+        List<String> messages = new ArrayList<>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord logRecord) {
+                messages.add(logRecord.getMessage());
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+        logger.addHandler(handler);
+        try {
+            logic.execute(AddCommand.COMMAND_WORD + NAME_DESC_AMY + PHONE_DESC_AMY + EMAIL_DESC_AMY
+                    + ADDRESS_DESC_AMY);
+            // A non-breaking space after the command word is accepted by the parser, so it must split here too.
+            assertThrows(ParseException.class, () -> logic.execute("\u00A0find\u00A0" + VALID_NAME_AMY
+                    + "\u00A0" + VALID_PHONE_AMY + " p/"));
+            logic.execute("find\u00A0" + VALID_NAME_AMY);
+            // A first word that is not a command, such as a pasted phone number, must not be logged either.
+            assertThrows(ParseException.class, () -> logic.execute(VALID_PHONE_AMY + " " + VALID_NAME_AMY));
+        } finally {
+            logger.removeHandler(handler);
+        }
+
+        assertTrue(messages.stream().anyMatch(message -> message.contains("[USER COMMAND][AddCommand]")));
+        assertTrue(messages.stream().anyMatch(message -> message.contains("[USER COMMAND][FindCommand]")));
+        assertTrue(messages.stream().noneMatch(message -> message.contains(VALID_NAME_AMY)
+                || message.contains(VALID_PHONE_AMY)));
     }
 }

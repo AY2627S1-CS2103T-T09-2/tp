@@ -8,7 +8,9 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 /**
  * Writes and reads files
@@ -71,10 +73,11 @@ public class FileUtil {
 
     /**
      * Writes given string to a file.
-     * Will create the file if it does not exist yet.
+     * Will create the file if it does not exist yet. Refuses to write through a symbolic link.
      */
     public static void writeToFile(Path file, String content) throws IOException {
-        Files.write(file, content.getBytes(CHARSET));
+        Files.write(file, content.getBytes(CHARSET), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS);
     }
 
 }

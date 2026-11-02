@@ -83,7 +83,7 @@ public class MainApp extends Application {
             }
             initialData = addressBookOptional.orElseGet(SampleDataUtil::getSampleAddressBook);
         } catch (DataBackupException e) {
-            throw new IllegalStateException("Cannot start Easy-Insurance: " + e.getMessage(), e);
+            throw new IllegalStateException("Cannot start Easy-Insurance: " + e.getMessage());
         } catch (DataLoadingException e) {
             logger.warning("Data file at " + storage.getAddressBookFilePath() + " could not be loaded."
                     + " Will be starting with an empty Easy-Insurance contact list.");

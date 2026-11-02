@@ -19,8 +19,9 @@
 | `WARNING` | User Guide URL cannot be copied | The clipboard rejected the write. |
 
 These feature logs record reasons and safe metadata. They do not include contact names, phone numbers,
-email addresses, addresses, raw arguments or tag values. Existing shared command and feedback logs
-are unchanged; this is not application-wide redaction.
+email addresses, addresses, raw arguments or tag values. At `INFO`, the shared command logs record only the
+type of a recognised command (e.g. `AddCommand`) and whether it succeeded, and a data file that cannot be read
+is logged with the error type only, so contact details and notes are not copied into `easyinsurance.log.0`.
 
 To inspect the detailed diagnostics locally:
 
