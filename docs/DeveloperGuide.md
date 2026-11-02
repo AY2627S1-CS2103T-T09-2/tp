@@ -24,6 +24,10 @@ pageNav: 3
 * Kaelin used Codex to assist with code review, documentation updates and
   repository maintenance. The resulting changes were reviewed before being
   applied.
+* Peter Bezgoubov used Codex to assist with code ideation, code review, documentation updates and
+  repository maintenance. The resulting changes were reviewed before being
+  applied. All code was reviewed by himself, and all pull requests were
+  also reviewed by teammates, built and approved before being merged.
 
 --------------------------------------------------------------------------------------------------------------------
 
