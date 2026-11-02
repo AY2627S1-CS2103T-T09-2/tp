@@ -446,6 +446,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *`  | insurance agent                          | mark a follow-up as done                                | keep my list to what is still pending                                |
 | `* * *`  | insurance agent unfamiliar with CLI      | see a guide to the available commands and their formats | learn to use the app without prior CLI experience                    |
 | `* *`    | insurance agent                          | record when I last contacted someone                    | see who I have not spoken to in a while                              |
+| `* *`    | insurance agent                          | record a note about an interaction with a contact        | remember what we discussed and what to follow up on                   |
+| `* *`    | insurance agent preparing to contact someone | view that contact's interaction history               | continue the conversation with the context of earlier discussions     |
+| `* *`    | insurance agent correcting a mistake     | remove an incorrect interaction note                    | avoid relying on misleading information in future conversations       |
 | `* *`    | insurance agent planning my day          | see all follow-ups due today                            | know who to call before I start                                      |
 | `* *`    | insurance agent unfamiliar with CLI      | get a clear error message when I type a command wrongly | learn from the error and type it correctly next time                 |
 | `* * *`  | insurance agent                          | filter my list by status                                | focus on prospects when planning outreach                            |
@@ -482,6 +485,11 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 ### Use cases
 
 (For all use cases below, the **System** is Easy-Insurance and the **Actor** is the insurance agent.)
+
+**Recoverable saving failures:** For any use case that changes contact data, the system confirms completion only
+after saving succeeds. If saving fails, the system reports the failure; the previous contact data and displayed
+list, including its filter and ordering, remain in place. The requested change has not been saved. After the
+storage problem is corrected, the agent can submit the request again. The system does not retry automatically.
 
 **Use case: Add a prospect and plan a follow-up**
 
@@ -643,6 +651,99 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
     Use case resumes at step 2.
 
+**Use case: Record an interaction note**
+
+**MSS**
+
+1. Agent requests to view contacts.
+2. System shows the matching contacts with their references.
+3. Agent supplies a note for a selected contact.
+4. System records the note with its creation time and confirms which contact was updated.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. No contacts are shown.
+  * Use case ends.
+* 3a. The contact reference is invalid.
+  * 3a1. System explains the error without changing any contacts.
+  * Use case ends.
+* 3b. The note is blank, contains control characters or exceeds the allowed length.
+  * 3b1. System explains the note constraints without adding the note.
+  * Use case ends.
+* 3c. System cannot save the note.
+  * 3c1. System reports the saving failure and retains the previous notes, contact data and displayed list.
+  * Use case ends without adding the note. Agent may retry after the storage problem is corrected.
+
+**Use case: View interaction history**
+
+**MSS**
+
+1. Agent requests to view contacts.
+2. System shows the matching contacts with their references.
+3. Agent requests the interaction history of a selected contact.
+4. System shows the contact's notes in reverse order of addition, each with a note reference and creation time.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. No contacts are shown.
+  * Use case ends.
+* 3a. The contact reference is invalid.
+  * 3a1. System explains the error without changing any contacts.
+  * Use case ends.
+* 3b. The contact has no notes.
+  * 3b1. System reports that no interaction notes have been recorded for that contact.
+  * Use case ends.
+
+**Use case: Remove an incorrect interaction note**
+
+**Precondition:** Agent has viewed the selected contact's current history and identified an incorrect note.
+
+**MSS**
+
+1. Agent requests to remove the note using the contact reference and the note reference shown in that history.
+2. System removes the selected note and confirms the contact and deleted text.
+3. Agent requests the contact's history again.
+4. System shows the remaining notes with updated references, preserving their relative order.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. Either reference is invalid.
+  * 1a1. System explains which reference is invalid without changing any notes.
+  * Use case ends.
+* 1b. System cannot save the deletion.
+  * 1b1. System reports the saving failure and retains all previous notes, contact data and the displayed list.
+  * Use case ends without deleting the note. Agent may retry after the storage problem is corrected.
+* 3a. The deleted note was the contact's only note.
+  * 3a1. System reports that no interaction notes have been recorded for that contact.
+  * Use case ends.
+
+**Use case: Clear all contacts with confirmation**
+
+**MSS**
+
+1. Agent requests to clear all contacts.
+2. System states the total number of contacts to be removed and asks for confirmation.
+3. Agent confirms the removal.
+4. System removes all contacts, including any hidden by the current view, and confirms completion.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. Agent's request already includes confirmation.
+  * Use case resumes at step 4 without another confirmation prompt.
+* 2a. Agent decides not to confirm and continues with another task.
+  * Use case ends without clearing any contacts.
+* \*a. System cannot save the requested removal, including a request that already contains confirmation.
+  * \*a1. System reports the saving failure and retains all contacts and the previous displayed list.
+  * Use case ends without clearing any contacts. Agent may retry after the storage problem is corrected.
+
 ### Non-Functional Requirements
 
 1. Easy-Insurance should run on Windows, macOS, and Linux with Java `25` or above installed.
@@ -679,6 +780,31 @@ Given below are instructions to test the app manually.
 **Note:** These instructions only provide a starting point for testers to work on;
 testers are expected to do more *exploratory* testing.
 </box>
+
+### Disposable test setup
+
+Use a separate, empty folder containing a copy of `EasyInsurance.jar`. Open a terminal in that folder and run
+`java -jar EasyInsurance.jar`. Use only this copy for the tests below: several tests deliberately clear contacts
+or make the data file unavailable. Keep your real data in its original folder and run only one app instance
+against the test folder.
+
+Unless a step says **terminal**, enter each command in the app's command box and press **Enter**. After a
+rejected command, replace the retained input before entering the next command. Follow each section in order.
+For restart checks, close the app and launch it again from the same test folder.
+
+### Three-contact test fixture
+
+Recreate this fixture before each section that asks for it. In the disposable app, run these commands in order:
+
+1. `clear confirm`
+1. `add n/Alice Tan p/+65 9123-4567 e/alice@example.com a/1 Test Road st/CLIENT f/02-01-2020 t/review`
+1. `add n/Bob Lim p/92345678 e/bob@example.com a/2 Test Road st/PROSPECT f/01-01-2020`
+1. `add n/Carol Ng p/93456789 e/carol@example.com a/3 Test Road st/CLIENT`
+1. `list`
+
+Expected: Exactly Alice, Bob and Carol appear at indexes 1, 2 and 3. Alice and Bob have the specified follow-up
+dates; Carol has none. The past-date warnings on the first two additions are expected. All three initially have
+no last-contact date or interaction notes. The file `data/addressbook.json` exists in the test folder.
 
 ### Launch and shutdown
 
@@ -917,6 +1043,191 @@ testers are expected to do more *exploratory* testing.
 
    1. Other incorrect commands to try: `due -1`, `due 366`, `due abc`, `due 7 days`<br>
       Expected: No change to the list. Error: `Number of days must be a whole number from 0 to 365, e.g. due 7.`
+
+### Searching by name prefix and phone
+
+Prerequisite: Recreate the [three-contact test fixture](#three-contact-test-fixture).
+
+| Input | Expected result |
+|-------|-----------------|
+| `find TA` | Only Alice Tan appears at index 1; `1 contact listed.` Matching is case-insensitive and includes the start of a surname. |
+| `find an` | Empty list; `0 contacts listed.` A substring inside `Tan` is not a word prefix. |
+| `find ta ng` | Alice Tan and Carol Ng appear, in that order; `2 contacts listed.` Either keyword can match. |
+| `find p/659123` | Only Alice appears; `1 contact listed.` Stored `+`, spaces and dashes do not interrupt phone-digit matching. |
+| `find p/0000` | Empty list; `0 contacts listed.` |
+| `find p/9123` | Only Alice appears again. |
+| `find`, then `find p/`, then `find p/9123-4567` | Each command reports its missing/invalid search input. Alice remains the only displayed contact after each rejection. Phone search input must contain digits only. |
+| `list` | All three contacts reappear with unchanged details. |
+
+### Recording last-contact dates
+
+Prerequisite: Recreate the [three-contact test fixture](#three-contact-test-fixture).
+
+1. Run `find bob`, then `contacted 1 d/01-01-2020`.<br>
+   Expected: `Updated last contact date for Bob Lim to 01-01-2020.` Bob's card shows `Last contacted: 01-01-2020`.
+   His follow-up remains `01-01-2020`; Alice and Carol are unchanged.
+1. Run `contacted 1 d/02-01-2020`.<br>
+   Expected: Bob's last-contact date changes to `02-01-2020`, while his follow-up remains `01-01-2020`.
+1. Try `contacted 1 d/31-02-2020`, `contacted 1 d/` and `contacted 2 d/01-01-2020` separately.<br>
+   Expected: Each reports an error. The last command explains that there is no contact 2 in the one-contact view.
+   Bob remains displayed with last-contact date `02-01-2020` and his original follow-up.
+1. Work out tomorrow's date in `DD-MM-YYYY` format. Run `contacted 1 d/TOMORROW`, replacing `TOMORROW` with that date.<br>
+   Expected: An error says the last-contact date cannot be in the future. Bob's dates remain unchanged.
+1. Restart, then run `find bob`.<br>
+   Expected: The last-contact date is still `02-01-2020`, and the follow-up is still `01-01-2020`.
+   Run `list` to verify that Alice and Carol still have no last-contact date.
+
+### Recording, viewing and removing interaction notes
+
+Prerequisite: Recreate the [three-contact test fixture](#three-contact-test-fixture).
+
+1. Run `find bob`, then `history 1`.<br>
+   Expected: `No interaction notes recorded for Bob Lim.` Bob is contact 1 in this filtered view, although he
+   was contact 2 in the full list.
+1. Run `note 1 nt/Discussed hospital coverage`, then `note 1 nt/Sent policy summary`.<br>
+   Expected after each command: `Added interaction note for Bob Lim.`
+1. Run `history 1`.<br>
+   Expected: The header names Bob Lim. Note **1** is `Sent policy summary`; note **2** is
+   `Discussed hospital coverage`. Each has a creation timestamp in `DD-MM-YYYY HH:mm` format. Notes are ordered
+   by when they were added, even if both displayed timestamps are the same minute. Record the two timestamps.
+1. Try `note 1 nt/`, `note 2 nt/Wrong contact`, `history 2`, `deletenote 1 3` and `deletenote 1 0` separately.<br>
+   Expected: Each reports an error. `deletenote 1 3` reports `There is no interaction note 3. The history shows 2 notes.`
+   Run `history 1` again: the same two notes, timestamps and indexes remain.
+1. Restart, run `find bob`, then `history 1`.<br>
+   Expected: Both notes, their timestamps and the newest-added-first order survive the restart.
+1. Run `deletenote 1 1`.<br>
+   Expected: `Deleted interaction note 1 for Bob Lim: Sent policy summary`.
+   Run `history 1`: only `Discussed hospital coverage` remains, now numbered **1** with its original timestamp.
+1. Restart, run `find bob`, then `history 1`.<br>
+   Expected: The deleted note stays absent, and the remaining note is still numbered **1**.
+   Run `list`: all contact details, including both follow-up dates, remain unchanged.
+   Run `history 1` and `history 3`: Alice and Carol still have no notes.
+1. Run `find bob`, then `deletenote 1 1`, then `history 1`.<br>
+   Expected: Deleting the last note succeeds, followed by `No interaction notes recorded for Bob Lim.`
+   Restart, run `find bob` and `history 1` again: the history remains empty.
+
+### Clearing contacts with confirmation
+
+Prerequisite: Recreate the [three-contact test fixture](#three-contact-test-fixture).
+
+1. Run `find bob`, then `clear`.<br>
+   Expected: `This deletes all 3 contacts. Type 'clear confirm' to proceed.` Bob remains visible; no contact is removed.
+1. Run `clear yes`.<br>
+   Expected: An error is shown. Bob remains visible. Run `list`: all three contacts are still present.
+1. Restart and run `list`.<br>
+   Expected: All three contacts remain saved; the unconfirmed request did not delete them.
+1. Run `find bob`, then `clear confirm` without running `clear` again.<br>
+   Expected: `All contacts have been cleared from Easy-Insurance.` The list is empty.
+   Run `list` to confirm that Alice and Carol, which were hidden, were also removed.
+1. Restart and run `list`.<br>
+   Expected: The list remains empty; sample contacts do not reappear. Run `clear`:
+   `This deletes all 0 contacts. Type 'clear confirm' to proceed.` Run `clear confirm`: the list remains empty.
+
+### Recalling commands and restoring a draft
+
+Prerequisite: Recreate the [three-contact test fixture](#three-contact-test-fixture), then restart to empty the
+session's command history. Keep the command box focused. Use arrow keys without modifier keys.
+
+1. Press **Up**, then **Down** before submitting anything.<br>
+   Expected: The empty command box stays empty.
+1. Submit `list`, then `find ta`. Type `edit 1 p/99998888` but **do not press Enter**.<br>
+   Expected: Only Alice is displayed, with her original phone number. The typed edit is an unfinished draft.
+1. Press **Up** once: `find ta` appears. Press **Up** again: `list` appears. Press **Up** once more: it stays `list`.<br>
+   Expected: Only the command text changes. Alice remains the only displayed contact.
+1. Press **Down**: `find ta` appears. Press **Down** again: `edit 1 p/99998888` is restored.
+   Press **Down** once more: the draft remains unchanged. It has not been executed.
+1. Replace the input with `find p/` and press **Enter**.<br>
+   Expected: A missing-phone-digits error appears and the failed command remains in the box.
+   Clear the box without submitting anything, then press **Up**: `find p/` is recalled, proving that failed
+   submissions are stored too. Press **Down**: the empty draft is restored.
+1. Restart. Press **Up** in the empty command box.<br>
+   Expected: It stays empty because command history is not persisted. Run `find ta`: Alice's phone is still
+   `+65 9123-4567`, confirming that recalling the draft never submitted it.
+
+### Navigating Help and copying text
+
+Prerequisite: Use the [disposable test setup](#disposable-test-setup). Open a blank plain-text editor to check
+clipboard contents. In this section, **Select All / Copy / Paste** mean **Ctrl+A / Ctrl+C / Ctrl+V** on Windows
+and Linux, or **Cmd+A / Cmd+C / Cmd+V** on macOS. Do not submit copied examples as app commands.
+
+1. Run `help`. Keep Help short enough that the guide has a vertical scrollbar.<br>
+   Expected: Help opens with the command guide focused. Press **Page Down** to reveal lower rows, then
+   **Page Up** to return towards the top. **Down** and **Up** also scroll while the guide is focused.
+1. Press **Tab** until the `contacted` example has the text cursor. Press **Select All**, then **Copy**.
+   Paste into the plain-text editor.<br>
+   Expected: The pasted text is exactly `contacted 2 d/27-10-2026`.
+1. Return to that example in Help, select its text and type `x`.<br>
+   Expected: The example remains unchanged because it is read-only. Press **Tab** to move to the next example,
+   then **Shift+Tab** to return. Arrow keys now move the text cursor rather than scroll the guide.
+1. Use **Shift+Tab** to reach the `clear` example. Select all, copy and paste into the editor.<br>
+   Expected: Two lines, `clear` and `clear confirm`, are copied. Selecting only one line with the mouse and
+   copying it pastes only that command.
+1. Return to Help. Press **Tab** until **Copy User Guide URL** has focus, then press **Space**.<br>
+   Expected: `User Guide URL copied.` appears. Paste into the editor: the clipboard contains exactly
+   `https://ay2627s1-cs2103t-t09-2.github.io/tp/UserGuide.html`.
+1. Return to Help and use **Tab** or **Shift+Tab** to focus the guide again; **Page Down** scrolls it.
+   Press **Esc**.<br>
+   Expected: Help closes, the main app remains open and no contacts have changed.
+
+### Recovering from a failed save
+
+1. Recreate the [three-contact test fixture](#three-contact-test-fixture). Run `find bob`, then
+   `note 1 nt/Existing saved note`, then `due`.<br>
+   Expected: Only Bob and Alice appear, in that order: Bob is index **1** because his follow-up is earlier.
+   Carol is hidden. This checks both filtering and sorting, rather than just an unfiltered list.
+1. Leave the app open. In a **second terminal in the test folder**, temporarily replace the data-file path with
+   an empty directory. Keep the original file and an additional comparison copy:
+
+   **macOS / Linux:**
+
+   ```bash
+   cp data/addressbook.json data/before-save-failure.json
+   mv data/addressbook.json data/addressbook.saved.json
+   mkdir data/addressbook.json
+   ```
+
+   **Windows PowerShell:**
+
+   ```powershell
+   Copy-Item data/addressbook.json data/before-save-failure.json
+   Move-Item data/addressbook.json data/addressbook.saved.json
+   New-Item -ItemType Directory -Path data/addressbook.json
+   ```
+
+   Expected: `addressbook.json` is now an empty directory; both saved JSON files remain intact.
+   This deliberately blocked path makes saving fail without relying on platform-specific permission settings.
+1. In the app, try `done 1`, `note 1 nt/Unwritten note` and `clear confirm` separately.<br>
+   Expected after **each** command: A save error identifies the data path as not a regular file, with no success
+   message. Bob and Alice remain at indexes 1 and 2; Carol stays hidden. Both original follow-up dates remain.
+   Run `history 1`: it still shows only `Existing saved note`, so the failed note was not added.
+1. In the **second terminal**, restore the original file and compare it with the copy:
+
+   **macOS / Linux:**
+
+   ```bash
+   rmdir data/addressbook.json
+   mv data/addressbook.saved.json data/addressbook.json
+   cmp data/before-save-failure.json data/addressbook.json
+   ```
+
+   **Windows PowerShell:**
+
+   ```powershell
+   Remove-Item -LiteralPath data/addressbook.json
+   Move-Item data/addressbook.saved.json data/addressbook.json
+   $savedHash = (Get-FileHash data/before-save-failure.json).Hash
+   $restoredHash = (Get-FileHash data/addressbook.json).Hash
+   $savedHash -eq $restoredHash
+   ```
+
+   Expected: `cmp` prints nothing and exits successfully, or PowerShell prints `True`. The original saved data
+   is unchanged. Restore this path before closing or restarting the app, even if you stop the test early.
+1. Retry `done 1` in the app.<br>
+   Expected: Bob's follow-up is completed successfully. Only Alice remains in the due view, now at index 1.
+   This time the change is saved.
+1. Restart and run `due`.<br>
+   Expected: Only Alice appears. Run `list`: all three contacts remain, Bob has no follow-up, Alice retains
+   `02-01-2020` and Carol still has none. Run `find bob`, then `history 1`: only `Existing saved note` remains.
 
 ### Saving data
 
