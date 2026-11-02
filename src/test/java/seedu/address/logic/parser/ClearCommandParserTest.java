@@ -66,7 +66,8 @@ public class ClearCommandParserTest {
     @Test
     public void parse_invalidArgs_throwsParseException() {
         String expectedMessage =
-                "The clear command does not accept additional parameters.";
+                "The clear command accepts no arguments or exactly 'confirm' in lowercase. "
+                        + "Type 'clear confirm' to proceed.";
 
         // EP: unrecognized confirmation text, including numeric input.
         assertParseFailure(parser, "3", expectedMessage);
@@ -74,9 +75,11 @@ public class ClearCommandParserTest {
 
         // EP: the confirmation keyword followed by an extra argument.
         assertParseFailure(parser, "confirm extra", expectedMessage);
+        assertParseFailure(parser, "confirm now", expectedMessage);
 
         // EP: a differently cased confirmation keyword; only the exact lowercase keyword is accepted.
         assertParseFailure(parser, "CONFIRM", expectedMessage);
+        assertParseFailure(parser, "Confirm", expectedMessage);
 
         // EP: unrecognized text remains invalid after trimming.
         assertParseFailure(parser, "  extra  ", expectedMessage);

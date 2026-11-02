@@ -80,8 +80,8 @@ Easy-Insurance is a **desktop app for junior insurance agents to keep track of t
   Extra parameters are rejected with an error naming the command.<br>
   For example, `help 123` shows `The help command does not accept additional parameters.`
 
-* `clear` accepts either no arguments or exactly `confirm`.
-  Other parameters are rejected with an error naming the command.
+* `clear` accepts either no arguments or exactly lowercase `confirm`.
+  Other arguments are rejected with an error explaining the accepted forms; no contacts are removed.
   
 * `list` accepts optional `st/STATUS` and `t/TAG` filters.
   Each filter may appear at most once.
@@ -454,12 +454,14 @@ Format: `clear [confirm]`
 * `clear` does not remove any contacts immediately.
 * It shows how many contacts would be deleted and asks you to type `clear confirm`.
 * `clear confirm` removes all contacts from Easy-Insurance.
-* Any other additional parameter is rejected.
+* The command word is case-insensitive, so `CLEAR confirm` also works, but `confirm` must be lowercase.
+* Other arguments, such as `CONFIRM` or `confirm now`, are rejected without removing any contacts.
 
 Examples:
 
 * `clear` shows `This deletes all N contacts. Type 'clear confirm' to proceed.`
 * `clear confirm` clears all contacts.
+* `clear CONFIRM` shows `The clear command accepts no arguments or exactly 'confirm' in lowercase. Type 'clear confirm' to proceed.`
 
 ### Exiting the program: `exit`
 

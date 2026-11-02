@@ -6,6 +6,7 @@ import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
+import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +31,9 @@ import seedu.address.logic.commands.HistoryCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.NoteCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.Model;
+import seedu.address.model.ModelManager;
+import seedu.address.model.UserPrefs;
 import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.LastContact;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
@@ -61,13 +65,31 @@ public class CommandInputParserTest {
 
     @Test
     public void parseCommand_clearWithExtraArgs_throwsParseException() {
-        // EP: the recognized clear command with an unsupported numeric or textual argument.
-        String expectedMessage = "The clear command does not accept additional parameters.";
+        String expectedMessage = "The clear command accepts no arguments or exactly 'confirm' in lowercase. "
+                + "Type 'clear confirm' to proceed.";
 
+        // EP: the recognized clear command with an unsupported numeric or textual argument.
         assertThrows(ParseException.class, expectedMessage, ()
                 -> parser.parseCommand(ClearCommand.COMMAND_WORD + " 3"));
         assertThrows(ParseException.class, expectedMessage, ()
                 -> parser.parseCommand(ClearCommand.COMMAND_WORD + " extra"));
+
+        // EP: uppercase confirmation remains invalid regardless of the command word's case.
+        assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand("clear CONFIRM"));
+        assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand("CLEAR CONFIRM"));
+
+        // EP: a lowercase confirmation keyword followed by extra text must not clear contacts.
+        assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand("clear confirm now"));
+    }
+
+    @Test
+    public void parseCommand_uppercaseClearWithLowercaseConfirm_clearsContacts() throws Exception {
+        // EP: an uppercase command word with the exact lowercase confirmation still clears contacts.
+        Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+
+        assertEquals(ClearCommand.MESSAGE_SUCCESS,
+                parser.parseCommand("CLEAR confirm").execute(model).getFeedbackToUser());
+        assertTrue(model.getAddressBook().getPersonList().isEmpty());
     }
 
     @Test
