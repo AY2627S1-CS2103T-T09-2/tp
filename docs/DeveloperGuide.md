@@ -21,6 +21,9 @@ pageNav: 3
 * Kasey Ho used Codex to assist with implementation, regression tests and
   documentation. All code was reviewed by himself, and all pull requests were
   also reviewed by teammates, built and approved before being merged.
+* Kaelin used Codex to assist with code review, documentation updates and
+  repository maintenance. The resulting changes were reviewed before being
+  applied.
 
 --------------------------------------------------------------------------------------------------------------------
 
