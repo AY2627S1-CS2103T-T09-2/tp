@@ -1,0 +1,31 @@
+@startuml
+!include style.puml
+skinparam arrowThickness 1.1
+skinparam arrowColor MODEL_COLOR
+skinparam classBackgroundColor MODEL_COLOR
+skinparam nodesep 30
+skinparam ranksep 55
+left to right direction
+
+Class Person
+Class Name
+Class Phone
+Class Email
+Class Address
+Enum "<<enumeration>>\nStatus" as Status
+Class FollowUp
+Class LastContact
+Class Tag
+Class InteractionNote
+
+Person *-up-> "1" Name
+Person *-up-> "1" Phone
+Person *-up-> "1" Email
+Person *-up-> "1" Address
+
+Person -down-> "1" Status
+Person *-down-> "0..1" FollowUp
+Person *-down-> "0..1" LastContact
+Person *-down-> "*" Tag
+Person *-down-> "*" InteractionNote
+@enduml
